@@ -55,6 +55,15 @@ interface ScraperResponse {
   platform?: string;
 }
 
+function isRetryableExtractError(error: unknown): boolean {
+  // Stop retry loops when backend already returned a failed response.
+  // Retries are only useful for transport-level failures.
+  if (error instanceof ApiError) {
+    return false;
+  }
+  return isRetryableRequestError(error);
+}
+
 const contentIdCache = createContentCache();
 
 function isMediaData(value: unknown): value is MediaData {
@@ -464,7 +473,7 @@ async function requestScraper(url: string, cookie?: string): Promise<ScraperResp
     {
       maxAttempts: 3,
       baseDelayMs: 250,
-      isRetryable: isRetryableRequestError,
+      isRetryable: isRetryableExtractError,
     },
   );
 
