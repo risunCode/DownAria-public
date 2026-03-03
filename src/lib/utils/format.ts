@@ -121,6 +121,11 @@ const DOMAIN_PLATFORM_MAP: Record<string, PlatformId> = {
     'ig.me': 'instagram',
     'www.ig.me': 'instagram',
     'ddinstagram.com': 'instagram',
+    // Threads
+    'threads.com': 'threads',
+    'www.threads.com': 'threads',
+    'threads.net': 'threads',
+    'www.threads.net': 'threads',
     // TikTok
     'tiktok.com': 'tiktok',
     'www.tiktok.com': 'tiktok',

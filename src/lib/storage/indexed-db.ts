@@ -2,7 +2,7 @@
  * IndexedDB Storage - Download History Only
  * ==========================================
  * Stores user's download history permanently (no auto-delete).
- * Caching is handled by Redis server-side.
+ * Runtime response caching is handled by backend and client-cache modules.
  * 
  * Features:
  * - Unlimited history items
@@ -13,6 +13,7 @@
  */
 
 import { PlatformId } from '@/lib/types';
+import { closeAriaIndexDB, HISTORY_STORE, openAriaIndexDB } from './aria-indexed-db';
 
 // ═══════════════════════════════════════════════════════════════
 // TYPES
@@ -45,45 +46,8 @@ export interface ExportData {
 // DATABASE SETUP
 // ═══════════════════════════════════════════════════════════════
 
-const DB_NAME = 'downaria_db';
-const DB_VERSION = 2; // Bumped version to remove cache store
-const HISTORY_STORE = 'history';
-
-let db: IDBDatabase | null = null;
-
 function openDB(): Promise<IDBDatabase> {
-    return new Promise((resolve, reject) => {
-        if (db) {
-            resolve(db);
-            return;
-        }
-
-        const request = indexedDB.open(DB_NAME, DB_VERSION);
-
-        request.onerror = () => reject(request.error);
-        
-        request.onsuccess = () => {
-            db = request.result;
-            resolve(db);
-        };
-
-        request.onupgradeneeded = (event) => {
-            const database = (event.target as IDBOpenDBRequest).result;
-
-            // History store
-            if (!database.objectStoreNames.contains(HISTORY_STORE)) {
-                const historyStore = database.createObjectStore(HISTORY_STORE, { keyPath: 'id' });
-                historyStore.createIndex('platform', 'platform', { unique: false });
-                historyStore.createIndex('downloadedAt', 'downloadedAt', { unique: false });
-                historyStore.createIndex('contentId', 'contentId', { unique: false });
-            }
-
-            // Remove old cache store if exists (no longer needed, Redis handles caching)
-            if (database.objectStoreNames.contains('media_cache')) {
-                database.deleteObjectStore('media_cache');
-            }
-        };
-    });
+    return openAriaIndexDB();
 }
 
 export async function initStorage(): Promise<void> {
@@ -96,10 +60,7 @@ export async function initStorage(): Promise<void> {
 }
 
 export function closeDB(): void {
-    if (db) {
-        db.close();
-        db = null;
-    }
+    closeAriaIndexDB();
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -109,6 +70,7 @@ export function closeDB(): void {
 export async function addHistory(entry: Omit<HistoryEntry, 'id' | 'downloadedAt'>): Promise<string> {
     const database = await openDB();
     const id = `${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 7)}`;
+    const now = Date.now();
     
     // Truncate title to save space (max 200 chars)
     const title = entry.title?.substring(0, 200) || 'Untitled';
@@ -117,16 +79,85 @@ export async function addHistory(entry: Omit<HistoryEntry, 'id' | 'downloadedAt'
         ...entry,
         id,
         title,
-        downloadedAt: Date.now(),
+        downloadedAt: now,
+    };
+
+    const normalizeResolvedUrl = (url: string): string => {
+        const trimmed = url.trim();
+        if (!trimmed) return '';
+
+        try {
+            const parsed = new URL(trimmed);
+            parsed.hash = '';
+            parsed.username = '';
+            parsed.password = '';
+            parsed.hostname = parsed.hostname.toLowerCase();
+            if (parsed.pathname.length > 1) {
+                parsed.pathname = parsed.pathname.replace(/\/+$/, '');
+            }
+
+            if (parsed.search) {
+                const sortedParams = [...parsed.searchParams.entries()].sort(([keyA, valueA], [keyB, valueB]) => {
+                    if (keyA === keyB) return valueA.localeCompare(valueB);
+                    return keyA.localeCompare(keyB);
+                });
+                parsed.search = '';
+                for (const [key, value] of sortedParams) {
+                    parsed.searchParams.append(key, value);
+                }
+            }
+
+            return parsed.toString();
+        } catch {
+            return trimmed.replace(/#.*$/, '').replace(/\/+$/, '').toLowerCase();
+        }
+    };
+
+    const isSameHistoryItem = (existing: HistoryEntry, incoming: Omit<HistoryEntry, 'id' | 'downloadedAt'>): boolean => {
+        const existingURL = normalizeResolvedUrl(existing.resolvedUrl);
+        const incomingURL = normalizeResolvedUrl(incoming.resolvedUrl);
+
+        if (existingURL && incomingURL) {
+            return existingURL === incomingURL;
+        }
+
+        if (existing.contentId && incoming.contentId) {
+            return existing.platform === incoming.platform && existing.contentId === incoming.contentId;
+        }
+
+        return false;
     };
 
     return new Promise((resolve, reject) => {
         const tx = database.transaction(HISTORY_STORE, 'readwrite');
         const store = tx.objectStore(HISTORY_STORE);
-        const request = store.add(fullEntry);
-        
-        request.onsuccess = () => resolve(id);
-        request.onerror = () => reject(request.error);
+
+        const allRequest = store.getAll();
+
+        allRequest.onsuccess = () => {
+            const existing = (allRequest.result as HistoryEntry[]).find((item) => isSameHistoryItem(item, entry));
+
+            if (existing) {
+                const updated: HistoryEntry = {
+                    ...existing,
+                    ...entry,
+                    id: existing.id,
+                    title,
+                    downloadedAt: now,
+                };
+
+                const updateRequest = store.put(updated);
+                updateRequest.onsuccess = () => resolve(existing.id);
+                updateRequest.onerror = () => reject(updateRequest.error);
+                return;
+            }
+
+            const addRequest = store.add(fullEntry);
+            addRequest.onsuccess = () => resolve(id);
+            addRequest.onerror = () => reject(addRequest.error);
+        };
+
+        allRequest.onerror = () => reject(allRequest.error);
     });
 }
 
@@ -625,19 +656,3 @@ export async function importFullBackupFromZip(file: File, options?: { mergeHisto
     
     return { historyImported, historySkipped, settingsImported, cookiesImported, seasonalRestored };
 }
-
-// ═══════════════════════════════════════════════════════════════
-// LEGACY COMPATIBILITY - Keep exports for existing code
-// ═══════════════════════════════════════════════════════════════
-
-/** @deprecated Cache is now handled by Redis. This is a no-op. */
-export async function getCachedMedia(): Promise<null> { return null; }
-
-/** @deprecated Cache is now handled by Redis. This is a no-op. */
-export async function setCachedMedia(): Promise<void> { }
-
-/** @deprecated Cache is now handled by Redis. This is a no-op. */
-export async function clearExpiredCache(): Promise<number> { return 0; }
-
-/** @deprecated Cache is now handled by Redis. This is a no-op. */
-export async function clearAllCache(): Promise<void> { }

@@ -10,7 +10,6 @@
 
 import { MediaData, MediaFormat, PlatformId } from '@/lib/types';
 import { formatBytes } from './format';
-import { API_URL } from '@/lib/config';
 
 // ============================================================================
 // DOWNLOAD UTILITIES (from download-utils.ts)
@@ -127,6 +126,334 @@ export function groupFormatsByItem(formats: MediaFormat[]): Record<string, Media
         grouped[id].push(format);
     });
     return grouped;
+}
+
+function normalizeQualityToken(value?: string): string {
+    if (!value) return '';
+    return value.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function normalizeContainerToken(format: MediaFormat): string {
+    if (format.format) return format.format.trim().toLowerCase();
+    if (format.mimeType?.includes('/')) {
+        return format.mimeType.split('/')[1].split(';')[0].trim().toLowerCase();
+    }
+    try {
+        const pathname = new URL(format.url).pathname;
+        const ext = pathname.split('.').pop();
+        return ext ? ext.trim().toLowerCase() : '';
+    } catch {
+        return '';
+    }
+}
+
+export function getMediaFormatIdentity(format: MediaFormat): string {
+    const itemId = format.itemId || 'main';
+    const quality = normalizeQualityToken(format.quality);
+    const container = normalizeContainerToken(format);
+    const needsMerge = format.needsMerge ? '1' : '0';
+    const mime = (format.mimeType || '').trim().toLowerCase();
+    return [itemId, format.type, quality, container, needsMerge, mime].join('|');
+}
+
+function getYouTubeStreamIdentity(format: MediaFormat): string {
+    const baseIdentity = getMediaFormatIdentity(format);
+    const looseFormat = format as MediaFormat & {
+        hash?: string;
+        formatId?: string;
+        itag?: string;
+    };
+
+    const hints: string[] = [];
+    const hash = typeof looseFormat.hash === 'string' ? looseFormat.hash.trim().toLowerCase() : '';
+    if (hash) hints.push(`hash:${hash}`);
+
+    const explicitId = typeof looseFormat.formatId === 'string' ? looseFormat.formatId.trim().toLowerCase() : '';
+    if (explicitId) hints.push(`fid:${explicitId}`);
+
+    const itag = typeof looseFormat.itag === 'string' ? looseFormat.itag.trim().toLowerCase() : '';
+    if (itag) hints.push(`itag:${itag}`);
+
+    try {
+        const parsed = new URL(format.url);
+        const path = parsed.pathname.toLowerCase();
+        const streamItag = parsed.searchParams.get('itag')?.trim().toLowerCase() || '';
+        const streamID = parsed.searchParams.get('id')?.trim().toLowerCase() || '';
+        const streamMime = parsed.searchParams.get('mime')?.trim().toLowerCase() || '';
+        const contentLength = parsed.searchParams.get('clen')?.trim().toLowerCase() || '';
+
+        hints.push(`url:${path}`);
+        if (streamItag) hints.push(`url-itag:${streamItag}`);
+        if (streamID) hints.push(`url-id:${streamID}`);
+        if (streamMime) hints.push(`url-mime:${streamMime}`);
+        if (contentLength) hints.push(`url-clen:${contentLength}`);
+    } catch {
+        hints.push(`url:${format.url}`);
+    }
+
+    return hints.length > 0 ? `${baseIdentity}|${hints.join('|')}` : baseIdentity;
+}
+
+function getFormatCompletenessScore(format: MediaFormat): number {
+    let score = 0;
+    if (typeof format.filesize === 'number' && format.filesize > 0) score += 4;
+    if (format.filename) score += 2;
+    if (format.mimeType) score += 1;
+    if (format.format) score += 1;
+    if (format.thumbnail) score += 1;
+    return score;
+}
+
+function parseNumericQuality(value: string): number {
+    const normalized = value.toLowerCase();
+    const match = normalized.match(/(\d{3,4})p/);
+    if (match) return Number(match[1]);
+    if (normalized.includes('8k')) return 4320;
+    if (normalized.includes('4k')) return 2160;
+    if (normalized.includes('2k')) return 1440;
+    if (normalized.includes('fhd')) return 1080;
+    if (normalized.includes('hd')) return 720;
+    if (normalized.includes('sd')) return 480;
+    return 0;
+}
+
+function getYouTubeVideoTierLabel(format: MediaFormat): string {
+    const candidates = [format.label, format.resolution, format.quality, format.filename]
+        .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+        .map((value) => value.toLowerCase());
+
+    for (const candidate of candidates) {
+        const match = candidate.match(/(\d{3,4})p/);
+        if (match) return `${match[1]}p`;
+        if (candidate.includes('8k')) return '4320p';
+        if (candidate.includes('4k')) return '2160p';
+        if (candidate.includes('2k')) return '1440p';
+        if (candidate.includes('fhd')) return '1080p';
+        if (candidate.includes('hd')) return '720p';
+        if (candidate.includes('sd')) return '480p';
+    }
+
+    return format.quality || 'Video';
+}
+
+function getYouTubeVideoCandidateScore(format: MediaFormat): number {
+    let score = getFormatCompletenessScore(format) * 10;
+    if (typeof format.filesize === 'number' && format.filesize > 0) {
+        score += Math.min(Math.round(format.filesize / (1024 * 1024)), 200);
+    }
+    if (typeof format.bitrate === 'number' && format.bitrate > 0) {
+        score += Math.min(Math.round(format.bitrate / 8), 80);
+    }
+    if (typeof format.width === 'number' && format.width > 0) score += 8;
+    if (typeof format.height === 'number' && format.height > 0) score += 8;
+    if (format.hasAudio) score += 2;
+    return score;
+}
+
+function resolveAudioTarget(format: MediaFormat): 'mp3' | 'm4a' | null {
+    if (format.requestedAudioFormat) return format.requestedAudioFormat;
+
+    const candidates = [
+        format.extension,
+        format.format,
+        format.mimeType,
+        format.codec,
+        format.label,
+        format.quality,
+        format.filename,
+    ].filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+        .map((value) => value.toLowerCase());
+
+    if (candidates.some((value) => value.includes('mp3'))) return 'mp3';
+    if (candidates.some((value) => value.includes('m4a') || value.includes('mp4a') || value.includes('aac'))) return 'm4a';
+    return null;
+}
+
+function normalizeAudioOption(format: MediaFormat, target: 'mp3' | 'm4a'): MediaFormat {
+    return {
+        ...format,
+        type: 'audio',
+        quality: target.toUpperCase(),
+        format: target,
+        extension: target,
+        requestedAudioFormat: target,
+    };
+}
+
+function buildSyntheticAudioOption(source: MediaFormat, target: 'mp3' | 'm4a'): MediaFormat {
+    return {
+        ...source,
+        type: 'audio',
+        quality: target.toUpperCase(),
+        format: target,
+        extension: target,
+        requestedAudioFormat: target,
+        isSyntheticAudioOption: true,
+        canConvertAudio: true,
+        label: target.toUpperCase(),
+    };
+}
+
+function getAudioCandidateScore(format: MediaFormat): number {
+    let score = getFormatCompletenessScore(format) * 10;
+    if (typeof format.filesize === 'number' && format.filesize > 0) {
+        score += Math.min(Math.round(format.filesize / (1024 * 1024)), 80);
+    }
+    if (typeof format.bitrate === 'number' && format.bitrate > 0) {
+        score += Math.min(Math.round(format.bitrate / 4), 100);
+    }
+    if (format.mimeType?.toLowerCase().startsWith('audio/')) score += 8;
+    return score;
+}
+
+export function buildYouTubeSelectorFormats(formats: MediaFormat[]): MediaFormat[] {
+    if (formats.length === 0) return [];
+
+    const videoCandidates = formats.filter((format) => format.type === 'video');
+    const audioCandidates = formats.filter((format) => format.type === 'audio');
+    const imageFormats = formats.filter((format) => format.type === 'image');
+
+    const dedupedVideos = new Map<string, MediaFormat>();
+    for (const format of videoCandidates) {
+        const label = getYouTubeVideoTierLabel(format);
+        const existing = dedupedVideos.get(label);
+        if (!existing) {
+            dedupedVideos.set(label, { ...format, quality: label, label: format.label || label });
+            continue;
+        }
+
+        const existingScore = getYouTubeVideoCandidateScore(existing);
+        const candidateScore = getYouTubeVideoCandidateScore(format);
+        if (candidateScore > existingScore || (candidateScore === existingScore && !!format.hasAudio && !existing.hasAudio)) {
+            dedupedVideos.set(label, { ...format, quality: label, label: format.label || label });
+        }
+    }
+
+    const audioByTarget = new Map<'mp3' | 'm4a', MediaFormat>();
+    for (const format of audioCandidates) {
+        const target = resolveAudioTarget(format);
+        if (!target) continue;
+
+        const normalized = normalizeAudioOption(format, target);
+        const existing = audioByTarget.get(target);
+        if (!existing || getAudioCandidateScore(normalized) > getAudioCandidateScore(existing)) {
+            audioByTarget.set(target, normalized);
+        }
+    }
+
+    const audioSourceSeed =
+        audioCandidates.reduce<MediaFormat | null>((best, current) => {
+            if (!best) return current;
+            return getAudioCandidateScore(current) > getAudioCandidateScore(best) ? current : best;
+        }, null) ||
+        videoCandidates.reduce<MediaFormat | null>((best, current) => {
+            if (!best) return current;
+            return getYouTubeVideoCandidateScore(current) > getYouTubeVideoCandidateScore(best) ? current : best;
+        }, null);
+
+    if (!audioByTarget.has('m4a') && audioSourceSeed) {
+        audioByTarget.set('m4a', buildSyntheticAudioOption(audioSourceSeed, 'm4a'));
+    }
+    if (!audioByTarget.has('mp3') && audioSourceSeed) {
+        audioByTarget.set('mp3', buildSyntheticAudioOption(audioSourceSeed, 'mp3'));
+    }
+
+    const sortedVideos = Array.from(dedupedVideos.values()).sort((a, b) => {
+        return parseNumericQuality(b.quality) - parseNumericQuality(a.quality);
+    });
+
+    const sortedAudio = (['m4a', 'mp3'] as const)
+        .map((target) => audioByTarget.get(target))
+        .filter((format): format is MediaFormat => !!format);
+
+    return [...sortedVideos, ...sortedAudio, ...imageFormats];
+}
+
+export function buildSelectorFormats(formats: MediaFormat[], platform: PlatformId, includeSyntheticAudio: boolean = true): MediaFormat[] {
+    if (platform === 'youtube') {
+        return buildYouTubeSelectorFormats(formats);
+    }
+
+    if (!includeSyntheticAudio || formats.length === 0) {
+        return formats;
+    }
+
+    const hasAudio = formats.some((format) => format.type === 'audio');
+    if (hasAudio) {
+        return formats;
+    }
+
+    const sourceVideo = formats.find((format) => format.type === 'video');
+    if (!sourceVideo) {
+        return formats;
+    }
+
+    if (sourceVideo.needsMerge || sourceVideo.hasAudio === false) {
+        return formats;
+    }
+
+    const estimatedAudioSize = typeof sourceVideo.filesize === 'number' && sourceVideo.filesize > 0
+        ? Math.max(1, Math.round(sourceVideo.filesize * 0.1))
+        : undefined;
+
+    const baseAudio = {
+        ...sourceVideo,
+        type: 'audio' as const,
+        canConvertAudio: true,
+        isSyntheticAudioOption: true,
+    };
+
+    const m4aOption: MediaFormat = {
+        ...baseAudio,
+        quality: 'M4A',
+        format: 'm4a',
+        extension: 'm4a',
+        requestedAudioFormat: 'm4a',
+        filesize: estimatedAudioSize,
+        filesizeEstimated: true,
+        label: 'M4A',
+    };
+
+    const mp3Option: MediaFormat = {
+        ...baseAudio,
+        quality: 'MP3',
+        format: 'mp3',
+        extension: 'mp3',
+        requestedAudioFormat: 'mp3',
+        filesize: estimatedAudioSize,
+        filesizeEstimated: true,
+        label: 'MP3',
+    };
+
+    return [...formats, m4aOption, mp3Option];
+}
+
+export function dedupeYouTubeFormats(formats: MediaFormat[]): MediaFormat[] {
+    const deduped: MediaFormat[] = [];
+    const identityToIndex = new Map<string, number>();
+
+    for (const format of formats) {
+        const identity = getYouTubeStreamIdentity(format);
+        const existingIndex = identityToIndex.get(identity);
+
+        if (existingIndex === undefined) {
+            identityToIndex.set(identity, deduped.length);
+            deduped.push(format);
+            continue;
+        }
+
+        const existing = deduped[existingIndex];
+        if (getFormatCompletenessScore(format) > getFormatCompletenessScore(existing)) {
+            deduped[existingIndex] = format;
+        }
+    }
+
+    return deduped;
+}
+
+export function getDisplayFormatsForPlatform(formats: MediaFormat[], platform: PlatformId): MediaFormat[] {
+    if (platform !== 'youtube') return formats;
+    return formats;
 }
 
 /**
@@ -276,7 +603,7 @@ export type ProgressCallback = (progress: HLSDownloadProgress) => void;
  */
 async function parseM3U8(m3u8Url: string): Promise<string[]> {
     // Fetch via proxy to bypass CORS
-    const proxyUrl = `${API_URL}/api/v1/proxy?url=${encodeURIComponent(m3u8Url)}&inline=1`;
+    const proxyUrl = `/api/web/proxy?url=${encodeURIComponent(m3u8Url)}&inline=1`;
     const res = await fetch(proxyUrl);
 
     if (!res.ok) {
@@ -314,7 +641,7 @@ async function parseM3U8(m3u8Url: string): Promise<string[]> {
  * Download a single segment with retry
  */
 async function downloadSegment(url: string, retries = 3): Promise<ArrayBuffer> {
-    const proxyUrl = `${API_URL}/api/v1/proxy?url=${encodeURIComponent(url)}`;
+    const proxyUrl = `/api/web/proxy?url=${encodeURIComponent(url)}`;
 
     for (let attempt = 1; attempt <= retries; attempt++) {
         try {
@@ -393,22 +720,6 @@ function concatenateSegments(segments: ArrayBuffer[]): Uint8Array {
     return merged;
 }
 
-/**
- * Trigger file download in browser
- */
-function triggerDownload(blob: Blob, filename: string): void {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-
-    // Revoke immediately - download has started
-    URL.revokeObjectURL(url);
-}
 
 /**
  * Main function: Download HLS stream as MP4
@@ -469,7 +780,7 @@ export async function downloadHLSAsMP4(
             finalFilename = filename.replace(/\.(mp4|webm|mkv|mov|avi|m3u8|ts)$/i, '') + '.mp4';
         }
 
-        triggerDownload(blob, finalFilename);
+        triggerBlobDownload(blob, finalFilename);
 
         onProgress?.({
             phase: 'complete',
@@ -570,6 +881,35 @@ export interface YouTubeMergeResult {
     blob?: Blob;
     filename?: string;
     error?: string;
+}
+
+async function extractMergeError(response: Response): Promise<string> {
+    const fallback = `HTTP ${response.status}${response.statusText ? ` ${response.statusText}` : ''}`;
+    const bodyText = await response.text().catch(() => '');
+    if (!bodyText || !bodyText.trim()) return fallback;
+
+    try {
+        const parsed = JSON.parse(bodyText) as {
+            error?: string | { message?: string; code?: string };
+            message?: string;
+            details?: string;
+            code?: string;
+        };
+
+        const directError = typeof parsed.error === 'string'
+            ? parsed.error
+            : parsed.error?.message;
+        const code = parsed.code || (typeof parsed.error === 'object' ? parsed.error?.code : undefined);
+        const message = directError || parsed.message || parsed.details;
+        if (typeof message === 'string' && message.trim()) {
+            return code ? `${code}: ${message}` : message;
+        }
+    } catch {
+        // non-JSON payload
+    }
+
+    const compactText = bodyText.replace(/\s+/g, ' ').trim();
+    return compactText || fallback;
 }
 
 /**
@@ -746,6 +1086,7 @@ export async function downloadMergedYouTube(
     filename: string,
     onProgress: (progress: YouTubeMergeProgress) => void,
     estimatedSize?: number,
+    requestedAudioFormat?: string,
     abortSignal?: AbortSignal
 ): Promise<YouTubeMergeResult> {
     try {
@@ -754,65 +1095,33 @@ export async function downloadMergedYouTube(
             return { success: false, error: 'Download cancelled' };
         }
 
-        // Phase 1: Start request
-        onProgress({ status: 'preparing', message: 'Preparing...', percent: 0, loaded: 0, total: 0 });
-
-        // Simulate realistic download progress based on estimated size @ 2 Mbps
-        // 2 Mbps = 250 KB/s = 256,000 bytes/s (realistic for converting animation)
-        const SIMULATED_SPEED = 2 * 1024 * 1024 / 8; // 2 Mbps in bytes/s = 256 KB/s
-        const estimatedTotal = estimatedSize || 30 * 1024 * 1024; // Default 30MB if unknown
-
-        // Converting phase: 0-80% with realistic timing
-        // We simulate downloading at 2 Mbps, progress updates every 200ms
-        const UPDATE_INTERVAL = 200; // ms
-        const bytesPerUpdate = SIMULATED_SPEED * (UPDATE_INTERVAL / 1000);
-        let fakeLoaded = 0;
-        const maxFakePercent = 80; // Stop at 80% until backend responds
-
-        const fakeProgressInterval = setInterval(() => {
-            fakeLoaded += bytesPerUpdate * (0.8 + Math.random() * 0.4); // Add some variance
-            const fakePercent = Math.min((fakeLoaded / estimatedTotal) * 100, maxFakePercent);
-
-            if (fakePercent < maxFakePercent) {
-                onProgress({
-                    status: 'merging',
-                    message: 'Converting...',
-                    percent: Math.round(fakePercent),
-                    loaded: Math.round(fakeLoaded),
-                    total: estimatedTotal
-                });
-            }
-        }, UPDATE_INTERVAL);
+        // Wait for backend processing (merge/convert) then stream final artifact
+        onProgress({ status: 'merging', message: 'Processing on server...', percent: 0, loaded: 0, total: estimatedSize || 0 });
 
         let response: Response;
         try {
             // Call merge API with abort signal
-            response = await fetch(`${API_URL}/api/v1/youtube/merge`, {
+            response = await fetch('/api/web/merge', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     url: youtubeUrl,
                     quality,
-                    filename
+                    filename,
+                    format: requestedAudioFormat || undefined
                 }),
                 signal: abortSignal
             });
         } catch (fetchError) {
-            // Network error or abort - clear interval and rethrow
-            clearInterval(fakeProgressInterval);
             if (fetchError instanceof Error && fetchError.name === 'AbortError') {
                 return { success: false, error: 'Download cancelled' };
             }
             throw fetchError;
         }
 
-        // Stop fake progress
-        clearInterval(fakeProgressInterval);
-
         if (!response.ok) {
-            const error = await response.json().catch(() => ({ error: 'Merge failed' }));
-            console.error('[Merge Debug] Response not OK:', response.status, error);
-            throw new Error(error.error || `HTTP ${response.status}`);
+            const errorMessage = await extractMergeError(response);
+            throw new Error(errorMessage || `HTTP ${response.status}`);
         }
 
         // Debug Headers
@@ -850,11 +1159,10 @@ export async function downloadMergedYouTube(
         let loaded = 0;
         let lastUpdate = Date.now();
 
-        // First progress with actual total size - jump to 80%
         onProgress({
             status: 'downloading',
             message: 'Downloading...',
-            percent: 80,
+            percent: 0,
             loaded: 0,
             total
         });
@@ -870,36 +1178,23 @@ export async function downloadMergedYouTube(
             const now = Date.now();
             if (now - lastUpdate > 50) {
                 lastUpdate = now;
-                // Progress: 80-100% is actual download phase
                 const downloadPercent = total > 0
-                    ? Math.round((loaded / total) * 20) + 80
-                    : 90;
+                    ? Math.round((loaded / total) * 100)
+                    : 0;
 
                 onProgress({
                     status: 'downloading',
                     message: 'Downloading...',
-                    percent: Math.min(downloadPercent, 99),
+                    percent: Math.min(downloadPercent, 100),
                     loaded,
                     total
                 });
             }
         }
 
-        const blob = new Blob(chunks as BlobPart[], { type: 'video/mp4' });
+        const responseContentType = response.headers.get('content-type') || 'application/octet-stream';
+        const blob = new Blob(chunks as BlobPart[], { type: responseContentType });
         const finalMB = (blob.size / 1024 / 1024).toFixed(1);
-
-        if (process.env.NODE_ENV === 'development') {
-            console.log(`[Merge Debug] Final Blob Size: ${blob.size} bytes (${finalMB} MB)`);
-        }
-
-        // Check signature of first chunk
-        if (process.env.NODE_ENV === 'development' && chunks.length > 0 && chunks[0].length >= 8) {
-            const header = new TextDecoder().decode(chunks[0].slice(0, 40)); // Check first 40 bytes
-            console.log('[Merge Debug] First chunk signature (hex):',
-                Array.from(chunks[0].slice(0, 16)).map(b => b.toString(16).padStart(2, '0')).join(' ')
-            );
-            console.log('[Merge Debug] First chunk text preview:', header.replace(/[^\x20-\x7E]/g, '.'));
-        }
 
         onProgress({ status: 'done', message: `Done! ${finalMB} MB`, percent: 100, loaded: blob.size, total: blob.size });
 
@@ -912,21 +1207,6 @@ export async function downloadMergedYouTube(
     }
 }
 
-/**
- * Trigger download from blob
- */
-export function downloadBlob(blob: Blob, filename: string): void {
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    // Delay revocation to ensure browser has time to register the download
-    setTimeout(() => URL.revokeObjectURL(url), 100);
-}
 
 /**
  * Check if a format needs merge (video-only)
@@ -986,6 +1266,22 @@ export interface DownloadResult {
     error?: string;
 }
 
+function extractFilenameFromContentDisposition(contentDisposition: string | null): string | null {
+    if (!contentDisposition) return null;
+
+    const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+    if (utf8Match && utf8Match[1]) {
+        return decodeURIComponent(utf8Match[1].replace(/['"]/g, '')).trim() || null;
+    }
+
+    const fallbackMatch = contentDisposition.match(/filename=["']?([^"';]+)["']?/i);
+    if (fallbackMatch && fallbackMatch[1]) {
+        return decodeURIComponent(fallbackMatch[1]).trim() || null;
+    }
+
+    return null;
+}
+
 /**
  * Unified download function - handles all cases:
  * - Regular direct download
@@ -1006,27 +1302,11 @@ export async function downloadMedia(
             return { success: false, error: 'Download cancelled' };
         }
 
-        // Generate filename
-        let filename = generateFilename(data, platform, format, carouselIndex);
+        // No frontend filename generation. Prefer backend/upstream filename.
+        let filename = '';
 
         // Case 1: ALL YouTube downloads go through backend merge endpoint
         if (platform === 'youtube') {
-            // Determine extension based on format
-            let ext: string;
-            if (format.type === 'audio') {
-                ext = format.format === 'm4a' ? '.m4a' : '.mp3';
-            } else {
-                ext = '.mp4';
-            }
-
-            // Replace only known media extensions to prevent double extension bug
-            // This regex specifically targets media file extensions at the end of filename
-            filename = filename.replace(/\.(mp4|webm|mkv|mov|avi|mp3|m4a|aac|opus|wav)$/i, ext);
-
-            if (process.env.NODE_ENV === 'development') {
-                console.log(`[Merge Debug] Generated local filename: "${filename}"`);
-            }
-
             onProgress?.({ status: 'merging', percent: 0, loaded: 0, total: 0, speed: 0, message: 'Preparing...' });
 
             // For audio, pass quality that backend understands
@@ -1055,18 +1335,54 @@ export async function downloadMedia(
                     });
                 },
                 format.filesize,
+                format.type === 'audio' ? (format.requestedAudioFormat || format.format || 'mp3') : undefined,
                 abortSignal
             );
 
             if (!result.success || !result.blob) {
                 return { success: false, error: result.error || 'Download failed' };
             }
-            return { success: true, blob: result.blob, filename };
+            return { success: true, blob: result.blob, filename: result.filename || 'downaria_output.mp4' };
+        }
+
+        // Case 1.5: synthetic audio conversion option (non-YouTube)
+        if (format.type === 'audio' && format.isSyntheticAudioOption && format.requestedAudioFormat) {
+            onProgress?.({ status: 'merging', percent: 0, loaded: 0, total: 0, speed: 0, message: 'Processing on server...' });
+
+            const result = await downloadMergedYouTube(
+                format.url,
+                format.quality,
+                filename,
+                (p) => {
+                    const status = p.status === 'done' ? 'done'
+                        : p.status === 'error' ? 'error'
+                            : p.status === 'downloading' ? 'downloading'
+                                : 'merging';
+
+                    onProgress?.({
+                        status,
+                        percent: p.percent || 0,
+                        loaded: p.loaded || 0,
+                        total: p.total || 0,
+                        speed: (p as { speed?: number }).speed || 0,
+                        message: p.message
+                    });
+                },
+                format.filesize,
+                format.requestedAudioFormat,
+                abortSignal
+            );
+
+            if (!result.success || !result.blob) {
+                return { success: false, error: result.error || 'Conversion failed' };
+            }
+            const fallbackAudioName = format.requestedAudioFormat === 'm4a' ? 'downaria_output.m4a' : 'downaria_output.mp3';
+            return { success: true, blob: result.blob, filename: result.filename || fallbackAudioName };
         }
 
         // Case 2: HLS/m3u8 stream (non-YouTube)
         if (isHlsFormat(format)) {
-            filename = filename.replace(/\.m3u8$/i, '.mp4');
+            filename = 'downaria_hls.mp4';
             const result = await downloadHLSAsMP4(format.url, filename, (p) => {
                 onProgress?.({
                     status: p.phase === 'complete' ? 'done' : p.phase === 'error' ? 'error' : 'downloading',
@@ -1086,7 +1402,7 @@ export async function downloadMedia(
         }
 
         // Case 3: Regular direct download
-        const proxyUrl = getProxyUrl(format.url, { filename, platform });
+        const proxyUrl = getProxyUrl(format.url, { filename, platform, download: true });
         const response = await fetch(proxyUrl, { signal: abortSignal });
         if (!response.ok) throw new Error(`Download failed: ${response.status}`);
 
@@ -1125,7 +1441,10 @@ export async function downloadMedia(
 
         onProgress?.({ status: 'done', percent: 100, loaded, total, speed: 0 });
         const blob = new Blob(chunks as BlobPart[]);
-        return { success: true, blob, filename };
+        const upstreamName = extractFilenameFromContentDisposition(response.headers.get('content-disposition'));
+        const ext = (format.format || format.extension || '').trim().toLowerCase();
+        const fallbackName = ext ? `downaria_download.${ext.replace(/^\./, '')}` : 'downaria_download.bin';
+        return { success: true, blob, filename: upstreamName || fallbackName };
 
     } catch (error) {
         // Check if it's an abort error
@@ -1143,9 +1462,6 @@ export async function downloadMedia(
  * Trigger browser download from blob
  */
 export function triggerBlobDownload(blob: Blob, filename: string): void {
-    if (process.env.NODE_ENV === 'development') {
-        console.log(`[Merge Debug] Triggering download with filename: "${filename}"`);
-    }
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;

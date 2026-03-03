@@ -1,0 +1,227 @@
+'use client';
+
+import { useEffect, useState, useCallback } from 'react';
+import { getUpdateDismissed, setUpdateDismissed } from '@/lib/storage/settings';
+import { IS_DEV } from '@/lib/config';
+
+interface UpdatePromptSettings {
+  enabled: boolean;
+  mode: 'always' | 'once' | 'session';
+  delay_seconds: number;
+  dismissable: boolean;
+  custom_message: string;
+}
+
+const DEFAULT_SETTINGS: UpdatePromptSettings = {
+  enabled: true,
+  mode: 'always',
+  delay_seconds: 0,
+  dismissable: true,
+  custom_message: '',
+};
+
+// Session storage key for session-based dismissal (not persisted)
+const SESSION_STORAGE_KEY = 'downaria_update_dismissed_session';
+
+/**
+ * Force clear all caches and reload
+ * Can be called from console: window.forceRefresh()
+ */
+export async function forceRefresh(): Promise<void> {
+  if (IS_DEV) console.log('[PWA] Force refreshing...');
+
+  // 1. Clear all caches
+  if ('caches' in window) {
+    const cacheNames = await caches.keys();
+    await Promise.all(cacheNames.map(name => caches.delete(name)));
+    if (IS_DEV) console.log('[PWA] Cleared caches:', cacheNames);
+  }
+
+  // 2. Unregister service worker
+  if ('serviceWorker' in navigator) {
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(registrations.map(reg => reg.unregister()));
+    if (IS_DEV) console.log('[PWA] Unregistered service workers');
+  }
+
+  // 3. Clear localStorage cache keys (keep user settings)
+  const keysToRemove = Object.keys(localStorage).filter(k =>
+    k.startsWith('cache_') || k.startsWith('xtf_cache_')
+  );
+  keysToRemove.forEach(k => localStorage.removeItem(k));
+
+  // 4. Hard reload
+  window.location.reload();
+}
+
+// Expose to window for debugging
+if (typeof window !== 'undefined') {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (window as any).forceRefresh = forceRefresh;
+}
+
+export function ServiceWorkerRegister() {
+  const [updateAvailable, setUpdateAvailable] = useState(false);
+  const [showPrompt, setShowPrompt] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
+  const [settings, setSettings] = useState<UpdatePromptSettings>(DEFAULT_SETTINGS);
+
+  // Check if prompt should be shown based on mode
+  const shouldShowPrompt = useCallback((mode: UpdatePromptSettings['mode']): boolean => {
+    if (mode === 'always') return true;
+
+    if (mode === 'once') {
+      // Check unified settings - if dismissed forever, never show again
+      const dismissed = getUpdateDismissed();
+      return dismissed !== 'forever';
+    }
+
+    if (mode === 'session') {
+      // Check sessionStorage - if dismissed this session, don't show
+      const dismissed = sessionStorage.getItem(SESSION_STORAGE_KEY);
+      return dismissed !== 'session';
+    }
+
+    return true;
+  }, []);
+
+  // Show prompt when update available (with delay and mode check)
+  useEffect(() => {
+    if (!updateAvailable || !settings.enabled) return;
+
+    if (!shouldShowPrompt(settings.mode)) {
+      if (IS_DEV) console.log('[PWA] Update prompt dismissed by user preference');
+      return;
+    }
+
+    const delay = (settings.delay_seconds || 0) * 1000;
+    const timer = setTimeout(() => {
+      setShowPrompt(true);
+    }, delay);
+
+    return () => clearTimeout(timer);
+  }, [updateAvailable, settings, shouldShowPrompt]);
+
+  useEffect(() => {
+    // Track online/offline status
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    setIsOffline(!navigator.onLine);
+
+    // Register service worker
+    let updateInterval: NodeJS.Timeout | null = null;
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker
+        .register('/sw.js', { updateViaCache: 'none' }) // Always check for SW updates
+        .then((registration) => {
+          if (IS_DEV) console.log('[PWA] Service Worker registered');
+
+          // Force check for updates immediately on page load
+          registration.update();
+
+          // Check for updates
+          registration.addEventListener('updatefound', () => {
+            const newWorker = registration.installing;
+            if (newWorker) {
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  // New version available
+                  setUpdateAvailable(true);
+                  if (IS_DEV) console.log('[PWA] New version available');
+                }
+              });
+            }
+          });
+
+          // Check for updates periodically (every 5 min instead of 30)
+          updateInterval = setInterval(() => {
+            registration.update();
+          }, 5 * 60 * 1000);
+        })
+        .catch((error) => {
+          console.error('[PWA] SW registration failed:', error);
+        });
+
+      // Handle controller change (new SW activated)
+      // NOTE: Don't auto-reload here - let user click "Update Now" button first
+      // The reload happens in handleUpdate() after user confirms
+    }
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      if (updateInterval) clearInterval(updateInterval);
+    };
+  }, []);
+
+  // Update prompt - user must click to reload
+  const handleUpdate = () => {
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      // Send skipWaiting to activate new SW
+      navigator.serviceWorker.controller.postMessage('skipWaiting');
+      // Reload after a short delay to let SW activate
+      setTimeout(() => {
+        window.location.reload();
+      }, 100);
+    } else {
+      // Fallback: just reload
+      window.location.reload();
+    }
+  };
+
+  // Dismiss handler based on mode
+  const handleDismiss = () => {
+    if (settings.mode === 'once') {
+      setUpdateDismissed('forever');
+    } else if (settings.mode === 'session') {
+      sessionStorage.setItem(SESSION_STORAGE_KEY, 'session');
+    }
+    setShowPrompt(false);
+  };
+
+  const promptMessage = settings.custom_message || 'Refresh to get the latest features.';
+
+  return (
+    <>
+      {/* Offline indicator */}
+      {isOffline && (
+        <div className="fixed bottom-4 left-4 z-50 px-4 py-2 rounded-lg bg-yellow-500/90 text-black text-sm font-medium shadow-lg flex items-center gap-2 animate-fade-in">
+          <span className="w-2 h-2 rounded-full bg-yellow-800 animate-pulse" />
+          Offline Mode
+        </div>
+      )}
+
+      {/* Update available prompt */}
+      {showPrompt && (
+        <div className="fixed bottom-4 right-4 z-50 p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--accent-primary)] shadow-xl animate-fade-in max-w-xs">
+          <p className="text-sm font-medium text-[var(--text-primary)] mb-2">
+            🎉 New version available!
+          </p>
+          <p className="text-xs text-[var(--text-muted)] mb-3">
+            {promptMessage}
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={handleUpdate}
+              className="flex-1 px-3 py-1.5 rounded-lg bg-[var(--accent-primary)] text-white text-sm font-medium hover:opacity-90 transition-opacity"
+            >
+              Update Now
+            </button>
+            {settings.dismissable && (
+              <button
+                onClick={handleDismiss}
+                className="px-3 py-1.5 rounded-lg bg-[var(--bg-secondary)] text-[var(--text-secondary)] text-sm hover:bg-[var(--bg-card-hover)] transition-colors"
+              >
+                Later
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}

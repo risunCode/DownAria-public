@@ -12,7 +12,9 @@
  */
 
 import Swal from 'sweetalert2';
-import { formatNumber, formatBytes } from './format';
+import { formatNumber } from './format';
+import { BASE_URL, IS_DEV } from '@/lib/config';
+import { getProxyUrl as buildProxyUrl } from '@/lib/api/proxy';
 import { 
   getUserDiscordSettings, 
   saveUserDiscordSettings, 
@@ -27,8 +29,7 @@ const getAppIcon = () => {
     if (typeof window !== 'undefined') {
         return `${window.location.origin}/icon.png`;
     }
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-    return baseUrl ? `${baseUrl}/icon.png` : '/icon.png';
+    return BASE_URL ? `${BASE_URL}/icon.png` : '/icon.png';
 };
 
 // Re-export types and functions from settings for backward compatibility
@@ -85,21 +86,15 @@ function markSent(key: string): void {
     recentMessages.set(key, Date.now());
 }
 
-function getBaseUrl(): string {
-    if (typeof window !== 'undefined') return window.location.origin;
-    // Use env var without fallback - server-side only
-    return process.env.NEXT_PUBLIC_BASE_URL || '';
-}
-
-function getProxyUrl(mediaUrl: string, platform: string): string {
-    return `${getBaseUrl()}/api/v1/proxy?url=${encodeURIComponent(mediaUrl)}&platform=${platform.toLowerCase()}&inline=1`;
+function getInlineProxyUrl(mediaUrl: string, platform: string): string {
+    return buildProxyUrl(mediaUrl, { platform: platform.toLowerCase(), inline: true });
 }
 
 // Get file size via HEAD request through proxy (returns 0 if unknown)
 async function getFileSize(url: string, platform: string): Promise<number> {
     try {
         // Always use proxy for HEAD request to avoid CORS issues
-        const proxyUrl = `${getBaseUrl()}/api/v1/proxy?url=${encodeURIComponent(url)}&platform=${platform.toLowerCase()}&head=1`;
+        const proxyUrl = buildProxyUrl(url, { platform: platform.toLowerCase(), head: true });
         const res = await fetch(proxyUrl);
         const size = res.headers.get('x-file-size');
         return size ? parseInt(size) : 0;
@@ -154,7 +149,7 @@ async function sendToWebhook(
     // Check rate limit before sending
     const waitMs = getRateLimitWait();
     if (waitMs > 0) {
-        if (process.env.NODE_ENV === 'development') console.log(`[Discord] Waiting ${waitMs}ms for rate limit...`);
+        if (IS_DEV) console.log(`[Discord] Waiting ${waitMs}ms for rate limit...`);
         await new Promise(r => setTimeout(r, waitMs));
     }
 
@@ -171,7 +166,7 @@ async function sendToWebhook(
             const retryAfter = res.headers.get('Retry-After');
             const waitSec = retryAfter ? parseFloat(retryAfter) : 5;
 
-            if (process.env.NODE_ENV === 'development') console.log(`[Discord] Rate limited, retry after ${waitSec}s`);
+            if (IS_DEV) console.log(`[Discord] Rate limited, retry after ${waitSec}s`);
 
             if (retries > 0) {
                 await new Promise(r => setTimeout(r, waitSec * 1000));
@@ -226,7 +221,7 @@ export async function sendDiscordNotification(data: {
 }, manual = false): Promise<{ sent: boolean; reason?: string; details?: string }> {
     const settings = getUserDiscordSettings();
 
-    if (!settings?.webhookUrl) {
+    if (!settings?.enabled || !settings?.webhookUrl) {
         return { sent: false, reason: 'no_webhook' };
     }
 
@@ -290,46 +285,19 @@ export async function sendDiscordNotification(data: {
         // Handle media display
         if (data.mediaType === 'image' && data.mediaUrl) {
             // Photos: Use BIG image (bottom)
-            embed.image = { url: isWeibo ? getProxyUrl(data.mediaUrl, data.platform) : data.mediaUrl };
+            embed.image = { url: isWeibo ? getInlineProxyUrl(data.mediaUrl, data.platform) : data.mediaUrl };
         } else if (data.thumbnail) {
             // Videos/Other: Use THUMBNAIL (small, top-right)
             // This ensures we always have a visual, but avoids overriding the video player in 'link' mode.
-            embed.thumbnail = { url: isWeibo ? getProxyUrl(data.thumbnail!, data.platform) : data.thumbnail! };
+            embed.thumbnail = { url: isWeibo ? getInlineProxyUrl(data.thumbnail!, data.platform) : data.thumbnail! };
         }
 
-        // Determine send method
-        const sendMethod = settings.sendMethod || 'smart';
+        // Canonical method: always 2-message link flow for video
         const mediaLabel = `${data.platform} ${data.quality || (data.mediaType === 'video' ? 'Video' : 'Media')}`;
-
-        // Use file size from data if available, otherwise check
-        let finalSize = data.fileSize || 0;
-        if (finalSize === 0 && data.mediaUrl) {
-            const { size } = await isLargeFile(data.mediaUrl, data.platform);
-            finalSize = size;
-        }
-
-        const isSmallMedia = finalSize > 0 && finalSize < LARGE_FILE_THRESHOLD;
-        const shouldUpload = (sendMethod === 'smart' && isSmallMedia) || (sendMethod === 'single' && isSmallMedia);
-        const useDoubleMessage = (sendMethod === 'double') || (sendMethod === 'smart' && !isSmallMedia);
 
         // UNIFIED CONFIRMATION DIALOG ---------------------------------------
         // If manual, show dialog for BOTH Upload and Link logic to ensure consistency.
         if (manual) {
-            // Determine what method label to show
-            let methodLabel = '';
-            let warningText = '';
-            let methodIcon = '';
-
-            if (shouldUpload && data.mediaUrl) {
-                methodLabel = 'Direct Upload'; // Gold
-                methodIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
-                warningText = '⚠️ This will upload media using your internet data.';
-            } else {
-                methodLabel = useDoubleMessage ? 'Link Embed (Double)' : 'Link Embed'; // Green
-                methodIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
-                warningText = '✅ Sends a link. No data usage for upload.';
-            }
-
             const result = await Swal.fire({
                 title: 'Send to Discord?',
                 html: `
@@ -346,17 +314,13 @@ export async function sendDiscordNotification(data: {
                             <span class="text-[var(--text-muted)]">Quality:</span>
                             <span class="font-medium text-[var(--text-primary)]">${data.quality || 'Standard'}</span>
 
-                            <span class="text-[var(--text-muted)]">Size:</span>
-                            <span class="font-medium text-[var(--text-primary)]">${finalSize > 0 ? formatBytes(finalSize) : 'Unknown'}</span>
-
                             <span class="text-[var(--text-muted)]">Method:</span>
-                            <span class="font-medium ${shouldUpload ? 'text-amber-500' : 'text-green-500'} flex items-center gap-1">
-                                ${methodIcon}
-                                ${methodLabel}
+                            <span class="font-medium text-green-500">
+                                Link + Embed (2 messages)
                             </span>
                         </div>
                         <p class="text-[10px] text-[var(--text-muted)] mt-3 pt-3 border-t border-[var(--border-color)]">
-                            ${warningText}
+                            Sends link first, then metadata embed. No direct media upload from your device.
                         </p>
                     </div>
                 `,
@@ -378,116 +342,51 @@ export async function sendDiscordNotification(data: {
         }
         // -------------------------------------------------------------------
 
-        // UPLOAD LOGIC
-        if (shouldUpload && data.mediaUrl) {
-            if (process.env.NODE_ENV === 'development') console.log(`[Discord] Uploading small media (${formatBytes(finalSize)})`);
-            try {
-                const proxyUrl = getProxyUrl(data.mediaUrl, data.platform);
-                const res = await fetch(proxyUrl);
-                if (!res.ok) throw new Error('Proxy fetch failed');
-                const blob = await res.blob();
+        // Canonical send flow for video
+        if (data.mediaType === 'video' && data.mediaUrl) {
+            const videoLinkUrl = isWeibo ? getInlineProxyUrl(data.mediaUrl, data.platform) : data.mediaUrl;
 
-                const fileExt = data.mediaType === 'video' ? 'mp4' : 'jpg';
-                const filename = `DownAria_${data.platform}_${Date.now()}.${fileExt}`;
+            if (IS_DEV) console.log('[Discord] Using canonical 2x send method (Link -> Embed)');
 
-                // Send File + Embed in ONE message
-                const result = await sendFileToDiscord(settings.webhookUrl, blob, filename, {
+            const result1 = await sendToWebhook(settings.webhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
                     username: APP_NAME,
                     avatar_url: appIcon,
-                    content: `${settings.mention ? settings.mention + ' ' : ''}✅ **${mediaLabel}**`,
-                    embeds: [embed]
-                });
+                    content: `${settings.mention ? settings.mention + ' ' : ''}[${mediaLabel}](${videoLinkUrl})`,
+                }),
+            });
 
-                if (result.ok) {
-                    markSent(messageKey);
-                    return { sent: true };
+            if (!result1.ok) {
+                if (result1.status === 429) {
+                    return { sent: false, reason: 'rate_limited', details: `Rate limited. Try again in ${result1.retryAfter || 5}s` };
                 }
-            } catch (err) {
-                if (process.env.NODE_ENV === 'development') console.warn('[Discord] Upload failed, falling back to link:', err);
-                if (manual) {
-                    // Optional: Notify user that upload failed and we are falling back?
-                    // Swal.fire(...) // Skipping to avoid double popup spam, just fall back
-                }
-                // Fall through to link logic
+                return { sent: false, reason: `error_${result1.status}`, details: result1.error };
             }
-        }
 
-        // FALLBACK TO LINK (if >10MB or upload failed)
-        if (data.mediaType === 'video' && data.mediaUrl) {
-            const videoLinkUrl = isWeibo ? getProxyUrl(data.mediaUrl, data.platform) : data.mediaUrl;
+            markSent(messageKey);
+            await new Promise(r => setTimeout(r, 2000));
 
-            if (useDoubleMessage) {
-                // 2x SEND: [Wrapped-Link] + Embed
-                if (process.env.NODE_ENV === 'development') console.log('[Discord] Using 2x send method (Link -> Embed)');
+            const result2 = await sendToWebhook(settings.webhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: APP_NAME,
+                    avatar_url: appIcon,
+                    embeds: [embed],
+                }),
+            });
 
-                // Message 1: Wrapped link [Platform Type](url) - Discord will auto-embed video
-                const result1 = await sendToWebhook(settings.webhookUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        username: APP_NAME,
-                        avatar_url: appIcon,
-                        content: `${settings.mention ? settings.mention + ' ' : ''}[${mediaLabel}](${videoLinkUrl})`,
-                    }),
-                });
-
-                if (!result1.ok) {
-                    if (result1.status === 429) {
-                        return { sent: false, reason: 'rate_limited', details: `Rate limited. Try again in ${result1.retryAfter || 5}s` };
-                    }
-                    return { sent: false, reason: `error_${result1.status}`, details: result1.error };
-                }
-
-                markSent(messageKey);
-
-                // Small delay between messages (2s to ensure ordering)
-                await new Promise(r => setTimeout(r, 2000));
-
-                // Message 2: Rich embed with info (no video/image)
-                const result2 = await sendToWebhook(settings.webhookUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        username: APP_NAME,
-                        avatar_url: appIcon,
-                        embeds: [embed],
-                    }),
-                });
-
-                if (!result2.ok) {
-                    return { sent: true, details: 'Link sent, embed failed' };
-                }
-                return { sent: true };
-            } else {
-                // 1x SEND: Link + embed in single message
-                // We now use embed.thumbnail (handled below) which is safe to use with video links.
-
-                const result = await sendToWebhook(settings.webhookUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        username: APP_NAME,
-                        avatar_url: appIcon,
-                        content: `${settings.mention ? settings.mention + ' ' : ''}📹 [**${mediaLabel}**](${videoLinkUrl})`,
-                        embeds: [embed],
-                    }),
-                });
-
-                if (result.ok) {
-                    markSent(messageKey);
-                    return { sent: true };
-                }
-
-                if (result.status === 429) {
-                    return { sent: false, reason: 'rate_limited', details: `Rate limited. Try again in ${result.retryAfter || 5}s` };
-                }
-
-                return { sent: false, reason: `error_${result.status}`, details: result.error };
+            if (!result2.ok) {
+                return { sent: true, details: 'Link sent, embed failed' };
             }
+
+            return { sent: true };
         } else if (data.thumbnail) {
             // Videos/Other: Use THUMBNAIL (small, top-right)
             // This ensures we always have a visual, but avoids overriding the video player in 'link' mode.
-            embed.thumbnail = { url: isWeibo ? getProxyUrl(data.thumbnail!, data.platform) : data.thumbnail! };
+            embed.thumbnail = { url: isWeibo ? getInlineProxyUrl(data.thumbnail!, data.platform) : data.thumbnail! };
         }
 
         // Send embed
@@ -541,7 +440,7 @@ export async function sendDiscordBatch(
 ): Promise<{ sent: number; failed: number }> {
     const settings = getUserDiscordSettings();
     
-    if (!settings?.webhookUrl) {
+    if (!settings?.enabled || !settings?.webhookUrl) {
         return { sent: 0, failed: items.length };
     }
 
@@ -569,13 +468,13 @@ export async function sendDiscordBatch(
                 result.sent++;
             } else {
                 result.failed++;
-                if (process.env.NODE_ENV === 'development') {
+                if (IS_DEV) {
                     console.log(`[Discord Batch] Item ${i + 1} failed:`, sendResult.reason, sendResult.details);
                 }
             }
         } catch (err) {
             result.failed++;
-            if (process.env.NODE_ENV === 'development') {
+            if (IS_DEV) {
                 console.error(`[Discord Batch] Item ${i + 1} error:`, err);
             }
         }

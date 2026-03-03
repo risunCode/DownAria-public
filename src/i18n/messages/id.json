@@ -48,7 +48,7 @@
       "twitter": "Twitter",
       "weibo": "Weibo"
     },
-    "subtitle": "Tempel URL → Deteksi Otomatis → Download",
+    "subtitle": "Download Social Media Gratis untuk Facebook, Instagram, Twitter/X, Pixiv, dan YouTube/Music dengan cepat dan mudah.",
     "badges": {
       "noWatermark": "Tanpa Watermark",
       "fastFree": "Cepat & Gratis",
@@ -82,7 +82,10 @@
     },
     "preview": {
       "download": "Download",
+      "downloadSelected": "Download terpilih",
       "downloadAll": "Download Semua",
+      "downloadAllOption": "Download semua",
+      "downloadZip": "Download ZIP",
       "downloadingAll": "Mendownload Semua...",
       "downloading": "Mendownload...",
       "downloaded": "Terdownload",
@@ -95,6 +98,7 @@
       "video": "Video",
       "image": "Gambar",
       "items": "item",
+      "descriptionTitle": "Deskripsi",
       "withCookie": "🔒 Private",
       "guest": "🌐 Public",
       "sent": "Terkirim",
@@ -125,7 +129,7 @@
 
   "settings": {
     "title": "Pengaturan",
-    "subtitle": "Sesuaikan pengalaman Anda",
+    "subtitle": "Atur pengalaman DownAria Anda dengan kontrol tema dan bahasa, cookies platform, alat backup dan penyimpanan, serta pengaturan integrasi Discord.",
     "tabs": {
       "basic": "Dasar",
       "cookies": "Cookies",
@@ -395,6 +399,10 @@
       "expired": "⚠️ Cookie sebelumnya sudah kedaluwarsa atau belum diset.",
       "hint": "Buka Pengaturan → Weibo dan tempel cookie tamu baru.",
       "goToSettings": "⚙️ Ke Pengaturan"
+    },
+    "botDetected": {
+      "title": "🤖 Bot Terdeteksi",
+      "message": "Akses langsung diblokir. Silakan gunakan endpoint /api/v1/ jika Anda adalah developer."
     }
   },
 
@@ -431,36 +439,7 @@
       "message": "Alat ini untuk pengguna tingkat lanjut. Gunakan dengan bijak."
     },
     "tabs": {
-      "playground": "API Playground",
       "fbHtml": "FB HTML Extractor"
-    },
-    "playground": {
-      "title": "API Playground",
-      "description": "Uji API download tanpa autentikasi. Dibatasi {limit} request/2 menit.",
-      "remaining": "Tersisa",
-      "viewApiEndpoint": "Lihat API Endpoint & Contoh",
-      "placeholder": "Tempel URL media sosial...",
-      "paste": "Tempel",
-      "pasteFailed": "Gagal menempel",
-      "sendRequest": "Kirim Request",
-      "rateLimited": "Limit Tercapai",
-      "privateContent": "Konten privat",
-      "availableFormats": "Format Tersedia",
-      "moreFormats": "format lainnya",
-      "viewJson": "Lihat JSON Response",
-      "api": {
-        "testBrowser": "Test di Browser (GET):",
-        "testBrowserHint": "Tempel di address bar browser untuk melihat JSON response",
-        "postHint": "Untuk penggunaan programatik - kirim URL di request body",
-        "postBody": "POST Body:",
-        "noKeyRequired": "Tanpa API key • GET /api = 15/menit • POST /api/playground = 5/2menit"
-      },
-      "errors": {
-        "invalidProtocol": "URL harus dimulai dengan http:// atau https://",
-        "unsupportedPlatform": "Platform tidak didukung. Coba Facebook, Instagram, Twitter, TikTok, atau Weibo",
-        "invalidFormat": "Format URL tidak valid",
-        "requestFailed": "Request gagal"
-      }
     },
     "fbHtml": {
       "title": "Facebook HTML Extractor",

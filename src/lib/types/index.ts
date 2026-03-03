@@ -1,29 +1,10 @@
 // ============================================================================
-// DATABASE ENUMS (New Schema Jan 2025)
-// ============================================================================
-
-/** User status enum */
-export type UserStatus = 'active' | 'frozen' | 'banned';
-
-/** API key type enum */
-export type ApiKeyType = 'public' | 'private';
-
-/** AI provider enum */
-export type AiProvider = 'gemini' | 'openai' | 'anthropic' | 'other';
-
-/** Cookie status enum */
-export type CookieStatus = 'healthy' | 'cooldown' | 'expired' | 'disabled';
-
-/** Alert type enum */
-export type AlertType = 'error_rate' | 'response_time' | 'cookie_health' | 'rate_limit' | 'platform_down';
-
-// ============================================================================
 // PLATFORM TYPES (Aligned with Backend)
 // ============================================================================
 
 /** Platform identifier - aligned with backend PlatformId */
 export type PlatformId = 
-    | 'facebook' | 'instagram' | 'twitter' | 'tiktok' | 'weibo' | 'youtube'
+    | 'facebook' | 'instagram' | 'threads' | 'twitter' | 'tiktok' | 'weibo' | 'youtube'
     | 'bilibili' | 'reddit' | 'soundcloud'
     | 'eporner' | 'pornhub' | 'rule34video' | 'erome' | 'pixiv';
 
@@ -63,6 +44,17 @@ export interface MediaFormat {
     isHLS?: boolean; // Flag for HLS/m3u8 streams (YouTube)
     needsMerge?: boolean; // YouTube: video-only format that needs audio merge
     audioUrl?: string; // YouTube: best audio URL for merging
+    extension?: string;
+    hash?: string;
+    codec?: string;
+    bitrate?: number;
+    resolution?: string;
+    label?: string;
+    hasAudio?: boolean;
+    requestedAudioFormat?: 'mp3' | 'm4a';
+    isSyntheticAudioOption?: boolean;
+    canConvertAudio?: boolean;
+    formatId?: string;
 }
 
 // Download response from API
@@ -79,22 +71,83 @@ export interface DownloadResponse {
     formats?: MediaFormat[];
 }
 
-// Media data extracted from URL
+// Media data extracted from URL (Legacy/UI compatibility layer)
 export interface MediaData {
     title: string;
     thumbnail: string;
     duration?: string;
     author?: string;
+    authorUsername?: string;
+    authorAlias?: string;
     authorUrl?: string;
     views?: string;
     description?: string;
     formats: MediaFormat[];
     url: string;
-    embedHtml?: string; // Embed HTML for iframe preview (fallback when no direct download)
-    usedCookie?: boolean; // Whether cookie was used to fetch this media (indicates private/authenticated content)
-    cached?: boolean; // Whether this response was served from cache
-    responseTime?: number; // API response time in milliseconds
+    embedHtml?: string;
+    usedCookie?: boolean;
+    cached?: boolean;
+    responseTime?: number;
     engagement?: EngagementStats;
+    // New fields from Go Backend
+    platform?: string;
+    contentType?: string;
+    id?: string;
+    uploadDate?: string;
+}
+
+// Backend Response Types (Go Backend - extract)
+// Consistent response format across all extractors (native + yt-dlp)
+export interface ExtractResult {
+    url: string;
+    platform: string;
+    mediaType: 'story' | 'reel' | 'video' | 'post' | 'image' | 'audio' | 'unknown';
+    author: {
+        name?: string;
+        handle?: string;
+    };
+    content: {
+        id?: string;
+        text?: string;
+        description?: string;
+        createdAt?: string;
+    };
+    engagement: {
+        views: number;
+        likes: number;
+        comments: number;
+        shares: number;
+        bookmarks: number;
+    };
+    media: Array<{
+        index: number;
+        type: 'video' | 'image' | 'audio' | 'unknown';
+        thumbnail?: string;
+        variants: Array<{
+            quality: string;
+            url: string;
+            resolution?: string;
+            mime?: string;
+            format?: string;
+            size?: number;
+            bitrate?: number;
+            codec?: string;
+            hasAudio?: boolean;
+            requiresMerge?: boolean;
+            requiresProxy?: boolean;
+            formatId?: string;
+        }>;
+    }>;
+    authentication: {
+        used: boolean;
+        source: 'none' | 'server' | 'client';
+    };
+}
+
+// Legacy wrapper format (deprecated - now backend returns ExtractResult directly)
+export interface BackendPublicServicesResponse {
+    platform: string;
+    result: ExtractResult;
 }
 
 // History item stored in localStorage
@@ -112,13 +165,6 @@ export interface HistoryItem {
 // API request body
 export interface DownloadRequest {
     url: string;
-}
-
-// Download progress state
-export interface DownloadProgress {
-    status: 'idle' | 'fetching' | 'ready' | 'downloading' | 'error';
-    progress?: number;
-    error?: string;
 }
 
 // Platform configuration
@@ -156,6 +202,16 @@ export const PLATFORMS: PlatformConfig[] = [
             /^(https?:\/\/)?instagr\.am\/.+/,
             /^(https?:\/\/)?(www\.)?ig\.me\/.+/,
             /^(https?:\/\/)?ddinstagram\.com\/.+/,
+        ],
+    },
+    {
+        id: 'threads',
+        name: 'Threads',
+        icon: '🧵',
+        color: '#1f2937',
+        placeholder: 'https://www.threads.com/@user/post/...',
+        patterns: [
+            /^(https?:\/\/)?(www\.)?threads\.(com|net)\/@[^/]+\/post\/.+/,
         ],
     },
     {

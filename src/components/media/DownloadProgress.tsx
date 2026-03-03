@@ -1,11 +1,7 @@
-/**
- * DownloadProgress - Reusable download progress bar
- * Used in DownloadPreview and MediaGallery
- */
-
 'use client';
 
-import { motion } from 'framer-motion';
+import { memo, useEffect, useMemo, useState } from 'react';
+import { cn } from '@/lib/utils';
 import { formatBytes } from '@/lib/utils/format';
 
 export interface DownloadProgressData {
@@ -15,88 +11,133 @@ export interface DownloadProgressData {
     speed: number;
     eta?: number;
     message?: string;
+    status?: 'idle' | 'downloading' | 'converting' | 'done' | 'error';
+    startTime?: number;
+}
+
+function formatElapsedTime(ms: number): string {
+    if (!Number.isFinite(ms) || ms < 0) {
+        return '0:00';
+    }
+
+    const seconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+}
+
+function buildProgressText(progress: {
+    percent: number;
+    loaded: number;
+    total: number;
+    speed: number;
+    message?: string;
+    status?: 'idle' | 'downloading' | 'converting' | 'done' | 'error';
+}): string {
+    if (progress.status === 'done') {
+        return progress.message || 'Download complete!';
+    }
+
+    if (progress.status === 'error') {
+        return progress.message || 'Download failed';
+    }
+
+    if (progress.status === 'idle') {
+        return progress.message || 'Download cancelled';
+    }
+
+    if (progress.loaded > 0) {
+        const percentText = progress.total > 0 ? `${progress.percent.toFixed(0)}% • ` : '';
+        const sizeText = progress.total > 0
+            ? `${formatBytes(progress.loaded)}/${formatBytes(progress.total)}`
+            : formatBytes(progress.loaded);
+        const speedText = progress.speed > 0 ? ` • ${formatBytes(progress.speed)}/s` : '';
+        return `${percentText}${sizeText}${speedText}`;
+    }
+
+    if (progress.speed > 0) {
+        return `${progress.percent.toFixed(0)}% • ${formatBytes(progress.loaded)}/${formatBytes(progress.total)} • ${formatBytes(progress.speed)}/s`;
+    }
+
+    if (progress.message) {
+        return progress.message;
+    }
+
+    return `${progress.percent.toFixed(0)}%`;
 }
 
 interface DownloadProgressProps {
     progress: DownloadProgressData;
-    showSpeed?: boolean;
-    showEta?: boolean;
-    animated?: boolean;
     className?: string;
 }
 
-/**
- * Display download progress with bar, speed, and ETA
- */
-export function DownloadProgress({
-    progress,
-    showSpeed = true,
-    showEta = true,
-    animated = true,
-    className = ''
-}: DownloadProgressProps) {
-    const { percent, loaded, total, speed, eta, message } = progress;
+export const DownloadProgress = memo(function DownloadProgress({ progress, className }: DownloadProgressProps) {
+    const { percent, loaded, total, speed, message, status, startTime } = progress;
+    const [elapsedTime, setElapsedTime] = useState(0);
+
+    const isProcessingServer = useMemo(() => {
+        const text = (message || '').toLowerCase();
+        const processingHint = text.includes('processing on server') || text.includes('preparing');
+        const mergingState = status === 'converting';
+        return loaded <= 0 && (processingHint || mergingState);
+    }, [loaded, message, status]);
+
+    useEffect(() => {
+        if (!startTime || status === 'idle' || status === 'done' || status === 'error') {
+            setElapsedTime(0);
+            return;
+        }
+
+        const interval = setInterval(() => {
+            const elapsed = Math.max(0, Date.now() - startTime);
+            setElapsedTime((previous) => (previous === elapsed ? previous : elapsed));
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [startTime, status]);
+
+    const progressText = useMemo(
+        () => buildProgressText({ percent, loaded, total, speed, message, status }),
+        [percent, loaded, total, speed, message, status],
+    );
+
+    const elapsedText = elapsedTime > 0 ? ` • ${formatElapsedTime(elapsedTime)} elapsed` : '';
 
     return (
-        <div className={`space-y-1 ${className}`}>
-            {/* Progress Bar */}
-            <div className="w-full h-2 bg-[var(--bg-tertiary)] rounded-full overflow-hidden">
-                {animated ? (
-                    <motion.div
-                        className="h-full bg-gradient-to-r from-[var(--accent-primary)] to-purple-500"
-                        initial={{ width: 0 }}
-                        animate={{ width: `${percent}%` }}
-                        transition={{ duration: 0.1, ease: 'linear' }}
-                    />
+        <div className={cn('space-y-1', className)}>
+            <div className="h-1.5 bg-[var(--bg-secondary)] rounded-full overflow-hidden">
+                {isProcessingServer ? (
+                    <div className="relative h-full w-full">
+                        <div className="absolute inset-0 bg-[var(--accent-primary)]/15" />
+                        <div className="downaria-processing-dot absolute top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-[var(--accent-primary)] shadow-[0_0_10px_var(--accent-primary)]" />
+                    </div>
                 ) : (
                     <div
-                        className="h-full bg-gradient-to-r from-[var(--accent-primary)] to-purple-500 transition-all duration-300 ease-out"
-                        style={{ width: `${percent}%` }}
+                        className="h-full bg-[var(--accent-primary)] transition-all duration-300"
+                        style={{ width: `${Math.min(percent, 100)}%` }}
                     />
                 )}
             </div>
+            <p className="text-[10px] text-[var(--text-muted)]">
+                {progressText}{elapsedText}
+            </p>
+            <style jsx>{`
+                @keyframes downaria-processing-scan {
+                    0% { left: 0%; }
+                    50% { left: calc(100% - 0.5rem); }
+                    100% { left: 0%; }
+                }
 
-            {/* Stats Row */}
-            <div className="flex justify-between text-[10px] text-[var(--text-muted)]">
-                {/* Left: Size progress or message */}
-                <span>
-                    {message || `${formatBytes(loaded)} / ${total ? formatBytes(total) : '?'}`}
-                </span>
-
-                {/* Right: Speed and ETA */}
-                {(showSpeed || showEta) && (
-                    <span className="text-[var(--accent-primary)] font-mono">
-                        {showSpeed && speed > 0 && (
-                            <>{(speed / 1024 / 1024).toFixed(1)} MB/s</>
-                        )}
-                        {showEta && eta !== undefined && eta > 0 && (
-                            <> · {Math.ceil(eta)}s left</>
-                        )}
-                    </span>
-                )}
-            </div>
+                .downaria-processing-dot {
+                    animation: downaria-processing-scan 1.25s ease-in-out infinite;
+                }
+            `}</style>
         </div>
     );
-}
+});
 
-/**
- * Get progress text for button display
- */
 export function getProgressText(progress: DownloadProgressData): string {
-    if (progress.message) return progress.message;
-    
-    const parts: string[] = [];
-    
-    if (progress.percent > 0) {
-        parts.push(`${progress.percent}%`);
-    }
-    
-    if (progress.speed > 0) {
-        const speedMB = (progress.speed / (1024 * 1024)).toFixed(1);
-        parts.push(`${speedMB} MB/s`);
-    }
-    
-    return parts.length > 0 ? parts.join(' · ') : 'Loading...';
+    return buildProgressText(progress);
 }
 
 export default DownloadProgress;

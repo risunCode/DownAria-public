@@ -1,8 +1,11 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Documentation - DownAria',
-    description: 'Learn how to use DownAria API to download videos from social media platforms.',
+    title: {
+        default: 'Documentation',
+        template: '%s | Docs | DownAria',
+    },
+    description: 'Official DownAria documentation covering current runtime behavior, FAQ, and changelog updates.',
 };
 
 export default function DocsLayout({ children }: { children: React.ReactNode }) {

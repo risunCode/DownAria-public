@@ -3,16 +3,17 @@ import { JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
+import { ServiceWorkerRegister } from "@/components/core/ServiceWorkerRegister";
 import { PendingDownloadProvider } from "@/lib/contexts/PendingDownloadContext";
-import { IntlProvider } from "@/components/IntlProvider";
-import { StructuredData, FAQStructuredData } from "@/components/StructuredData";
+import { IntlProvider } from "@/components/core/IntlProvider";
+import { StructuredData } from "@/components/core/StructuredData";
 import { SkipToContent } from "@/components/ui/Accessibility";
-import { MaintenanceCheck } from "@/components/MaintenanceCheck";
-import { SeasonalEffects } from "@/components/SeasonalEffects";
-import { AdaptText } from "@/components/AdaptText";
-import { ThemeColorMeta } from "@/components/ThemeColorMeta";
-import { CacheInitializer } from "@/components/CacheInitializer";
+import { SeasonalEffects } from "@/components/core/SeasonalEffects";
+import { ScreenSizeGuard } from "@/components/core/ScreenSizeGuard";
+import { AdaptText } from "@/components/core/AdaptText";
+import { ThemeColorMeta } from "@/components/core/ThemeColorMeta";
+import { CacheInitializer } from "@/components/core/CacheInitializer";
+import { BASE_URL_WITH_FALLBACK, IS_PROD, IS_VERCEL } from "@/lib/config";
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
@@ -21,7 +22,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'),
+  metadataBase: new URL(BASE_URL_WITH_FALLBACK),
   title: "DownAria - Free Social Media Video Downloader | Facebook, Instagram, TikTok, Twitter",
   description: "Download videos, reels, stories from Facebook, Instagram, TikTok, Twitter/X, Weibo for free. No watermark, no login, unlimited downloads. Fast & easy social media downloader by risunCode.",
   keywords: [
@@ -88,7 +89,6 @@ export default function RootLayout({
         <meta name="theme-color" content="#0d1117" />
         <meta name="screen-orientation" content="portrait" />
         <StructuredData />
-        <FAQStructuredData />
       </head>
       <body
         className={`${jetbrainsMono.variable} font-mono antialiased bg-[var(--bg-primary)] text-[var(--text-primary)]`}
@@ -96,17 +96,16 @@ export default function RootLayout({
         <SkipToContent />
         <ThemeColorMeta />
         <SeasonalEffects />
+        <ScreenSizeGuard />
         <AdaptText />
         <CacheInitializer />
         <IntlProvider>
           <PendingDownloadProvider>
-            <MaintenanceCheck>
-              <ServiceWorkerRegister />
-              {children}
-            </MaintenanceCheck>
+            <ServiceWorkerRegister />
+            {children}
           </PendingDownloadProvider>
         </IntlProvider>
-        {process.env.NODE_ENV === 'production' && process.env.VERCEL && (
+        {IS_PROD && IS_VERCEL && (
           <>
             <Analytics />
             <SpeedInsights />

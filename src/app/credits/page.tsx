@@ -1,155 +1,188 @@
 'use client';
 
-import { SidebarLayout } from '@/components/Sidebar';
 import { motion } from 'framer-motion';
-import { BoltIcon, LayersIcon, MagicIcon, LockIcon } from '@/components/ui/Icons';
+import Link from 'next/link';
+import { SidebarLayout } from '@/components/layout/Sidebar';
+import { Bot, Code2, Cpu, Github, Handshake, Heart, Layers, Lock, Wrench } from 'lucide-react';
 
 export default function CreditsPage() {
-    const container = {
-        hidden: { opacity: 0 },
-        show: {
-            opacity: 1,
-            transition: {
-                staggerChildren: 0.1
-            }
-        }
-    };
+  const quickLinks = [
+    { href: '/about', title: 'About', description: 'Project background and ecosystem' },
+    { href: '/docs', title: 'Documentation', description: 'Guides, API flow, and troubleshooting' },
+    { href: '/privacy', title: 'Privacy', description: 'Cookie lane and data handling policy' },
+  ];
 
-    const item = {
-        hidden: { opacity: 0, y: 20 },
-        show: { opacity: 1, y: 0 }
-    };
+  const frontendStack = ['Next.js', 'React', 'TypeScript', 'Tailwind CSS', 'Framer Motion', 'Lucide'];
+  const backendStack = ['Go', 'chi router', 'FFmpeg', 'yt-dlp', 'Custom extractors', 'HTTP proxy'];
+  const tools = ['Vitest', 'ESLint', 'Go test', 'GitHub', 'VS Code'];
 
-    return (
-        <SidebarLayout>
-            <div className="max-w-5xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-                <motion.div
-                    variants={container}
-                    initial="hidden"
-                    animate="show"
-                    className="space-y-12"
-                >
-                    {/* Header */}
-                    <div className="text-center">
-                        <motion.h1
-                            className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 mb-4"
-                            variants={item}
-                        >
-                            Credits & Acknowledgements
-                        </motion.h1>
-                        <motion.p
-                            className="text-lg text-[var(--text-secondary)] max-w-2xl mx-auto"
-                            variants={item}
-                        >
-                            DownAria wouldn't be possible without the incredible open-source community and these amazing technologies.
-                        </motion.p>
-                    </div>
+  return (
+    <SidebarLayout>
+      <div className="docs-surface py-6 px-4 lg:px-8">
+        <div className="max-w-4xl mx-auto">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
+            <h1 className="text-3xl sm:text-4xl font-bold mb-3">
+              <span className="gradient-text">Credits</span> & Acknowledgements
+            </h1>
+            <p className="text-[var(--text-secondary)] text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
+              DownAria is built on top of open-source tools and community-maintained technologies.
+              This page credits the stack and contributors behind the project.
+            </p>
+          </motion.div>
 
-                    {/* Creator Section */}
-                    <motion.div variants={item} className="bg-[var(--bg-card)] rounded-2xl p-8 border border-[var(--border-color)] text-center relative overflow-hidden group">
-                        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                        <h2 className="text-2xl font-bold mb-2">Created by</h2>
-                        <div className="text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-cyan-400 my-4">
-                            risunCode
-                        </div>
-                        <p className="text-[var(--text-secondary)] mb-6">
-                            Fullstack Developer • Open Source Enthusiast • UI/UX Designer
-                        </p>
-                        <div className="flex justify-center gap-4">
-                            <a
-                                href="https://github.com/risunCode"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="px-6 py-2 rounded-full bg-[var(--bg-secondary)] hover:bg-[var(--accent-primary)] hover:text-white transition-all duration-300 font-medium"
-                            >
-                                GitHub
-                            </a>
-                            <a
-                                href="https://risuncode.github.io"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="px-6 py-2 rounded-full bg-[var(--bg-secondary)] hover:bg-[var(--accent-primary)] hover:text-white transition-all duration-300 font-medium"
-                            >
-                                Portfolio
-                            </a>
-                        </div>
-                    </motion.div>
-
-                    {/* Tech Stack Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <motion.div variants={item} className="bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-color)]">
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="p-2 rounded-lg bg-blue-500/20 text-blue-400">
-                                    <LayersIcon className="w-6 h-6" />
-                                </div>
-                                <h3 className="text-xl font-bold">Core Frameworks</h3>
-                            </div>
-                            <ul className="space-y-3 text-[var(--text-secondary)]">
-                                <li className="flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
-                                    <strong>Next.js 15</strong> (App Router & Server Actions)
-                                </li>
-                                <li className="flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-                                    <strong>React 19</strong> (Latest Features)
-                                </li>
-                                <li className="flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-teal-400" />
-                                    <strong>Tailwind CSS</strong> (Styling Engine)
-                                </li>
-                                <li className="flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
-                                    <strong>Framer Motion</strong> (Animations)
-                                </li>
-                            </ul>
-                        </motion.div>
-
-                        <motion.div variants={item} className="bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-color)]">
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="p-2 rounded-lg bg-red-500/20 text-red-400">
-                                    <BoltIcon className="w-6 h-6" />
-                                </div>
-                                <h3 className="text-xl font-bold">Backend & Infrastructure</h3>
-                            </div>
-                            <ul className="space-y-3 text-[var(--text-secondary)]">
-                                <li className="flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
-                                    <strong>yt-dlp</strong> (The legendary media extractor)
-                                </li>
-                                <li className="flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
-                                    <strong>Supabase</strong> (Database & Auth)
-                                </li>
-                                <li className="flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
-                                    <strong>Redis (Upstash)</strong> (Rate Limiting & Caching)
-                                </li>
-                                <li className="flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-yellow-400" />
-                                    <strong>BullMQ</strong> (Queue Management)
-                                </li>
-                            </ul>
-                        </motion.div>
-                    </div>
-
-                    {/* Special Thanks */}
-                    <motion.div variants={item} className="bg-[var(--bg-card)] rounded-xl p-8 border border-[var(--border-color)]">
-                        <h3 className="text-xl font-bold mb-6 text-center">Special Thanks & APIs</h3>
-                        <div className="flex flex-wrap justify-center gap-4">
-                            {['TikWM', 'ffmpeg', 'Sharp', 'Axios', 'Zod', 'Lucide React', 'SweetAlert2'].map((tech) => (
-                                <span key={tech} className="px-4 py-2 rounded-lg bg-[var(--bg-secondary)] text-sm font-medium hover:scale-105 transition-transform cursor-default border border-[var(--border-color)]">
-                                    {tech}
-                                </span>
-                            ))}
-                        </div>
-                        <p className="text-center text-sm text-[var(--text-muted)] mt-8">
-                            All trademarks, logos and brand names are the property of their respective owners. <br />
-                            This project is based on <a href="https://github.com/risunCode/xtfetchs" target="_blank" rel="noopener noreferrer" className="text-[var(--accent-primary)] hover:underline">xtfetchs</a> (GPL 3 License).
-                        </p>
-                    </motion.div>
-
-                </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="glass-card border border-[var(--border-color)] rounded-2xl p-5 mb-6"
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <Heart className="w-4 h-4 text-red-400" />
+              <h2 className="font-semibold text-[var(--text-primary)]">Built by risunCode</h2>
             </div>
-        </SidebarLayout>
-    );
+            <div className="space-y-3 text-sm leading-relaxed">
+              <p className="text-[var(--text-secondary)]">
+                Designed and maintained as an open-source downloader platform with both frontend and backend runtime ownership.
+              </p>
+              <p className="text-[var(--text-secondary)]">
+                Repository: <a href="https://github.com/risunCode/DownAria" target="_blank" rel="noopener noreferrer" className="text-[var(--accent-primary)] hover:underline">github.com/risunCode/DownAria</a>
+              </p>
+            </div>
+          </motion.div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+              className="glass-card border border-[var(--border-color)] rounded-2xl p-5"
+            >
+              <h2 className="font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
+                <Layers className="w-4 h-4 text-[var(--accent-primary)]" />
+                Frontend Stack
+              </h2>
+              <div className="grid grid-cols-2 gap-2">
+                {frontendStack.map((item) => (
+                  <div key={item} className="settings-surface-card flex items-center gap-2 p-2.5 rounded-xl">
+                    <Code2 className="w-3.5 h-3.5 text-sky-400 flex-shrink-0" />
+                    <p className="text-xs text-[var(--text-secondary)]">{item}</p>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="glass-card border border-[var(--border-color)] rounded-2xl p-5"
+            >
+              <h2 className="font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
+                <Cpu className="w-4 h-4 text-[var(--accent-primary)]" />
+                Backend Stack
+              </h2>
+              <div className="grid grid-cols-2 gap-2">
+                {backendStack.map((item) => (
+                  <div key={item} className="settings-surface-card flex items-center gap-2 p-2.5 rounded-xl">
+                    <Bot className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                    <p className="text-xs text-[var(--text-secondary)]">{item}</p>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
+              className="glass-card border border-[var(--border-color)] rounded-2xl p-5"
+            >
+              <h2 className="font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
+                <Wrench className="w-4 h-4 text-[var(--accent-primary)]" />
+                Tools & Workflow
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {tools.map((item) => (
+                  <div key={item} className="settings-surface-card flex items-center gap-2.5 p-2.5 rounded-xl">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-primary)]/80 flex-shrink-0" />
+                    <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{item}</p>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="glass-card border border-[var(--border-color)] rounded-2xl p-5"
+            >
+              <h2 className="font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
+                <Handshake className="w-4 h-4 text-[var(--accent-primary)]" />
+                License & Credits Notes
+              </h2>
+              <div className="space-y-3 text-sm text-[var(--text-secondary)] leading-relaxed">
+                <p className="settings-surface-card p-2.5 rounded-xl">
+                  DownAria is distributed under GPL-3 and includes integrations with third-party tools and services.
+                </p>
+                <p className="settings-surface-card p-2.5 rounded-xl">
+                  All product names, logos, and platform trademarks remain property of their respective owners.
+                </p>
+                <p className="settings-surface-card p-2.5 rounded-xl">
+                  Usage must follow local laws, copyright rules, and platform terms of service.
+                </p>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.35 }}
+              className="glass-card border border-[var(--border-color)] rounded-2xl p-5 lg:col-span-2"
+            >
+              <h2 className="font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
+                <Lock className="w-4 h-4 text-[var(--accent-primary)]" />
+                Quick Links
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {quickLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className="nested-hover-card settings-surface-card settings-surface-card-hover flex items-start gap-2.5 p-3 rounded-xl transition-all text-[var(--text-primary)]"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium leading-tight">{link.title}</p>
+                      <p className="text-xs text-[var(--text-muted)] leading-tight mt-1">{link.description}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className="text-center mt-8 pt-6 border-t border-[var(--border-color)]"
+          >
+            <p className="text-xs text-[var(--text-muted)]">
+              <a
+                href="https://github.com/risunCode/DownAria"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[var(--accent-primary)] hover:underline inline-flex items-center gap-1"
+              >
+                <Github className="w-3 h-3" />
+                risunCode/DownAria
+              </a>
+              {' • © '}
+              {new Date().getFullYear()}
+            </p>
+          </motion.div>
+        </div>
+      </div>
+    </SidebarLayout>
+  );
 }

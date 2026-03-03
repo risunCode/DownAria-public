@@ -1,4 +1,4 @@
 /**
  * SWR Barrel Export
  */
-export { fetcher, adminFetcher, postFetcher, SWR_CONFIG } from './fetcher';
+export { fetcher, SWR_CONFIG } from './fetcher';

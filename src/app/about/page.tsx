@@ -1,310 +1,356 @@
 'use client';
 
+/**
+ * About Page - 2026 Refreshed Edition
+ *
+ * Modern, clean design showcasing DownAria features and supported platforms.
+ */
+
 import { motion } from 'framer-motion';
-import { Download, Heart, Github, FileText, Clock } from 'lucide-react';
-import { SidebarLayout } from '@/components/Sidebar';
-import CompactAdDisplay from '@/components/CompactAdDisplay';
+import { FormEvent, useMemo, useState } from 'react';
+import {
+  Heart,
+  Github,
+  FileText,
+  Clock,
+  Handshake,
+  MessageSquare,
+  Send,
+  Video,
+  Music,
+  Smartphone,
+  Shield,
+  Bot,
+  Globe,
+  Lock,
+  Zap,
+  ExternalLink,
+} from 'lucide-react';
+import { SidebarLayout } from '@/components/layout/Sidebar';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import {
-    FacebookIcon,
-    InstagramIcon,
-    XTwitterIcon,
-    TiktokIcon,
-    WeiboIcon,
-    YoutubeIcon,
-    LockIcon,
-} from '@/components/ui/Icons';
-import { faPinterest, faThreads } from '@fortawesome/free-brands-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 export default function AboutPage() {
-    const t = useTranslations('about');
+  const t = useTranslations('about');
+  const [feedbackName, setFeedbackName] = useState('');
+  const [feedbackComment, setFeedbackComment] = useState('');
+  const [feedbackStatus, setFeedbackStatus] = useState<{ type: 'idle' | 'success' | 'error'; message: string }>({ type: 'idle', message: '' });
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
 
-    // All supported platforms with status
-    const allPlatforms = [
-        { name: 'YouTube', icon: YoutubeIcon, color: '#FF0000', status: 'active' as const },
-        { name: 'Facebook', icon: FacebookIcon, color: '#1877F2', status: 'active' as const },
-        { name: 'Instagram', icon: InstagramIcon, color: '#E4405F', status: 'active' as const },
-        { name: 'TikTok', icon: TiktokIcon, color: '#00F2EA', status: 'active' as const },
-        { name: 'Twitter/X', icon: XTwitterIcon, color: '#9CA3AF', status: 'active' as const },
-        { name: 'Weibo', icon: WeiboIcon, color: '#E6162D', status: 'cookie' as const, note: 'Cookie required' },
-        { name: 'Pinterest', icon: () => <FontAwesomeIcon icon={faPinterest} className="w-5 h-5" />, color: '#E60023', status: 'coming' as const },
-        { name: 'Threads', icon: () => <FontAwesomeIcon icon={faThreads} className="w-5 h-5" />, color: '#000000', status: 'coming' as const },
-    ];
+  const feedbackDateTime = useMemo(() => {
+    return new Date().toLocaleString('en-US', {
+      weekday: 'short',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }, []);
 
-    return (
-        <SidebarLayout>
-            <div className="py-6 px-4 lg:px-8">
-                <div className="max-w-4xl mx-auto space-y-8">
-                    {/* Hero */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="text-center"
-                    >
-                        <h1 className="text-3xl font-bold mb-2">
-                            {t('title')} <span className="gradient-text">DownAria</span>
-                        </h1>
-                        <p className="text-sm text-[var(--text-muted)]">{t('subtitle')}</p>
-                    </motion.div>
+  async function handleFeedbackSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (isSubmittingFeedback) return;
 
-                    {/* Compact Ads */}
-                    <CompactAdDisplay placement="about" maxAds={3} />
+    const name = feedbackName.trim();
+    const comment = feedbackComment.trim();
 
-                    {/* The Story - Full Width, Centered */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 }}
-                        className="glass-card p-6 border-l-4 border-l-[var(--accent-primary)]"
-                    >
-                        <div className="flex items-center gap-2 mb-4">
-                            <Heart className="w-5 h-5 text-red-500" />
-                            <h2 className="font-bold text-lg text-[var(--text-primary)]">{t('story.title')}</h2>
-                        </div>
-                        <div className="space-y-3 text-sm text-[var(--text-secondary)] max-w-3xl">
-                            <p>{t('story.p1')}</p>
-                            <p>{t('story.p2')}</p>
-                            <p><em>{t('story.p3')}</em></p>
-                            <p className="text-[var(--accent-primary)] font-medium">{t('story.p4')}</p>
-                        </div>
-                    </motion.div>
+    if (name.length < 2) {
+      setFeedbackStatus({ type: 'error', message: 'Name must be at least 2 characters.' });
+      return;
+    }
+    if (comment.length < 3) {
+      setFeedbackStatus({ type: 'error', message: 'Comment must be at least 3 characters.' });
+      return;
+    }
 
-                    {/* Changelog - Full Width */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.15 }}
-                        className="glass-card p-6"
-                    >
-                        <div className="flex items-center gap-2 mb-4">
-                            <Clock className="w-5 h-5 text-[var(--accent-primary)]" />
-                            <h3 className="font-semibold text-lg text-[var(--text-primary)]">Changelog</h3>
-                            <span className="text-xs font-bold text-[var(--accent-primary)] bg-[var(--accent-primary)]/10 px-2 py-0.5 rounded">v2.0.0</span>
-                        </div>
-                        <ul className="text-sm text-[var(--text-muted)] space-y-2 mb-4">
-                            <li>📦 Download ZIP - Album &gt;10 items auto-ZIP</li>
-                            <li>🔞 New Platforms - Erome, Rule34Video, Eporner, PornHub</li>
-                            <li>⚡ Lazy Thumbnails - Faster loading, retry on fail</li>
-                            <li>🚫 400MB Limit - Global download limit protection</li>
-                            <li>❌ Per-item Cancel - Cancel individual downloads</li>
-                        </ul>
-                        <Link
-                            href="/docs/changelog"
-                            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent-primary)] transition-all text-sm font-medium"
-                        >
-                            <Clock className="w-4 h-4" />
-                            View Full Changelog
-                        </Link>
-                    </motion.div>
+    setIsSubmittingFeedback(true);
+    setFeedbackStatus({ type: 'idle', message: '' });
 
-                    {/* Documentation & Privacy - 2 Columns */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Documentation Card */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.2 }}
-                            className="glass-card p-5 flex flex-col"
-                        >
-                            <div className="flex items-center gap-2 mb-3">
-                                <FileText className="w-5 h-5 text-[var(--accent-primary)]" />
-                                <h3 className="font-semibold text-[var(--text-primary)]">Documentation</h3>
-                            </div>
-                            <p className="text-sm text-[var(--text-muted)] mb-4 flex-1">
-                                Learn how to use DownAria, API reference, cookie guides, and frequently asked questions.
-                            </p>
-                            <Link
-                                href="/docs"
-                                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent-primary)] transition-all text-sm font-medium"
-                            >
-                                <FileText className="w-4 h-4" />
-                                View Documentation
-                            </Link>
-                        </motion.div>
+    try {
+      const response = await fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          datetime: new Date().toISOString(),
+          comment,
+        }),
+      });
 
-                        {/* Privacy Card */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.25 }}
-                            className="glass-card p-5 flex flex-col"
-                        >
-                            <div className="flex items-center gap-2 mb-3">
-                                <LockIcon className="w-5 h-5 text-green-400" />
-                                <h3 className="font-semibold text-[var(--text-primary)]">Privacy Policy</h3>
-                            </div>
-                            <p className="text-sm text-[var(--text-muted)] mb-4 flex-1">
-                                We respect your user data. Learn how we handle your information and cookies.
-                            </p>
-                            <Link
-                                href="/privacy"
-                                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-green-400 transition-all text-sm font-medium"
-                            >
-                                <LockIcon className="w-4 h-4" />
-                                View Policy
-                            </Link>
-                        </motion.div>
-                    </div>
+      const payload = (await response.json().catch(() => ({}))) as { error?: string };
 
-                    {/* Credits - Full Width */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.28 }}
-                        className="glass-card p-5 flex flex-col"
-                    >
-                        <div className="flex items-center gap-2 mb-3">
-                            <Heart className="w-5 h-5 text-pink-400" />
-                            <h3 className="font-semibold text-[var(--text-primary)]">Credits</h3>
-                        </div>
-                        <p className="text-sm text-[var(--text-muted)] mb-4 flex-1">
-                            Meet the creator and the open-source technologies that power DownAria.
-                        </p>
-                        <Link
-                            href="/credits"
-                            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-pink-400 transition-all text-sm font-medium"
-                        >
-                            <Heart className="w-4 h-4" />
-                            View Credits
-                        </Link>
-                    </motion.div>
+      if (!response.ok) {
+        setFeedbackStatus({ type: 'error', message: payload.error || 'Failed to send feedback.' });
+        return;
+      }
 
-                    {/* Supported Platforms Section */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3 }}
-                        id="platforms"
-                        className="glass-card p-6"
-                    >
-                        <h3 className="font-bold text-lg text-[var(--text-primary)] mb-4">Supported Platforms</h3>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                            {allPlatforms.map((platform, i) => (
-                                <div
-                                    key={i}
-                                    className={`flex flex-col items-center gap-2 p-4 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-color)] ${platform.status === 'coming' ? 'opacity-50' : ''
-                                        }`}
-                                >
-                                    <div style={{ color: platform.color }}>
-                                        <platform.icon className="w-6 h-6" />
-                                    </div>
-                                    <span className="text-sm font-medium text-[var(--text-primary)]">
-                                        {platform.name}
-                                    </span>
-                                    {platform.status === 'active' && (
-                                        <span className="text-[10px] text-green-400 bg-green-500/10 px-2 py-0.5 rounded">
-                                            Active
-                                        </span>
-                                    )}
-                                    {platform.status === 'cookie' && (
-                                        <span className="text-[10px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded">
-                                            {platform.note}
-                                        </span>
-                                    )}
-                                    {platform.status === 'coming' && (
-                                        <span className="text-[10px] text-[var(--text-muted)] bg-[var(--bg-primary)] px-2 py-0.5 rounded">
-                                            Coming Soon
-                                        </span>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    </motion.div>
+      setFeedbackComment('');
+      setFeedbackStatus({ type: 'success', message: 'Thanks! Your feedback has been sent.' });
+    } catch {
+      setFeedbackStatus({ type: 'error', message: 'Network error while sending feedback.' });
+    } finally {
+      setIsSubmittingFeedback(false);
+    }
+  }
 
-                    {/* Other Projects */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.35 }}
-                        className="glass-card p-5"
-                    >
-                        <h3 className="font-semibold text-[var(--text-primary)] mb-4">🔗 Other Projects by risunCode</h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <a
-                                href="https://github.com/risunCode/SurfManager"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="block p-4 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-color)] hover:border-[var(--accent-primary)] transition-colors group"
-                            >
-                                <div className="flex items-center gap-2 mb-2">
-                                    <Github className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-[var(--accent-primary)]" />
-                                    <span className="font-medium text-[var(--text-primary)]">SurfManager</span>
-                                </div>
-                                <p className="text-xs text-[var(--text-muted)]">
-                                    Reset IDE data, backup & restore, multi-account management.
-                                </p>
-                            </a>
-                            <a
-                                href="https://github.com/risunCode/SesWi-Session-Manager"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="block p-4 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-color)] hover:border-[var(--accent-primary)] transition-colors group"
-                            >
-                                <div className="flex items-center gap-2 mb-2">
-                                    <Github className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-[var(--accent-primary)]" />
-                                    <span className="font-medium text-[var(--text-primary)]">SesWi Session</span>
-                                </div>
-                                <p className="text-xs text-[var(--text-muted)]">
-                                    Chrome extension for cookie & session management.
-                                </p>
-                            </a>
-                        </div>
-                    </motion.div>
+  const features = [
+    { icon: Video, title: 'Video', desc: 'Up to 4K quality', color: 'text-purple-400' },
+    { icon: Music, title: 'Audio', desc: 'MP3, M4A, FLAC', color: 'text-pink-400' },
+    { icon: Smartphone, title: 'Stories & Reels', desc: 'All platforms', color: 'text-orange-400' },
+    { icon: Shield, title: 'No Watermark', desc: 'Clean downloads', color: 'text-green-400' },
+    { icon: Zap, title: 'Fast Servers', desc: 'Optimized CDN', color: 'text-yellow-400' },
+    { icon: Globe, title: 'REST API', desc: 'For developers', color: 'text-sky-400' },
+  ];
 
-                    {/* CTA Buttons */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.4 }}
-                        className="flex flex-col sm:flex-row gap-3 justify-center"
-                    >
-                        <Link
-                            href="/"
-                            className="inline-flex items-center justify-center gap-2 bg-[var(--accent-primary)] text-white font-semibold py-3 px-6 rounded-xl text-sm hover:opacity-90 transition-opacity"
-                        >
-                            <Download className="w-4 h-4" />
-                            {t('startDownloading')}
-                        </Link>
-                        <a
-                            href="https://github.com/risunCode"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center gap-2 bg-[var(--bg-secondary)] text-[var(--text-secondary)] font-medium py-3 px-6 rounded-xl text-sm border border-[var(--border-color)] hover:border-[var(--accent-primary)] hover:text-[var(--text-primary)] transition-all"
-                        >
-                            <Github className="w-4 h-4" />
-                            GitHub
-                        </a>
-                    </motion.div>
+  const quickLinks = [
+    { href: '/docs', icon: FileText, title: 'Documentation', description: 'Guides, API reference, and integration flow' },
+    { href: '/docs/changelog', icon: Clock, title: 'Changelog', description: 'Track updates and improvements' },
+    { href: '/privacy', icon: Lock, title: 'Privacy', description: 'Read data and security policy' },
+    { href: '/credits', icon: Handshake, title: 'Credits', description: 'Open-source acknowledgements and stack' },
+  ];
 
-                    {/* Footer */}
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.45 }}
-                        className="text-center text-xs text-[var(--text-muted)] space-y-1 pt-4"
-                    >
-                        <p>⚠️ For personal use only. Respect copyright laws.</p>
-                        <p>
-                            Made with ❤️ by{' '}
-                            <a href="https://github.com/risunCode" className="text-[var(--accent-primary)] hover:underline">
-                                risunCode
-                            </a>
-                            {' • '}
-                            Icon by{' '}
-                            <a
-                                href="https://icons8.com/icons/set/download"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-[var(--accent-primary)] hover:underline"
-                            >
-                                Icons8
-                            </a>
-                        </p>
-                    </motion.div>
-                </div>
+  return (
+    <SidebarLayout>
+      <div className="docs-surface py-6 px-4 lg:px-8">
+        <div className="max-w-4xl mx-auto">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
+            <h1 className="text-3xl sm:text-4xl font-bold mb-3">
+              {t('title')} <span className="gradient-text">DownAria</span>
+            </h1>
+            <p className="text-[var(--text-secondary)] text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
+              {t('subtitle')}
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="glass-card border border-[var(--border-color)] rounded-2xl p-5 mb-6"
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <Heart className="w-4 h-4 text-red-400" />
+              <h2 className="font-semibold text-[var(--text-primary)]">{t('story.title')}</h2>
             </div>
-        </SidebarLayout>
-    );
+            <div className="space-y-3 text-sm leading-relaxed">
+              <p className="text-[var(--text-secondary)]">{t('story.p1')}</p>
+              <p className="text-[var(--text-primary)] font-medium italic">{t('story.p2')}</p>
+              <p className="text-[var(--text-secondary)]">{t('story.p3')}</p>
+              <p className="text-[var(--text-secondary)]">
+                <span className="text-[var(--accent-primary)] font-medium">{t('story.p4')}</span>
+              </p>
+            </div>
+          </motion.div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+              className="glass-card border border-[var(--border-color)] rounded-2xl p-5"
+            >
+              <h2 className="font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
+                <Zap className="w-4 h-4 text-[var(--accent-primary)]" />
+                Features
+              </h2>
+              <div className="grid grid-cols-2 gap-3">
+                {features.map((feature, i) => (
+                  <div key={i} className="settings-surface-card flex items-start gap-2.5 p-2.5 rounded-xl">
+                    <feature.icon className={`w-4 h-4 ${feature.color} flex-shrink-0 mt-0.5`} />
+                    <div>
+                      <p className="text-sm font-medium text-[var(--text-primary)]">{feature.title}</p>
+                      <p className="text-xs text-[var(--text-muted)]">{feature.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="glass-card border border-[var(--border-color)] rounded-2xl p-5"
+            >
+              <h2 className="font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
+                <Zap className="w-4 h-4 text-[var(--accent-primary)]" />
+                Quick Links
+              </h2>
+              <div className="grid grid-cols-2 gap-2">
+                {quickLinks.map((link, i) => (
+                  <Link
+                    key={i}
+                    href={link.href}
+                    className="nested-hover-card settings-surface-card settings-surface-card-hover flex items-start gap-2.5 p-3 rounded-xl transition-all text-[var(--text-primary)]"
+                  >
+                    <link.icon className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium leading-tight">{link.title}</p>
+                      <p className="text-xs text-[var(--text-muted)] leading-tight mt-1">{link.description}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
+              className="glass-card border border-[var(--border-color)] rounded-2xl p-5"
+            >
+              <h2 className="font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
+                <Github className="w-4 h-4 text-[var(--accent-primary)]" />
+                More Projects
+              </h2>
+              <div className="space-y-2">
+                <a
+                  href="https://github.com/risunCode/DownAria"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="nested-hover-card settings-surface-card settings-surface-card-hover flex items-center gap-3 p-3 rounded-xl transition-colors group"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-[var(--bg-card)] flex items-center justify-center">
+                    <Bot className="w-4 h-4 text-[var(--accent-primary)]" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-[var(--text-primary)]">Downaria</p>
+                    <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+                      Free, fast, and easy-to-use tool for downloading videos from social media. No registration, no
+                      limits, no BS.
+                    </p>
+                  </div>
+                  <ExternalLink className="w-4 h-4 text-[var(--text-muted)] opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                </a>
+                <a
+                  href="https://github.com/risunCode/SurfManagerPublic"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="nested-hover-card settings-surface-card settings-surface-card-hover flex items-center gap-3 p-3 rounded-xl transition-colors group"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-[var(--bg-card)] flex items-center justify-center">
+                    <Globe className="w-4 h-4 text-[var(--accent-primary)]" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-[var(--text-primary)]">SurfManager</p>
+                    <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+                      Reset IDE data, create backup and restore, manage multi-account easily. Works for VS-Code/fork
+                      based app.
+                    </p>
+                  </div>
+                  <ExternalLink className="w-4 h-4 text-[var(--text-muted)] opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                </a>
+                <a
+                  href="https://github.com/risunCode/SesWi-Session-Manager"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="nested-hover-card settings-surface-card settings-surface-card-hover flex items-center gap-3 p-3 rounded-xl transition-colors group"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-[var(--bg-card)] flex items-center justify-center">
+                    <Lock className="w-4 h-4 text-[var(--accent-primary)]" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-[var(--text-primary)]">SesWi-Session-Manager</p>
+                    <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+                      A Chrome Extension that manages cookie & session securely, supporting Netscape export, JSON
+                      raw, and encrypted save.
+                    </p>
+                  </div>
+                  <ExternalLink className="w-4 h-4 text-[var(--text-muted)] opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                </a>
+              </div>
+            </motion.div>
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.28 }}
+            className="glass-card border border-[var(--border-color)] rounded-2xl p-5 mt-6"
+          >
+            <h2 className="font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
+              <MessageSquare className="w-4 h-4 text-[var(--accent-primary)]" />
+              Feedback
+            </h2>
+
+            <form onSubmit={handleFeedbackSubmit} className="feedback-surface space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="feedback-panel settings-surface-card rounded-xl p-2.5 transition-colors focus-within:border-[var(--accent-primary)]/45 focus-within:bg-[var(--bg-card)]/90">
+                  <label htmlFor="feedback-name" className="block text-[11px] text-[var(--text-muted)] mb-1">Name</label>
+                  <input
+                    id="feedback-name"
+                    type="text"
+                    maxLength={40}
+                    value={feedbackName}
+                    onChange={(event) => setFeedbackName(event.target.value)}
+                    placeholder="Your name"
+                    className="feedback-input w-full rounded-md border border-transparent focus:border-[var(--accent-primary)]/35 px-2.5 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none transition-colors"
+                  />
+                </div>
+                <div className="feedback-panel settings-surface-card rounded-xl p-2.5">
+                  <label htmlFor="feedback-datetime" className="block text-[11px] text-[var(--text-muted)] mb-1">Datetime</label>
+                  <div
+                    id="feedback-datetime"
+                    className="feedback-input w-full rounded-md px-2.5 py-2 text-sm text-[var(--text-secondary)] border border-[var(--border-color)]/50"
+                  >
+                    {feedbackDateTime}
+                  </div>
+                </div>
+              </div>
+
+              <div className="feedback-panel settings-surface-card rounded-xl p-2.5 transition-colors focus-within:border-[var(--accent-primary)]/45 focus-within:bg-[var(--bg-card)]/90">
+                <label htmlFor="feedback-comment" className="block text-[11px] text-[var(--text-muted)] mb-1">Comment</label>
+                <textarea
+                  id="feedback-comment"
+                  value={feedbackComment}
+                  onChange={(event) => setFeedbackComment(event.target.value)}
+                  maxLength={500}
+                  rows={5}
+                  placeholder="Text + emojis only"
+                  className="feedback-input w-full resize-y min-h-[120px] rounded-md border border-transparent focus:border-[var(--accent-primary)]/35 px-2.5 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none transition-colors"
+                />
+                <p className={`text-[11px] mt-1 text-right ${feedbackComment.length > 450 ? 'text-amber-400' : 'text-[var(--text-muted)]'}`}>{feedbackComment.length}/500</p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <p className={`text-xs leading-relaxed ${feedbackStatus.type === 'error' ? 'text-red-400' : feedbackStatus.type === 'success' ? 'text-emerald-400' : 'text-[var(--text-muted)]'}`}>
+                  {feedbackStatus.message || 'Drop your thoughts here. We read every note and emoji.'}
+                </p>
+                <button
+                  type="submit"
+                  disabled={isSubmittingFeedback}
+                  className="inline-flex w-full sm:w-auto items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-[var(--accent-primary)] text-white text-xs font-semibold hover:opacity-90 transition-opacity disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  {isSubmittingFeedback ? 'Sending...' : 'Send Feedback'}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="text-center mt-8 pt-6 border-t border-[var(--border-color)]"
+          >
+            <p className="text-xs text-[var(--text-muted)]">
+              DownAria by{' '}
+              <a
+                href="https://github.com/risunCode"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[var(--accent-primary)] hover:underline"
+              >
+                risunCode
+              </a>
+              {' - Licensed under GPL-3 - © '}
+              {new Date().getFullYear()}
+            </p>
+          </motion.div>
+        </div>
+      </div>
+    </SidebarLayout>
+  );
 }

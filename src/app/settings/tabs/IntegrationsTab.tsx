@@ -1,0 +1,27 @@
+'use client';
+
+import { motion } from 'framer-motion';
+import { Zap } from 'lucide-react';
+import { DiscordWebhookSettings } from '@/components/settings/DiscordWebhookSettings';
+
+export function IntegrationsTab() {
+  return (
+    <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-6">
+      <div className="glass-card p-6 rounded-2xl border border-[var(--border-color)]">
+        <div className="flex items-center gap-3 mb-6">
+          <Zap className="w-5 h-5 text-yellow-500" />
+          <div>
+            <h2 className="text-lg font-semibold text-[var(--text-primary)]">Integrations</h2>
+            <p className="text-xs text-[var(--text-muted)]">Connect webhook workflows and preview notification output in one place.</p>
+          </div>
+        </div>
+
+        <DiscordWebhookSettings />
+
+        <div className="mt-6 p-3 rounded-xl border border-dashed border-[var(--border-color)] text-center">
+          <p className="text-sm text-[var(--text-muted)]">More integrations coming soon...</p>
+        </div>
+      </div>
+    </motion.div>
+  );
+}

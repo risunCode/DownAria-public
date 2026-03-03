@@ -2,133 +2,57 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Code, BookOpen, HelpCircle, FileText, Rocket, ChevronRight } from 'lucide-react';
-import { useMemo } from 'react';
+import { FileText, HelpCircle, Rocket, Code2 } from 'lucide-react';
 
 const navItems = [
-    { href: '/docs', label: 'Getting Started', icon: Rocket },
-    {
-        href: '/docs/api', label: 'API', icon: Code, children: [
-            { href: '/docs/api', label: 'Overview' },
-            { href: '/docs/api/endpoints', label: 'Endpoints' },
-            { href: '/docs/api/errors', label: 'Errors' },
-        ]
-    },
-    {
-        href: '/docs/guides/cookies', label: 'Guides', icon: BookOpen, children: [
-            { href: '/docs/guides/cookies', label: 'Cookies' },
-            { href: '/docs/guides/api-keys', label: 'API Keys' },
-            { href: '/docs/guides/troubleshooting', label: 'Troubleshooting' },
-        ]
-    },
+    { href: '/docs', label: 'Overview', icon: Rocket },
+    { href: '/docs/api', label: 'API', icon: Code2 },
     { href: '/docs/faq', label: 'FAQ', icon: HelpCircle },
     { href: '/docs/changelog', label: 'Changelog', icon: FileText },
 ];
 
 export function DocsNavbar() {
     const pathname = usePathname();
-
-    // Get current section for breadcrumb
-    const getBreadcrumb = () => {
-        if (pathname === '/docs') return null;
-
-        for (const item of navItems) {
-            if (item.children) {
-                const child = item.children.find(c => c.href === pathname);
-                if (child) {
-                    return { parent: item.label, current: child.label };
-                }
-            }
-            if (item.href === pathname) {
-                return { parent: null, current: item.label };
-            }
-        }
-        return null;
-    };
-
-    const breadcrumb = getBreadcrumb();
-
-    // Find active parent section (memoized to prevent unnecessary re-renders)
-    const activeParentSection = useMemo(() => {
-        return navItems.find(item => 
-            item.children && item.children.some(c => c.href === pathname)
-        );
-    }, [pathname]);
+    const current = navItems.find((item) => item.href === pathname);
+    const currentLabel = current?.label || 'Overview';
 
     return (
         <div className="mb-6">
-            {/* Breadcrumb */}
-            {breadcrumb && (
-                <div className="flex items-center gap-2 text-xs text-[var(--text-muted)] mb-4">
-                    <Link href="/docs" className="hover:text-[var(--accent-primary)] transition-colors">
-                        Docs
-                    </Link>
-                    {breadcrumb.parent && (
-                        <>
-                            <ChevronRight className="w-3 h-3" />
-                            <span>{breadcrumb.parent}</span>
-                        </>
-                    )}
-                    <ChevronRight className="w-3 h-3" />
-                    <span className="text-[var(--text-primary)]">{breadcrumb.current}</span>
-                </div>
-            )}
+            <div className="inline-flex items-center gap-1.5 text-xs mb-4 px-2.5 py-1.5 rounded-lg settings-surface-card border border-[var(--border-color)]">
+                <Link href="/docs" className="text-[var(--text-secondary)] hover:text-[var(--accent-primary)] transition-colors font-medium">
+                    Docs
+                </Link>
+                <span className="text-[var(--text-muted)]">/</span>
+                <span className="text-[var(--text-primary)] font-semibold">{currentLabel}</span>
+            </div>
 
-            {/* Navigation Pills */}
-            <div className="flex flex-wrap gap-2">
+            <div className="-mx-1 px-1 overflow-x-auto scrollbar-hide">
+                <div className="flex gap-2 min-w-max">
                 {navItems.map((item) => {
-                    const isActive = pathname === item.href ||
-                        (item.children && item.children.some(c => c.href === pathname));
+                    const isActive = pathname === item.href;
 
                     return (
                         <Link
                             key={item.href}
                             href={item.href}
-                            className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${isActive
-                                    ? 'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]'
-                                    : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]'
+                            className={`relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${isActive
+                                ? 'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]'
+                                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]'
                                 }`}
                         >
                             <item.icon className="w-3.5 h-3.5" />
                             {item.label}
                             <span
                                 className={`absolute inset-0 rounded-lg border transition-opacity duration-200 ${isActive
-                                        ? 'opacity-100 border-[var(--accent-primary)]/30'
-                                        : 'opacity-0 border-transparent'
+                                    ? 'opacity-100 border-[var(--accent-primary)]/30'
+                                    : 'opacity-0 border-transparent'
                                     }`}
                             />
                         </Link>
                     );
                 })}
+                </div>
             </div>
-
-            {/* Sub-navigation - only animate on section change, not on child navigation */}
-            <AnimatePresence mode="wait">
-                {activeParentSection && (
-                    <motion.div
-                        key={activeParentSection.href}
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.15 }}
-                        className="flex gap-1 mt-3 pl-1"
-                    >
-                        {activeParentSection.children!.map((child) => (
-                            <Link
-                                key={child.href}
-                                href={child.href}
-                                className={`px-3 py-1 rounded-md text-xs transition-colors ${pathname === child.href
-                                        ? 'bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-color)]'
-                                        : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
-                                    }`}
-                            >
-                                {child.label}
-                            </Link>
-                        ))}
-                    </motion.div>
-                )}
-            </AnimatePresence>
         </div>
     );
 }

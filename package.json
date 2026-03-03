@@ -1,28 +1,27 @@
 {
   "name": "downaria",
-  "version": "1.9.0",
+  "version": "2.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev -p 3001",
-    "prebuild": "node scripts/update-sw-version.js",
+    "prebuild": "node scripts/update-sw-version.js && node scripts/copy-changelog.js",
     "build": "next build",
     "start": "next start -p 3001",
     "lint": "eslint",
-    "test:fb": "node .xtf-pentest/test-fb-debug.mjs"
+    "test": "vitest run"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^7.1.0",
     "@fortawesome/free-brands-svg-icons": "^7.1.0",
     "@fortawesome/free-solid-svg-icons": "^7.1.0",
     "@fortawesome/react-fontawesome": "^3.1.1",
-    "@supabase/supabase-js": "^2.87.3",
     "@vercel/analytics": "^1.6.1",
     "@vercel/speed-insights": "^1.3.1",
     "framer-motion": "^12.23.26",
     "hls.js": "^1.6.15",
     "jszip": "^3.10.1",
     "lucide-react": "^0.561.0",
-    "next": "16.0.10",
+    "next": "^16.1.6",
     "next-intl": "^4.6.1",
     "react": "19.2.1",
     "react-dom": "19.2.1",
@@ -30,7 +29,7 @@
     "remark-gfm": "^4.0.1",
     "sweetalert2": "^11.26.10",
     "swr": "^2.3.8",
-    "web-push": "^3.6.7"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -41,6 +40,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.0.10",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^2.1.9"
   }
 }

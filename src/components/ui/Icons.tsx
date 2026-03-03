@@ -114,6 +114,7 @@ export function PlatformIcon({ platform, className }: { platform: string; classN
     switch (platform) {
         case 'facebook': return <FacebookIcon className={className} />;
         case 'instagram': return <InstagramIcon className={className} />;
+        case 'threads': return <InstagramIcon className={className} />;
         case 'twitter': return <XTwitterIcon className={className} />;
         case 'tiktok': return <TiktokIcon className={className} />;
         case 'weibo': return <WeiboIcon className={className} />;

@@ -24,6 +24,11 @@ export interface CookieStorage {
   weibo?: string;
 }
 
+interface CookieStorageEnvelope {
+  savedAt: number;
+  cookies: CookieStorage;
+}
+
 // ═══════════════════════════════════════════════════════════════
 // SIMPLE HASH & XOR CIPHER
 // ═══════════════════════════════════════════════════════════════
@@ -63,6 +68,37 @@ function computeHMAC(data: string, key: string): string {
 }
 
 const ENCRYPTED_PREFIX = 'enc:';
+const COOKIE_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+const COOKIE_KEYS: Array<keyof CookieStorage> = ['facebook', 'instagram', 'twitter', 'weibo'];
+
+function normalizeCookies(input: unknown): CookieStorage {
+  const normalized: CookieStorage = {};
+  if (!input || typeof input !== 'object') return normalized;
+
+  for (const key of COOKIE_KEYS) {
+    const value = (input as Record<string, unknown>)[key];
+    if (typeof value === 'string' && value.trim()) {
+      normalized[key] = value.trim();
+    }
+  }
+
+  return normalized;
+}
+
+function isCookieEnvelope(input: unknown): input is CookieStorageEnvelope {
+  if (!input || typeof input !== 'object') return false;
+  const record = input as Record<string, unknown>;
+  return typeof record.savedAt === 'number' && Number.isFinite(record.savedAt) && record.cookies !== undefined;
+}
+
+function hasCookieExpired(savedAt: number): boolean {
+  return Date.now() - savedAt > COOKIE_TTL_MS;
+}
+
+function purgeCookieStorage(): void {
+  localStorage.removeItem(STORAGE_KEYS.COOKIES);
+}
 
 function encryptValue(value: string): string {
   const encrypted = xorCipher(value, APP_KEY);
@@ -95,7 +131,21 @@ export function getEncryptedCookies(): CookieStorage {
     if (!stored) return {};
     const decrypted = decryptValue(stored);
     if (!decrypted) return {};
-    return JSON.parse(decrypted);
+
+    const parsed: unknown = JSON.parse(decrypted);
+
+    if (!isCookieEnvelope(parsed)) {
+      // Enforce new envelope-only format (no legacy compatibility).
+      purgeCookieStorage();
+      return {};
+    }
+
+    if (hasCookieExpired(parsed.savedAt)) {
+      purgeCookieStorage();
+      return {};
+    }
+
+    return normalizeCookies(parsed.cookies);
   } catch {
     return {};
   }
@@ -105,17 +155,19 @@ export function setEncryptedCookies(cookies: CookieStorage): void {
   if (typeof window === 'undefined') return;
   
   try {
-    const cleaned: CookieStorage = {};
-    for (const [key, value] of Object.entries(cookies)) {
-      if (value?.trim()) cleaned[key as keyof CookieStorage] = value.trim();
-    }
+    const cleaned = normalizeCookies(cookies);
     
     if (Object.keys(cleaned).length === 0) {
-      localStorage.removeItem(STORAGE_KEYS.COOKIES);
+      purgeCookieStorage();
       return;
     }
-    
-    const encrypted = encryptValue(JSON.stringify(cleaned));
+
+    const payload: CookieStorageEnvelope = {
+      savedAt: Date.now(),
+      cookies: cleaned,
+    };
+
+    const encrypted = encryptValue(JSON.stringify(payload));
     localStorage.setItem(STORAGE_KEYS.COOKIES, encrypted);
   } catch (e) {
     console.warn('[Crypto] Failed to save cookies:', e);
@@ -124,7 +176,7 @@ export function setEncryptedCookies(cookies: CookieStorage): void {
 
 export function clearAllCookies(): void {
   if (typeof window === 'undefined') return;
-  localStorage.removeItem(STORAGE_KEYS.COOKIES);
+  purgeCookieStorage();
 }
 
 // ═══════════════════════════════════════════════════════════════

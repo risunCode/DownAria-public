@@ -3,43 +3,67 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { AnimatePresence } from 'framer-motion';
-import Swal from 'sweetalert2';
+import { AlertTriangle, Settings } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { SidebarLayout } from '@/components/Sidebar';
-import { DownloadForm } from '@/components/DownloadForm';
-import { DownloadPreview } from '@/components/DownloadPreview';
+import { SidebarLayout } from '@/components/layout/Sidebar';
+import { DownloadForm } from '@/components/download/DownloadForm';
+import { DownloadPreview } from '@/components/download/DownloadPreview';
 import { CardSkeleton } from '@/components/ui/Card';
 import { PlatformId, MediaData } from '@/lib/types';
 import type { HistoryEntry } from '@/lib/storage';
 import { getPlatformCookie, getSkipCache } from '@/lib/storage';
 import { platformDetect, sanitizeUrl } from '@/lib/utils/format';
 import { fetchMediaWithCache } from '@/hooks/useScraperCache';
-import { useStatus } from '@/hooks/useStatus';
-import { useMaintenanceStatus } from '@/hooks/useMaintenanceStatus';
-import { MaintenanceMode } from '@/components/MaintenanceMode';
 
 function ShareContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const t = useTranslations('share');
-  const tErrors = useTranslations('errors');
+  const mapBackendErrorToPreview = (message?: string, code?: string) => {
+    const normalizedCode = typeof code === 'string' && code.trim() ? code.trim().toUpperCase() : undefined;
+    const normalizedMessage = typeof message === 'string' && message.trim() ? message.trim() : t('error');
+
+    const cookieTipCodes = new Set([
+      'NO_MEDIA_FOUND',
+      'PRIVATE_CONTENT',
+      'COOKIE_REQUIRED',
+      'AGE_RESTRICTED',
+      'COOKIE_EXPIRED',
+      'COOKIE_BANNED',
+      'CHECKPOINT_REQUIRED',
+    ]);
+
+    if (normalizedCode && cookieTipCodes.has(normalizedCode)) {
+      return {
+        title: 'Extraction Error',
+        message: normalizedMessage,
+        code: normalizedCode,
+        tip: 'Set cookie in Settings to access protected content.',
+        tipHref: '/settings?tab=cookies',
+      };
+    }
+
+    return {
+      title: 'Extraction Error',
+      message: normalizedMessage,
+      code: normalizedCode,
+    };
+  };
 
   const [platform, setPlatform] = useState<PlatformId>('facebook');
   const [isLoading, setIsLoading] = useState(false);
   const [mediaData, setMediaData] = useState<MediaData | null>(null);
+  const [previewError, setPreviewError] = useState<{
+    title: string;
+    message: string;
+    code?: string;
+    tip?: string;
+    tipHref?: string;
+    showSettings?: boolean;
+  } | null>(null);
+  const [responseJson, setResponseJson] = useState<unknown>(null);
   const [sharedUrl, setSharedUrl] = useState<string>('');
   const [autoFetched, setAutoFetched] = useState(false);
-  
-  // Get platform status
-  const { platforms: platformStatus } = useStatus();
-  
-  // Check maintenance status
-  const { isFullMaintenance, isApiMaintenance, message: maintenanceMessage } = useMaintenanceStatus();
-
-  // Show maintenance page if full maintenance is active
-  if (isFullMaintenance) {
-    return <MaintenanceMode message={maintenanceMessage} />;
-  }
 
   // Extract URL from share params
   useEffect(() => {
@@ -87,41 +111,14 @@ function ShareContent() {
   const handleSubmit = async (url: string) => {
     setIsLoading(true);
     setMediaData(null);
-
-    // Check API maintenance FIRST - fast fail
-    if (isApiMaintenance) {
-      setIsLoading(false);
-      Swal.fire({
-        icon: 'warning',
-        title: '🔧 Under Maintenance',
-        text: maintenanceMessage || 'API service is under maintenance. Please try again later.',
-        background: 'var(--bg-card)',
-        color: 'var(--text-primary)',
-        confirmButtonColor: 'var(--accent-primary)',
-      });
-      return;
-    }
+    setResponseJson(null);
+    setPreviewError(null);
 
     const sanitizedUrl = sanitizeUrl(url);
     const detectedPlatform = platformDetect(sanitizedUrl) || platform;
 
     if (detectedPlatform !== platform) {
       setPlatform(detectedPlatform);
-    }
-
-    // Check if platform is enabled
-    const platformInfo = platformStatus.find(p => p.id === detectedPlatform);
-    if (platformInfo && !platformInfo.enabled) {
-      setIsLoading(false);
-      Swal.fire({
-        icon: 'warning',
-        title: '🔧 Platform Offline',
-        text: `${platformInfo.name} is temporarily unavailable. Please try again later.`,
-        background: 'var(--bg-card)',
-        color: 'var(--text-primary)',
-        confirmButtonColor: 'var(--accent-primary)',
-      });
-      return;
     }
 
     try {
@@ -138,32 +135,17 @@ function ShareContent() {
       const result = await fetchMediaWithCache(sanitizedUrl, platformCookie, skipCache);
 
       if (!result.success) {
-        // Handle Weibo cookie error
-        if (detectedPlatform === 'weibo' && (result.error?.includes('cookie') || result.error?.includes('Cookie'))) {
-          setIsLoading(false);
-          Swal.fire({
-            icon: 'warning',
-            title: tErrors('weiboCookie.title'),
-            text: tErrors('weiboCookie.hint'),
-            background: 'var(--bg-card)',
-            color: 'var(--text-primary)',
-            confirmButtonColor: 'var(--accent-primary)',
-          });
-          return;
-        }
-        throw new Error(result.error || tErrors('fetchFailed'));
+        setPreviewError(mapBackendErrorToPreview(result.error, result.errorCode));
+        return;
       }
 
       setMediaData(result.data || null);
+      setResponseJson(result.responseJson ?? result.data ?? null);
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : t('error');
-      Swal.fire({
-        icon: 'error',
+      setPreviewError({
         title: t('failed'),
-        text: errorMsg.length > 100 ? errorMsg.substring(0, 100) + '...' : errorMsg,
-        background: 'var(--bg-card)',
-        color: 'var(--text-primary)',
-        confirmButtonColor: 'var(--accent-primary)',
+        message: errorMsg.length > 100 ? errorMsg.substring(0, 100) + '...' : errorMsg,
       });
     } finally {
       setIsLoading(false);
@@ -195,6 +177,7 @@ function ShareContent() {
             onSubmit={handleSubmit}
             isLoading={isLoading}
             initialUrl={sharedUrl}
+            enableAutoSubmit={false}
           />
 
           {/* Loading */}
@@ -208,10 +191,47 @@ function ShareContent() {
               <DownloadPreview
                 data={mediaData}
                 platform={platform}
+                responseJson={responseJson}
                 onDownloadComplete={handleDownloadComplete}
               />
             )}
           </AnimatePresence>
+
+          {!isLoading && !mediaData && previewError && (
+            <div className="glass-card p-4 sm:p-5 border border-red-500/30">
+              <h3 className="text-sm sm:text-base font-semibold text-red-400 mb-1 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" />
+                <span>{previewError.title}</span>
+              </h3>
+              <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed">{previewError.message}</p>
+              {previewError.code && (
+                <p className="text-[11px] text-[var(--text-muted)] mt-2">Code: {previewError.code}</p>
+              )}
+              {previewError.tip && (
+                <p className="text-[11px] text-[var(--text-muted)] mt-1">
+                  Tips:{' '}
+                  {previewError.tipHref ? (
+                    <a href={previewError.tipHref} className="text-[var(--accent-primary)] hover:underline">
+                      {previewError.tip}
+                    </a>
+                  ) : (
+                    previewError.tip
+                  )}
+                </p>
+              )}
+              {previewError.showSettings && (
+                <div className="mt-3">
+                  <a
+                    href="/settings?tab=cookies"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-[var(--border-color)] text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors"
+                  >
+                    <Settings className="w-3.5 h-3.5" />
+                    Open Cookie Settings
+                  </a>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Back to Home */}
           <div className="text-center">

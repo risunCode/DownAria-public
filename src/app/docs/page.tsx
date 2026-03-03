@@ -3,11 +3,14 @@ import { DocsHomePage } from '@/app/docs/DocsHomePage';
 
 export const metadata: Metadata = {
     title: 'Documentation - DownAria',
-    description: 'Learn how to use DownAria to download videos from Facebook, Instagram, Twitter, TikTok, YouTube, and Weibo. Complete guide with API reference.',
-    keywords: ['DownAria docs', 'video downloader guide', 'social media downloader tutorial', 'API documentation'],
+    description: 'Official DownAria documentation for runtime behavior, cookie handling, FAQ, and changelog.',
+    keywords: ['DownAria docs', 'runtime documentation', 'social media downloader', 'FAQ'],
+    alternates: {
+        canonical: '/docs',
+    },
     openGraph: {
         title: 'DownAria Documentation',
-        description: 'Complete guide to download videos from social media platforms',
+        description: 'Runtime docs aligned with the current BringAlive Downaria setup',
         type: 'website',
     },
 };

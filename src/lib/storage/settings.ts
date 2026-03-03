@@ -21,7 +21,7 @@ export const STORAGE_KEYS = {
   COOKIES: 'downaria_cookies',
   SEASONAL: 'downaria_seasonal',
   QUEUE: 'downaria_queue',
-  AI: 'downaria_ai',
+  EXPERIMENTAL_AUDIO: 'downaria_experimental_audio',
 } as const;
 
 // ═══════════════════════════════════════════════════════════════
@@ -34,6 +34,7 @@ export type LanguagePreference = 'auto' | Locale;
 export type CookiePlatform = 'facebook' | 'instagram' | 'twitter' | 'weibo';
 
 export interface DiscordSettings {
+  enabled: boolean;
   webhookUrl: string;
   autoSend: boolean;
   embedEnabled: boolean;
@@ -57,7 +58,11 @@ export interface DownAriaSettings {
   autoDownload: boolean;
   showEngagement: boolean;
   videoSound: boolean;
-  
+  experimentalAudioConvert?: boolean;
+
+  // Experimental
+  experimentalEnabled: boolean;
+
   // Background Settings
   wallpaperOpacity: number;
   backgroundBlur: number;
@@ -82,12 +87,13 @@ export interface DownAriaSettings {
 // ═══════════════════════════════════════════════════════════════
 
 export const DEFAULT_DISCORD: DiscordSettings = {
+  enabled: true,
   webhookUrl: '',
   autoSend: false,
   embedEnabled: true,
   embedColor: '#f3d61b',
   footerText: 'via DownAria',
-  sendMethod: 'smart',
+  sendMethod: 'double',
   mention: '',
   sendAllOnBatch: false,
   batchDelay: 2000,
@@ -102,6 +108,7 @@ const DEFAULT_SETTINGS: DownAriaSettings = {
   autoDownload: false,
   showEngagement: true,
   videoSound: false,
+  experimentalEnabled: true,
   wallpaperOpacity: 8,
   backgroundBlur: 0,
   allowLargeBackground: false,

@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
-
-
-/* Custom CSS Variables */
+/* ==========================================================================
+   THEME TOKENS
+   ========================================================================== */
 :root {
   /* Light theme as default */
   --bg-primary: #ffffff;
@@ -26,6 +26,8 @@
   --border-color: #e5e5e5;
   --glass-bg: rgba(0, 0, 0, 0.02);
   --glass-border: rgba(0, 0, 0, 0.08);
+  --modal-overlay: rgba(15, 23, 42, 0.22);
+  --modal-overlay-blur: 4px;
 
   /* Platform Colors */
   --youtube: #ff0000;
@@ -60,6 +62,8 @@
   --border-color: #e5e5e5;
   --glass-bg: rgba(0, 0, 0, 0.02);
   --glass-border: rgba(0, 0, 0, 0.08);
+  --modal-overlay: rgba(15, 23, 42, 0.22);
+  --modal-overlay-blur: 4px;
 }
 
 /* Solarized Theme - cream/warm white with better contrast */
@@ -86,6 +90,8 @@
   --border-color: #d6d3d1;
   --glass-bg: rgba(28, 25, 23, 0.03);
   --glass-border: rgba(28, 25, 23, 0.12);
+  --modal-overlay: rgba(66, 52, 28, 0.24);
+  --modal-overlay-blur: 3px;
 }
 
 /* Solarized-specific color overrides for better contrast */
@@ -110,6 +116,25 @@
 .theme-solarized .text-blue-400,
 .theme-solarized .text-blue-500 {
   color: #1d4ed8 !important;
+}
+
+.theme-solarized .text-sky-200,
+.theme-solarized .text-sky-300,
+.theme-solarized .text-sky-400,
+.theme-solarized .text-sky-500 {
+  color: #075985 !important;
+}
+
+.theme-solarized .text-emerald-300,
+.theme-solarized .text-emerald-400,
+.theme-solarized .text-emerald-500 {
+  color: #166534 !important;
+}
+
+.theme-solarized .text-red-300,
+.theme-solarized .text-red-400,
+.theme-solarized .text-red-500 {
+  color: #991b1b !important;
 }
 
 .theme-solarized .text-red-400,
@@ -194,6 +219,8 @@
   --border-color: #30363d;
   --glass-bg: rgba(255, 255, 255, 0.04);
   --glass-border: rgba(255, 255, 255, 0.08);
+  --modal-overlay: rgba(2, 6, 14, 0.62);
+  --modal-overlay-blur: 8px;
 }
 
 @theme inline {
@@ -203,7 +230,9 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* Base styles */
+/* ==========================================================================
+   BASE RESET + ROOT
+   ========================================================================== */
 * {
   box-sizing: border-box;
 }
@@ -238,7 +267,9 @@ body {
   background: var(--text-muted);
 }
 
-/* Glassmorphism utilities */
+/* ==========================================================================
+   GLASS + SURFACE UTILITIES
+   ========================================================================== */
 .glass {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -285,7 +316,412 @@ body {
   }
 }
 
-/* Accent text - solid color */
+/* Custom background transparency for glass-card */
+body.has-custom-background .glass-card:not([role="dialog"]):not([aria-modal="true"]) {
+  background: color-mix(in srgb, var(--bg-card) var(--bg-opacity, 8%), transparent);
+  border-color: var(--border-color);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+body.has-custom-background .glass-card:not([role="dialog"]):not([aria-modal="true"]):hover {
+  background: color-mix(in srgb, var(--bg-card-hover) var(--bg-opacity, 8%), transparent);
+  border-color: var(--accent-primary);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+/* Theme-specific bg-secondary overrides for custom background */
+body.has-custom-background .glass-card:not([role="dialog"]):not([aria-modal="true"]) {
+  --bg-secondary: color-mix(in srgb, #f5f5f5 var(--bg-opacity, 8%), transparent);
+}
+
+html.theme-dark body.has-custom-background .glass-card:not([role="dialog"]):not([aria-modal="true"]) {
+  --bg-secondary: color-mix(in srgb, #161b22 var(--bg-opacity, 8%), transparent);
+}
+
+html.theme-solarized body.has-custom-background .glass-card:not([role="dialog"]):not([aria-modal="true"]) {
+  --bg-secondary: color-mix(in srgb, #eee8d5 var(--bg-opacity, 8%), transparent);
+}
+
+/* Docs pages: keep cards visibly different from solarized background */
+body.has-custom-background .docs-surface .glass-card:not([role="dialog"]):not([aria-modal="true"]) {
+  background: color-mix(in srgb, var(--bg-card) 94%, var(--bg-primary) 6%) !important;
+  border-color: color-mix(in srgb, var(--border-color) 88%, transparent) !important;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+body.has-custom-background .docs-surface .glass-card:not([role="dialog"]):not([aria-modal="true"]):hover {
+  background: color-mix(in srgb, var(--bg-card-hover) 96%, var(--bg-primary) 4%) !important;
+}
+
+body.has-custom-background .docs-surface [class*="bg-[var(--bg-secondary)]"] {
+  background: color-mix(in srgb, var(--bg-secondary) 90%, var(--bg-primary) 10%) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border-color) 70%, transparent);
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+body.has-custom-background .docs-surface [class*="bg-[var(--bg-card)]"] {
+  background: color-mix(in srgb, var(--bg-card) 92%, var(--bg-primary) 8%) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border-color) 66%, transparent);
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Dark theme docs-surface: use Settings-like stronger surfaces */
+html.theme-dark body.has-custom-background .docs-surface .glass-card:not([role="dialog"]):not([aria-modal="true"]) {
+  background: color-mix(in srgb, var(--bg-card) 92%, #000 8%) !important;
+  border-color: color-mix(in srgb, var(--border-color) 92%, transparent) !important;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+}
+
+html.theme-dark body.has-custom-background .docs-surface [class*="bg-[var(--bg-secondary)]"],
+html.theme-dark body.has-custom-background .docs-surface [class*="bg-[var(--bg-card)]"] {
+  background: color-mix(in srgb, var(--bg-secondary) 90%, #000 10%) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border-color) 75%, transparent);
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html.theme-dark body.has-custom-background .docs-surface .glass-card:not([role="dialog"]):not([aria-modal="true"]) > * > button,
+html.theme-dark body.has-custom-background .docs-surface .glass-card:not([role="dialog"]):not([aria-modal="true"]) > * > div,
+html.theme-dark body.has-custom-background .docs-surface .glass-card:not([role="dialog"]):not([aria-modal="true"]) button,
+html.theme-dark body.has-custom-background .docs-surface .glass-card:not([role="dialog"]):not([aria-modal="true"]) > div > div {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Stronger outline for light/solarized custom background surfaces */
+.theme-light body.has-custom-background .docs-surface .glass-card:not([role="dialog"]):not([aria-modal="true"]),
+.theme-solarized body.has-custom-background .docs-surface .glass-card:not([role="dialog"]):not([aria-modal="true"]) {
+  border-color: color-mix(in srgb, var(--border-color) 100%, transparent) !important;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.09), inset 0 0 0 1px color-mix(in srgb, var(--border-color) 55%, transparent);
+}
+
+.theme-light body.has-custom-background .docs-surface [class*="bg-[var(--bg-secondary)]"],
+.theme-solarized body.has-custom-background .docs-surface [class*="bg-[var(--bg-secondary)]"] {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border-color) 86%, transparent);
+}
+
+/* Avoid over-bright changelog row background on custom wallpapers */
+body.has-custom-background .docs-surface .changelog-toggle {
+  background: transparent !important;
+}
+
+body.has-custom-background .docs-surface .changelog-toggle:hover {
+  background: color-mix(in srgb, var(--bg-secondary) 72%, transparent) !important;
+}
+
+/* Card-in-card hover clarity (About/Privacy/Credits quick links, etc.) */
+.nested-hover-card {
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.nested-hover-card:hover {
+  border-color: color-mix(in srgb, var(--accent-primary) 35%, var(--border-color)) !important;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+  transform: translateY(-1px);
+}
+
+/* Reuse Settings Basic theme-card surface style */
+.settings-surface-card {
+  background: color-mix(in srgb, var(--bg-card) 86%, var(--bg-secondary) 14%);
+  border: 1px solid color-mix(in srgb, var(--border-color) 92%, transparent);
+}
+
+body.has-custom-background .settings-surface-card {
+  background: color-mix(in srgb, var(--bg-card) 35%, transparent);
+  border-color: var(--border-color);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.settings-surface-card-hover {
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.settings-surface-card-hover:hover {
+  border-color: color-mix(in srgb, var(--accent-primary) 42%, var(--border-color));
+}
+
+/* About feedback: keep fields readable on custom backgrounds */
+.feedback-input {
+  background: color-mix(in srgb, var(--bg-card) 82%, var(--bg-secondary) 18%);
+}
+
+body.has-custom-background .feedback-surface,
+body.has-custom-background .feedback-surface * {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+body.has-custom-background .feedback-surface .feedback-panel {
+  background: color-mix(in srgb, var(--bg-card) 90%, #000 10%);
+  border-color: color-mix(in srgb, var(--border-color) 90%, transparent);
+}
+
+html.theme-dark body.has-custom-background .feedback-surface .feedback-panel {
+  background: color-mix(in srgb, #1c2128 92%, #000 8%);
+  border-color: color-mix(in srgb, #30363d 88%, transparent);
+}
+
+body.has-custom-background .feedback-surface .feedback-input {
+  background: color-mix(in srgb, var(--bg-card) 94%, #000 6%) !important;
+  border-color: color-mix(in srgb, var(--border-color) 76%, transparent) !important;
+}
+
+html.theme-dark body.has-custom-background .feedback-surface .feedback-input {
+  background: color-mix(in srgb, #1c2128 95%, #000 5%) !important;
+  border-color: color-mix(in srgb, #30363d 80%, transparent) !important;
+}
+
+html.theme-light .nested-hover-card:hover,
+html.theme-solarized .nested-hover-card:hover {
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.12);
+}
+
+html.theme-dark .nested-hover-card:hover {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+}
+
+/* Apply transparency to ALL nested elements inside glass-card that have background */
+body.has-custom-background .glass-card:not([role="dialog"]):not([aria-modal="true"]) > * > button,
+body.has-custom-background .glass-card:not([role="dialog"]):not([aria-modal="true"]) > * > div,
+body.has-custom-background .glass-card:not([role="dialog"]):not([aria-modal="true"]) button,
+body.has-custom-background .glass-card:not([role="dialog"]):not([aria-modal="true"]) > div > div {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Glass effect for nested elements (buttons, divs inside glass-card) */
+.glass-nested {
+  background: var(--bg-secondary);
+  transition: all 0.3s ease;
+}
+
+body.has-custom-background .glass-nested {
+  /* Higher opacity for better text readability */
+  background: color-mix(in srgb, var(--bg-secondary) calc(var(--bg-opacity, 8%) + 50%), transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Remove hover background change - only border should change (defined in HTML) */
+body.has-custom-background .glass-nested:hover {
+  /* Keep same background, no darkening effect */
+  background: color-mix(in srgb, var(--bg-secondary) calc(var(--bg-opacity, 8%) + 50%), transparent);
+}
+
+/* Critical: cancel inherited glass blur inside format selector (DownloadPreview + MediaGallery) */
+body.has-custom-background .glass-card:not([role="dialog"]):not([aria-modal="true"]) .format-selector-surface,
+body.has-custom-background .glass-card:not([role="dialog"]):not([aria-modal="true"]) .format-selector-surface > div,
+body.has-custom-background .glass-card:not([role="dialog"]):not([aria-modal="true"]) .format-selector-surface > div > div,
+body.has-custom-background .glass-card:not([role="dialog"]):not([aria-modal="true"]) .format-selector-surface button,
+body.has-custom-background .glass-card:not([role="dialog"]):not([aria-modal="true"]) .format-selector-surface span {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Stable surface for quality/format selector buttons */
+.format-selector-surface .format-option {
+  background: var(--bg-secondary);
+  border-color: transparent;
+  color: var(--text-secondary);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background-clip: padding-box;
+}
+
+/* Light-like themes: quality selector must stay solid (no blur) */
+html.theme-light body.has-custom-background .format-selector-surface,
+html.theme-light body.has-custom-background .format-selector-surface *,
+html.theme-solarized body.has-custom-background .format-selector-surface,
+html.theme-solarized body.has-custom-background .format-selector-surface * {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.format-selector-surface .format-option:hover {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+.format-selector-surface .format-option.is-selected {
+  background: var(--accent-primary);
+  color: #ffffff;
+  border-color: color-mix(in srgb, var(--accent-primary) 65%, #111111 35%);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+}
+
+body.has-custom-background .format-selector-surface .format-option {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  opacity: 1;
+}
+
+/* Force-disable inherited glass blur on quality/audio selector wrappers */
+body.has-custom-background .format-selector-surface,
+body.has-custom-background .format-selector-surface > div,
+body.has-custom-background .format-selector-surface > div > div,
+body.has-custom-background .format-selector-surface > div > span,
+body.has-custom-background .format-selector-surface * {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+body.has-custom-background .format-selector-surface .format-option:hover {
+  background: var(--bg-card-hover);
+}
+
+body.has-custom-background .format-selector-surface .format-option.is-selected {
+  background: var(--accent-primary);
+  color: #ffffff;
+  border-color: color-mix(in srgb, var(--accent-primary) 58%, #080808 42%);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.58), inset 0 0 0 1px rgba(0, 0, 0, 0.28);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.45);
+}
+
+/* Light/Solarized custom background: keep selector buttons fully solid */
+html.theme-light body.has-custom-background .format-selector-surface .format-option:not(.is-selected) {
+  background: #f8f8f8 !important;
+  border-color: #d4d4d4 !important;
+}
+
+html.theme-solarized body.has-custom-background .format-selector-surface .format-option:not(.is-selected) {
+  background: #f3ecdb !important;
+  border-color: #cfc6af !important;
+}
+
+/* Modal/Dialog/Alert elements stay SOLID - no transparency, no override */
+[role="dialog"],
+[role="alertdialog"],
+[aria-modal="true"],
+[data-radix-dialog-content],
+[data-radix-dropdown-content] {
+  background-color: rgb(var(--bg-card-rgb));
+}
+
+.modal-theme-backdrop {
+  background: var(--modal-overlay);
+  backdrop-filter: blur(var(--modal-overlay-blur));
+  -webkit-backdrop-filter: blur(var(--modal-overlay-blur));
+}
+
+.modal-theme-titlebar {
+  background: var(--bg-card);
+  border-bottom: 1px solid color-mix(in srgb, var(--border-color) 72%, transparent);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+body.has-custom-background .modal-theme-titlebar {
+  background: color-mix(in srgb, var(--bg-card) 95%, var(--bg-primary));
+}
+
+/* Solid modal/alert class - 100% opaque, no glass effect */
+.modal-solid {
+  background: var(--bg-card) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Force solid background for modals even with custom background */
+body.has-custom-background .modal-solid {
+  background: var(--bg-card) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Response JSON modal must stay solid and fixed (no seasonal transparency bleed) */
+.response-json-modal-panel {
+  background: var(--bg-card) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-radius: 1rem !important;
+  overflow: hidden !important;
+}
+
+body.has-custom-background .response-json-modal-panel {
+  background: var(--bg-card) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Blur backdrop/overlay behind modals and alerts */
+body.has-custom-background [data-radix-dialog-overlay],
+body.has-custom-background [class*="backdrop"] {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* ==========================================================================
+   COMPONENT UTILITIES
+   ========================================================================== */
+
+/* Downaria2 parity: response JSON modal + downloading row */
+.downaria-downloading-row {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+@media (min-width: 640px) {
+  .downaria-downloading-row {
+    gap: 0.5rem;
+  }
+}
+
+.downaria-cancel-btn {
+  background: color-mix(in srgb, #ef4444 20%, transparent);
+  border-color: color-mix(in srgb, #ef4444 30%, transparent);
+  color: #f87171;
+}
+
+.downaria-cancel-btn:hover {
+  background: color-mix(in srgb, #ef4444 30%, transparent);
+}
+
+.downaria-response-json-shell {
+  border-radius: 0.75rem;
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  background: var(--bg-card);
+}
+
+.downaria-response-json-copy {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 0.375rem;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.downaria-response-json-copy:hover {
+  background: var(--bg-tertiary, var(--bg-card-hover));
+}
+
+.downaria-response-json-pre {
+  max-height: 60vh;
+  overflow: auto;
+  border-radius: 0.5rem;
+  background: var(--bg-secondary);
+  padding: 0.75rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .gradient-text {
   color: var(--accent-primary);
 }
@@ -304,13 +740,6 @@ body {
 
 .btn-gradient:hover {
   opacity: 0.9;
-}
-
-/* Mobile - same behavior */
-@media (max-width: 768px) {
-  .btn-gradient:hover {
-    opacity: 0.9;
-  }
 }
 
 .btn-gradient:active {
@@ -385,7 +814,9 @@ body {
   color: var(--text-muted);
 }
 
-/* Animations */
+/* ==========================================================================
+   ANIMATIONS
+   ========================================================================== */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -477,8 +908,7 @@ body {
   }
 }
 
-
-/* Spinning border animation for input card */
+/* Border-angle driven animated surfaces */
 @property --border-angle {
   syntax: "<angle>";
   initial-value: 0deg;
@@ -491,25 +921,10 @@ body {
   }
 }
 
-/* Only enable spin animation when explicitly applied (not always running) */
+/* Shared utility for animated border loop */
 .animate-spin-slow {
   animation: spin-border 3s linear infinite;
 }
-
-/* Disable animation on mobile for performance */
-@media (max-width: 768px) {
-  .animate-spin-slow {
-    animation: none;
-  }
-}
-
-/* Disable animation when user prefers reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  .animate-spin-slow {
-    animation: none;
-  }
-}
-
 
 /* Shiny border animation for preview cards */
 .shiny-border {
@@ -551,10 +966,9 @@ body {
   }
 }
 
-
-/* ═══════════════════════════════════════════════════════════════
-   ACCESSIBILITY STYLES
-   ═══════════════════════════════════════════════════════════════ */
+/* ==========================================================================
+   ACCESSIBILITY
+   ========================================================================== */
 
 /* Keyboard focus styles - only show when using keyboard */
 .keyboard-user *:focus {

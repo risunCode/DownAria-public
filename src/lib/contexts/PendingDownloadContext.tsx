@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { MediaData, PlatformId } from '@/lib/types';
-import { STORAGE_KEYS } from '@/lib/storage/settings';
+import { STORAGE_KEYS } from '@/lib/storage';
 
 export interface QueuedMedia {
   id: string;
@@ -26,9 +26,6 @@ interface PendingDownloadContextType {
 
 const PendingDownloadContext = createContext<PendingDownloadContextType | null>(null);
 
-// Use unified storage key
-const QUEUE_STORAGE_KEY = STORAGE_KEYS.QUEUE;
-
 export function PendingDownloadProvider({ children }: { children: ReactNode }) {
   const [mediaData, setMediaDataState] = useState<MediaData | null>(null);
   const [queue, setQueue] = useState<QueuedMedia[]>([]);
@@ -38,7 +35,7 @@ export function PendingDownloadProvider({ children }: { children: ReactNode }) {
   // Load queue from localStorage on mount
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(QUEUE_STORAGE_KEY);
+      const saved = localStorage.getItem(STORAGE_KEYS.QUEUE);
       if (saved) {
         const parsed = JSON.parse(saved) as QueuedMedia[];
         setQueue(parsed);
@@ -54,9 +51,9 @@ export function PendingDownloadProvider({ children }: { children: ReactNode }) {
     if (!isHydrated) return;
     try {
       if (queue.length > 0) {
-        localStorage.setItem(QUEUE_STORAGE_KEY, JSON.stringify(queue));
+        localStorage.setItem(STORAGE_KEYS.QUEUE, JSON.stringify(queue));
       } else {
-        localStorage.removeItem(QUEUE_STORAGE_KEY);
+        localStorage.removeItem(STORAGE_KEYS.QUEUE);
       }
     } catch {
       // Ignore storage errors
@@ -77,7 +74,7 @@ export function PendingDownloadProvider({ children }: { children: ReactNode }) {
       const updated = [...prev, { id, mediaData: media, platform, addedAt: Date.now() }];
       // Save immediately
       try {
-        localStorage.setItem(QUEUE_STORAGE_KEY, JSON.stringify(updated));
+        localStorage.setItem(STORAGE_KEYS.QUEUE, JSON.stringify(updated));
       } catch {
         // Ignore
       }
@@ -92,9 +89,9 @@ export function PendingDownloadProvider({ children }: { children: ReactNode }) {
       // Save immediately
       try {
         if (updated.length > 0) {
-          localStorage.setItem(QUEUE_STORAGE_KEY, JSON.stringify(updated));
+          localStorage.setItem(STORAGE_KEYS.QUEUE, JSON.stringify(updated));
         } else {
-          localStorage.removeItem(QUEUE_STORAGE_KEY);
+          localStorage.removeItem(STORAGE_KEYS.QUEUE);
         }
       } catch {
         // Ignore
@@ -106,7 +103,7 @@ export function PendingDownloadProvider({ children }: { children: ReactNode }) {
   const clearQueue = useCallback(() => {
     setQueue([]);
     try {
-      localStorage.removeItem(QUEUE_STORAGE_KEY);
+      localStorage.removeItem(STORAGE_KEYS.QUEUE);
     } catch {
       // Ignore
     }

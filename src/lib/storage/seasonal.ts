@@ -52,13 +52,23 @@ export interface SeasonalSettings {
   cardOpacity: number;
   /** Background blur: 0-20 */
   backgroundBlur: number;
+  /** Background zoom: 65-150 */
+  backgroundZoom: number;
+  /** Background sound enabled */
+  backgroundSound: boolean;
+  /** Background volume: 0-100 */
+  backgroundVolume: number;
+  /** Background enabled (can disable without deleting) */
+  backgroundEnabled: boolean;
   /** Random mode rotation interval in seconds (default: 30) */
   randomInterval: number;
 }
 
-const SEASONAL_KEY = 'downaria_seasonal';
-const SEASONAL_DB_NAME = 'downaria_seasonal_db';
-const SEASONAL_STORE_NAME = 'backgrounds';
+import { STORAGE_KEYS } from './settings';
+import { BACKGROUNDS_STORE, openAriaIndexDB } from './aria-indexed-db';
+
+const SEASONAL_KEY = STORAGE_KEYS.SEASONAL;
+const SEASONAL_STORE_NAME = BACKGROUNDS_STORE;
 const MAX_FILE_SIZE = 200 * 1024 * 1024; // 200MB
 
 const DEFAULT_POSITION: BackgroundPosition = { x: 50, y: 50, scale: 1 };
@@ -72,6 +82,10 @@ const DEFAULT_SETTINGS: SeasonalSettings = {
   backgroundOpacity: 20,
   cardOpacity: 85,
   backgroundBlur: 0,
+  backgroundZoom: 100,
+  backgroundSound: false,
+  backgroundVolume: 50,
+  backgroundEnabled: true,
   randomInterval: 30, // 30 seconds default
 };
 
@@ -79,28 +93,8 @@ const DEFAULT_SETTINGS: SeasonalSettings = {
 // INDEXEDDB FOR LARGE BACKGROUNDS
 // ═══════════════════════════════════════════════════════════════
 
-let dbInstance: IDBDatabase | null = null;
-
 async function openSeasonalDB(): Promise<IDBDatabase> {
-  if (dbInstance) return dbInstance;
-  
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(SEASONAL_DB_NAME, 1);
-    
-    request.onerror = () => reject(new Error('Failed to open seasonal database'));
-    
-    request.onsuccess = () => {
-      dbInstance = request.result;
-      resolve(request.result);
-    };
-    
-    request.onupgradeneeded = (event) => {
-      const db = (event.target as IDBOpenDBRequest).result;
-      if (!db.objectStoreNames.contains(SEASONAL_STORE_NAME)) {
-        db.createObjectStore(SEASONAL_STORE_NAME, { keyPath: 'id' });
-      }
-    };
-  });
+  return openAriaIndexDB();
 }
 
 /**
@@ -417,6 +411,34 @@ export function setBackgroundOpacity(opacity: number): void {
  */
 export function setBackgroundBlur(blur: number): void {
   saveSeasonalSettings({ backgroundBlur: Math.max(0, Math.min(20, blur)) });
+}
+
+/**
+ * Set background zoom (65-150)
+ */
+export function setBackgroundZoom(zoom: number): void {
+  saveSeasonalSettings({ backgroundZoom: Math.max(65, Math.min(150, zoom)) });
+}
+
+/**
+ * Set background sound enabled
+ */
+export function setBackgroundSound(enabled: boolean): void {
+  saveSeasonalSettings({ backgroundSound: enabled });
+}
+
+/**
+ * Set background volume (0-100)
+ */
+export function setBackgroundVolume(volume: number): void {
+  saveSeasonalSettings({ backgroundVolume: Math.max(0, Math.min(100, volume)) });
+}
+
+/**
+ * Set background enabled (disable without deleting)
+ */
+export function setBackgroundEnabled(enabled: boolean): void {
+  saveSeasonalSettings({ backgroundEnabled: enabled });
 }
 
 /**

@@ -17,6 +17,7 @@
  */
 
 import type { PlatformId } from '@/lib/types';
+import { openAriaIndexDB, SCRAPER_CACHE_STORE } from './aria-indexed-db';
 
 // ═══════════════════════════════════════════════════════════════
 // TYPES
@@ -65,6 +66,7 @@ export interface CacheStats {
 const TTL_CONFIG: Record<PlatformId, number> = {
   youtube: 2 * 60 * 1000,      // 2 minutes - URLs expire quickly
   instagram: 30 * 60 * 1000,   // 30 minutes
+  threads: 30 * 60 * 1000,     // 30 minutes
   facebook: 30 * 60 * 1000,    // 30 minutes
   tiktok: 30 * 60 * 1000,      // 30 minutes
   twitter: 30 * 60 * 1000,     // 30 minutes
@@ -95,44 +97,10 @@ const STATS_KEY = 'downaria_cache_stats';
 // DATABASE SETUP
 // ═══════════════════════════════════════════════════════════════
 
-const DB_NAME = 'downaria_cache';
-const DB_VERSION = 1;
-const CACHE_STORE = 'scraper_cache';
-
-let db: IDBDatabase | null = null;
+const CACHE_STORE = SCRAPER_CACHE_STORE;
 
 function openDB(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    if (typeof window === 'undefined') {
-      reject(new Error('IndexedDB not available'));
-      return;
-    }
-    
-    if (db) {
-      resolve(db);
-      return;
-    }
-
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-
-    request.onerror = () => reject(request.error);
-    
-    request.onsuccess = () => {
-      db = request.result;
-      resolve(db);
-    };
-
-    request.onupgradeneeded = (event) => {
-      const database = (event.target as IDBOpenDBRequest).result;
-
-      if (!database.objectStoreNames.contains(CACHE_STORE)) {
-        const store = database.createObjectStore(CACHE_STORE, { keyPath: 'key' });
-        store.createIndex('platform', 'platform', { unique: false });
-        store.createIndex('expiresAt', 'expiresAt', { unique: false });
-        store.createIndex('lastAccess', 'lastAccess', { unique: false });
-      }
-    };
-  });
+  return openAriaIndexDB();
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -151,6 +119,11 @@ const CONTENT_ID_EXTRACTORS: Record<PlatformId, (url: string) => string | null> 
     const storyId = url.match(/\/stories\/[^/]+\/(\d+)/i);
     if (storyId) return `story:${storyId[1]}`;
     return null;
+  },
+
+  threads: (url) => {
+    const postId = url.match(/\/@[^/]+\/post\/([A-Za-z0-9_-]+)/i);
+    return postId ? postId[1] : null;
   },
   
   facebook: (url) => {

@@ -1,16 +1,19 @@
 import type { Metadata } from 'next';
-import { ApiOverviewPage } from '@/app/docs/api/ApiOverviewPage';
+import { ApiDocsPage } from '@/app/docs/api/ApiDocsPage';
 
 export const metadata: Metadata = {
-    title: 'API Overview - DownAria Docs',
-    description: 'DownAria API overview. Learn how to integrate video downloading into your applications with our simple REST API.',
-    keywords: ['DownAria API', 'video download API', 'social media API', 'REST API'],
-    openGraph: {
-        title: 'API Overview - DownAria',
-        description: 'Integrate video downloading into your apps with DownAria API',
-    },
+  title: 'API - DownAria Docs',
+  description: 'Complete DownAria API endpoint and error handling reference based on current backend implementation.',
+  keywords: ['DownAria API', 'endpoint reference', 'error codes', 'api v1 extract proxy merge'],
+  alternates: {
+    canonical: '/docs/api',
+  },
+  openGraph: {
+    title: 'API Reference - DownAria',
+    description: 'Endpoints, categories, and error handling guide for DownAria API.',
+  },
 };
 
 export default function Page() {
-    return <ApiOverviewPage />;
+  return <ApiDocsPage />;
 }

@@ -34,21 +34,21 @@
       "short_name": "Download",
       "description": "Start downloading videos",
       "url": "/",
-      "icons": [{ "src": "/icon-512.png", "sizes": "512x512" }]
+      "icons": [{ "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }]
     },
     {
       "name": "History",
       "short_name": "History",
       "description": "View download history",
       "url": "/history",
-      "icons": [{ "src": "/icon-512.png", "sizes": "512x512" }]
+      "icons": [{ "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }]
     },
     {
       "name": "Settings",
       "short_name": "Settings",
       "description": "Configure app settings",
       "url": "/settings",
-      "icons": [{ "src": "/icon-512.png", "sizes": "512x512" }]
+      "icons": [{ "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }]
     }
   ],
   "share_target": {
@@ -61,7 +61,6 @@
       "url": "url"
     }
   },
-  "screenshots": [],
   "related_applications": [],
   "handle_links": "preferred",
   "launch_handler": {

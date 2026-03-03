@@ -1,13 +1,12 @@
 /**
  * Storage Module
  * ==============
- * 5 Storage Keys:
- * 
+ * 4 Storage Keys:
+ *
  * 1. downaria_settings - All user preferences
  * 2. downaria_cookies - All platform cookies (encrypted)
  * 3. downaria_seasonal - Seasonal effects
  * 4. downaria_queue - Pending downloads queue
- * 5. downaria_ai - AI chat sessions
  */
 
 // ═══════════════════════════════════════════════════════════════
@@ -33,10 +32,6 @@ export {
   createFullBackup,
   downloadFullBackupAsZip,
   importFullBackupFromZip,
-  getCachedMedia,
-  setCachedMedia,
-  clearExpiredCache,
-  clearAllCache,
   getStorageStats,
   type FullBackupData,
   type HistoryEntry,
@@ -114,6 +109,10 @@ export {
   setBackgroundPosition,
   setBackgroundOpacity,
   setBackgroundBlur,
+  setBackgroundZoom,
+  setBackgroundSound,
+  setBackgroundVolume,
+  setBackgroundEnabled,
   setCardOpacity,
   setParticleIntensity,
   setParticlesWithBackground,
@@ -159,7 +158,24 @@ export {
   cleanupIfNeeded as cleanupClientCache,
   getCacheStats,
   resetCacheStats,
-  extractContentId,
   type CachedResult,
   type CacheStats,
 } from './client-cache';
+
+export {
+  extractContentId,
+  isStoryLikeContent,
+  makeContentCacheKey,
+} from '../utils/content-id';
+
+export {
+  ContentCache,
+  createContentCache,
+  DEFAULT_CONTENT_CACHE_MAX_ENTRIES,
+  DEFAULT_PLATFORM_TTL_MS,
+  DEFAULT_STORY_CACHE_TTL_MS,
+  type ContentCacheConfig,
+  type ContentCacheEntry,
+  type ContentCacheGetOptions,
+  type ContentCacheSetOptions,
+} from './content-cache';

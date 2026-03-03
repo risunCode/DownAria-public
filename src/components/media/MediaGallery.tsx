@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronLeft, ChevronRight, ChevronDown, Download, Send, Link2, Play, User, Loader2, Check } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, ChevronDown, Download, Send, Link2, Play, User, Loader2, Check, Share2 } from 'lucide-react';
 import Image from 'next/image';
 import { MediaData, MediaFormat, PlatformId } from '@/lib/types';
 import { formatBytes } from '@/lib/utils/format';
@@ -10,21 +10,25 @@ import { getProxiedThumbnail } from '@/lib/api/proxy';
 import { getProxyUrl } from '@/lib/api/proxy';
 import { RichText } from '@/lib/utils/text-parser';
 import { sendDiscordNotification, getUserDiscordSettings } from '@/lib/utils/discord-webhook';
-import { addHistory, type HistoryEntry } from '@/lib/storage';
 import Swal from 'sweetalert2';
+import { SplitButton } from '@/components/ui/SplitButton';
+import { Modal } from '@/components/ui/Modal';
+import { Button } from '@/components/ui/Button';
+import { TrafficLights } from '@/components/ui/TrafficLights';
 
-// Global filesize limit for all platforms (400MB)
-const MAX_FILESIZE_MB = 400;
+// Global filesize limit for all platforms (1GB)
+const MAX_FILESIZE_MB = 1024;
+const MAX_FILESIZE_LABEL = '1GB';
 const MAX_FILESIZE_BYTES = MAX_FILESIZE_MB * 1024 * 1024;
 
 // Shared utilities and components
 import { 
-  extractPostId, 
   groupFormatsByItem, 
+  getDisplayFormatsForPlatform,
+  getMediaFormatIdentity,
   getItemThumbnails,
   findPreferredFormat,
-  canYouTubeAutoplay,
-  getYouTubePreviewNotice,
+  buildSelectorFormats,
   getQualityBadge,
 } from '@/lib/utils/media';
 // Shared download store
@@ -44,11 +48,11 @@ import { DownloadProgress } from '@/components/media/DownloadProgress';
 interface MediaGalleryProps {
   data: MediaData;
   platform: PlatformId;
+  responseJson?: unknown;
   isOpen: boolean;
   onClose: () => void;
   initialIndex?: number;
   initialFormat?: MediaFormat | null;
-  onDownloadComplete?: (entry: HistoryEntry) => void;
 }
 
 interface DownloadState {
@@ -160,7 +164,7 @@ function useSwipeNavigation(
 // MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════════
 
-export function MediaGallery({ data, platform, isOpen, onClose, initialIndex = 0, initialFormat = null, onDownloadComplete }: MediaGalleryProps) {
+export function MediaGallery({ data, platform, responseJson, isOpen, onClose, initialIndex = 0, initialFormat = null }: MediaGalleryProps) {
   const mode = useMediaGalleryMode();
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [selectedFormat, setSelectedFormat] = useState<MediaFormat | null>(initialFormat);
@@ -168,12 +172,14 @@ export function MediaGallery({ data, platform, isOpen, onClose, initialIndex = 0
   const [fileSizes, setFileSizes] = useState<Record<string, string>>({});
   const [discordSent, setDiscordSent] = useState<Record<string, boolean>>({}); // Track per itemId
   const [captionExpanded, setCaptionExpanded] = useState(false);
+  const [showResponseJsonModal, setShowResponseJsonModal] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const loopCountRef = useRef(0);
   const MAX_LOOPS = 8; // Auto-stop after 8 loops (user might be asleep 😴)
   const abortControllerRef = useRef<AbortController | null>(null); // For cancelling downloads
+  const activeDownloadLabel = 'Downloading...';
 
-  // Check if format exceeds global size limit (400MB for all platforms)
+  // Check if format exceeds global size limit (1GB for all platforms)
   const isOverSizeLimit = (format: MediaFormat | null): boolean => {
     if (!format) return false;
     const size = format.filesize || 0;
@@ -188,14 +194,28 @@ export function MediaGallery({ data, platform, isOpen, onClose, initialIndex = 0
   }, [onClose]);
 
   // Memoize grouped formats - only recalculate when formats change
-  const groupedItems = useMemo(() => groupFormatsByItem(data.formats || []), [data.formats]);
-  const itemThumbnails = useMemo(() => getItemThumbnails(data.formats || []), [data.formats]);
+  const displayFormats = useMemo(
+    () => getDisplayFormatsForPlatform(data.formats || [], platform),
+    [data.formats, platform]
+  );
+  const groupedItems = useMemo(() => groupFormatsByItem(displayFormats), [displayFormats]);
+  const itemThumbnails = useMemo(() => getItemThumbnails(displayFormats), [displayFormats]);
   const itemIds = useMemo(() => Object.keys(groupedItems), [groupedItems]);
   const isCarousel = itemIds.length > 1;
   const currentItemId = itemIds[currentIndex] || 'main';
   const currentFormats = groupedItems[currentItemId] || [];
+  const selectorFormats = useMemo(() => {
+    return buildSelectorFormats(currentFormats, platform, true);
+  }, [currentFormats, platform]);
   // Use item-specific thumbnail, fallback to data.thumbnail
   const currentThumbnail = itemThumbnails[currentItemId] || currentFormats[0]?.thumbnail || data.thumbnail;
+  const authorHandle = data.authorUsername;
+  const normalizedAuthorHandle = authorHandle
+    ? authorHandle.startsWith('@')
+      ? authorHandle
+      : `@${authorHandle}`
+    : null;
+  const displayAuthor = data.author || data.authorAlias || normalizedAuthorHandle || 'Unknown';
 
   // Sync initialFormat when modal opens or initialFormat changes
   useEffect(() => {
@@ -246,11 +266,23 @@ export function MediaGallery({ data, platform, isOpen, onClose, initialIndex = 0
 
   // Auto-select format when switching items (only if no initialFormat or user switched manually)
   useEffect(() => {
-    if (currentFormats.length > 0 && !selectedFormat) {
-      const preferred = findPreferredFormat(currentFormats);
-      if (preferred) setSelectedFormat(preferred);
+    if (selectorFormats.length === 0) {
+      if (selectedFormat) setSelectedFormat(null);
+      return;
     }
-  }, [currentFormats, selectedFormat]);
+
+    if (!selectedFormat) {
+      const preferred = findPreferredFormat(selectorFormats) || selectorFormats[0];
+      setSelectedFormat(preferred);
+      return;
+    }
+
+    const selectedIdentity = `${getMediaFormatIdentity(selectedFormat)}|${selectedFormat.url}`;
+    const hasSelection = selectorFormats.some((format) => `${getMediaFormatIdentity(format)}|${format.url}` === selectedIdentity);
+    if (!hasSelection) {
+      setSelectedFormat(selectorFormats[0]);
+    }
+  }, [selectorFormats, selectedFormat]);
 
   // Track if this is initial open (to avoid resetting initialFormat)
   const hasInitialFormat = useRef(false);
@@ -271,7 +303,8 @@ export function MediaGallery({ data, platform, isOpen, onClose, initialIndex = 0
       // Always select preferred format for new item when navigating
       const newItemId = itemIds[currentIndex] || 'main';
       const newFormats = groupedItems[newItemId] || [];
-      const preferred = findPreferredFormat(newFormats);
+      const selectorFormatsForItem = buildSelectorFormats(newFormats, platform, true);
+      const preferred = findPreferredFormat(selectorFormatsForItem);
       setSelectedFormat(preferred || null);
       setDownloadState({ status: 'idle', progress: 0, speed: 0, loaded: 0, total: 0, eta: 0 });
       loopCountRef.current = 0; // Reset loop counter on item change
@@ -282,7 +315,7 @@ export function MediaGallery({ data, platform, isOpen, onClose, initialIndex = 0
       }
     }
     prevIndex.current = currentIndex;
-  }, [currentIndex, itemIds, groupedItems]);
+  }, [currentIndex, itemIds, groupedItems, platform]);
 
   // Reset loop counter when format changes
   useEffect(() => {
@@ -308,64 +341,21 @@ export function MediaGallery({ data, platform, isOpen, onClose, initialIndex = 0
     }
   }, []);
 
-  // Fetch file sizes (batch + parallel) - use backend sizes if available, fallback to proxy fetch
+  // Populate file sizes from backend JSON only (no frontend HEAD requests)
   useEffect(() => {
     if (!isOpen) return;
     
-    // First: populate from backend filesize (all platforms including YouTube)
     const backendSizes: Record<string, string> = {};
     Object.values(groupedItems).forEach(formats => {
       formats.forEach(f => {
-        if (f.filesize && f.filesize > 0 && !fileSizes[f.url]) {
+        if (f.filesize && f.filesize > 0) {
           backendSizes[f.url] = formatBytes(f.filesize);
         }
       });
     });
-    
-    if (Object.keys(backendSizes).length > 0) {
-      setFileSizes(prev => ({ ...prev, ...backendSizes }));
-    }
-    
-    // Skip proxy fetch for YouTube (backend already provides sizes)
-    if (platform === 'youtube') return;
-    
-    const fetchSizes = async () => {
-      // Collect formats that don't have size yet (not from backend, not already fetched)
-      const allFormats: MediaFormat[] = [];
-      Object.values(groupedItems).forEach(formats => {
-        formats.forEach(f => {
-          if (!fileSizes[f.url] && !backendSizes[f.url] && !f.filesize) {
-            allFormats.push(f);
-          }
-        });
-      });
-      
-      if (allFormats.length === 0) return;
-      
-      // Fetch all in parallel
-      const results = await Promise.allSettled(
-        allFormats.map(async (format) => {
-          const res = await fetch(getProxyUrl(format.url, { platform, head: true }));
-          const size = res.headers.get('x-file-size');
-          return { url: format.url, size: size && parseInt(size) > 0 ? formatBytes(parseInt(size)) : null };
-        })
-      );
-      
-      // Batch update state once
-      const newSizes: Record<string, string> = {};
-      results.forEach((result) => {
-        if (result.status === 'fulfilled' && result.value.size) {
-          newSizes[result.value.url] = result.value.size;
-        }
-      });
-      
-      if (Object.keys(newSizes).length > 0) {
-        setFileSizes(prev => ({ ...prev, ...newSizes }));
-      }
-    };
-    
-    fetchSizes();
-  }, [platform, isOpen, groupedItems]); // Fetch all formats when modal opens
+
+    setFileSizes(backendSizes);
+  }, [isOpen, groupedItems]);
 
   // Navigation
   const goToPrev = useCallback(() => {
@@ -433,6 +423,10 @@ export function MediaGallery({ data, platform, isOpen, onClose, initialIndex = 0
   // Download handler - uses unified helper
   const handleDownload = async () => {
     if (!selectedFormat) return;
+
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
     setDownloadState({ status: 'downloading', progress: 0, speed: 0, loaded: 0, total: 0, eta: 0 });
     // Update global store for sync with DownloadPreview
     setGlobalDownloadProgress(data.url, { status: 'downloading', percent: 0, loaded: 0, total: 0, speed: 0 });
@@ -460,9 +454,14 @@ export function MediaGallery({ data, platform, isOpen, onClose, initialIndex = 0
           speed: progress.speed,
           message: progress.message,
         });
-      });
+      }, abortController.signal);
 
       if (!result.success) {
+        if (result.error === 'Download cancelled') {
+          setDownloadState({ status: 'idle', progress: 0, speed: 0, loaded: 0, total: 0, eta: 0 });
+          setGlobalDownloadProgress(data.url, { status: 'idle', percent: 0, loaded: 0, total: 0, speed: 0 });
+          return;
+        }
         throw new Error(result.error || 'Download failed');
       }
 
@@ -474,38 +473,17 @@ export function MediaGallery({ data, platform, isOpen, onClose, initialIndex = 0
       setDownloadState({ status: 'done', progress: 100, speed: 0, loaded: result.blob?.size || 0, total: result.blob?.size || 0, eta: 0 });
       setGlobalDownloadProgress(data.url, { status: 'done', percent: 100, loaded: 0, total: 0, speed: 0 });
 
-      // Add to history
-      const historyId = await addHistory({
-        platform,
-        contentId: extractPostId(data.url),
-        resolvedUrl: data.url,
-        title: data.title || 'Untitled',
-        thumbnail: currentThumbnail || '',
-        author: data.author || 'Unknown',
-        quality: selectedFormat.quality,
-        type: selectedFormat.type,
-      });
-
-      if (onDownloadComplete) {
-        onDownloadComplete({
-          id: historyId,
-          platform,
-          contentId: extractPostId(data.url),
-          resolvedUrl: data.url,
-          title: data.title || 'Untitled',
-          thumbnail: currentThumbnail || '',
-          author: data.author || 'Unknown',
-          downloadedAt: Date.now(),
-          quality: selectedFormat.quality,
-          type: selectedFormat.type,
-        });
-      }
-
       setTimeout(() => {
         setDownloadState(prev => ({ ...prev, status: 'idle' }));
         setGlobalDownloadProgress(data.url, { status: 'idle', percent: 0, loaded: 0, total: 0, speed: 0 });
       }, 3000);
     } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        setDownloadState({ status: 'idle', progress: 0, speed: 0, loaded: 0, total: 0, eta: 0 });
+        setGlobalDownloadProgress(data.url, { status: 'idle', percent: 0, loaded: 0, total: 0, speed: 0 });
+        return;
+      }
+
       console.error('Download error:', err);
       setDownloadState({ status: 'error', progress: 0, speed: 0, loaded: 0, total: 0, eta: 0 });
       setGlobalDownloadProgress(data.url, { status: 'error', percent: 0, loaded: 0, total: 0, speed: 0 });
@@ -513,8 +491,20 @@ export function MediaGallery({ data, platform, isOpen, onClose, initialIndex = 0
         setDownloadState(prev => ({ ...prev, status: 'idle' }));
         setGlobalDownloadProgress(data.url, { status: 'idle', percent: 0, loaded: 0, total: 0, speed: 0 });
       }, 3000);
+    } finally {
+      abortControllerRef.current = null;
     }
   };
+
+  const cancelDownload = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+
+    setDownloadState({ status: 'idle', progress: 0, speed: 0, loaded: 0, total: 0, eta: 0 });
+    setGlobalDownloadProgress(data.url, { status: 'idle', percent: 0, loaded: 0, total: 0, speed: 0 });
+  }, [data.url]);
 
   // Discord handler
   const handleDiscord = async () => {
@@ -567,6 +557,53 @@ export function MediaGallery({ data, platform, isOpen, onClose, initialIndex = 0
     Swal.fire({ icon: 'success', title: 'Link Copied!', toast: true, position: 'top-end', timer: 1500, showConfirmButton: false, background: 'var(--bg-card)', color: 'var(--text-primary)' });
   };
 
+  const responseJsonText = useMemo(() => {
+    try {
+      return JSON.stringify(responseJson ?? data, null, 2);
+    } catch {
+      return JSON.stringify({ error: 'Unable to serialize response JSON' }, null, 2);
+    }
+  }, [responseJson, data]);
+
+  const handleCopyResponse = useCallback(async () => {
+    if (!navigator.clipboard?.writeText) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Clipboard Unavailable',
+        text: 'Copy is not supported in this browser.',
+        background: 'var(--bg-card)',
+        color: 'var(--text-primary)',
+      });
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(responseJsonText);
+      Swal.fire({
+        icon: 'success',
+        title: 'Response Copied',
+        toast: true,
+        position: 'top-end',
+        timer: 1800,
+        showConfirmButton: false,
+        background: 'var(--bg-card)',
+        color: 'var(--text-primary)',
+      });
+    } catch {
+      Swal.fire({
+        icon: 'error',
+        title: 'Copy Failed',
+        text: 'Failed to copy response JSON.',
+        toast: true,
+        position: 'top-end',
+        timer: 2600,
+        showConfirmButton: false,
+        background: 'var(--bg-card)',
+        color: 'var(--text-primary)',
+      });
+    }
+  }, [responseJsonText]);
+
   const content = (
     <>
       {/* Media Preview - max height to prevent overflow */}
@@ -607,7 +644,7 @@ export function MediaGallery({ data, platform, isOpen, onClose, initialIndex = 0
                 poster={currentThumbnail ? getProxiedThumbnail(currentThumbnail, platform) : undefined}
                 className="w-full h-full object-contain"
                 controls
-                autoPlay={canYouTubeAutoplay(selectedFormat, platform)}
+                autoPlay={platform !== 'youtube'}
                 playsInline
                 onEnded={handleVideoEnded}
               />
@@ -648,7 +685,7 @@ export function MediaGallery({ data, platform, isOpen, onClose, initialIndex = 0
                 src={getProxyUrl(selectedFormat.url, { platform, inline: true })}
                 className="w-full"
                 controls
-                autoPlay
+                autoPlay={platform !== 'youtube'}
               />
               <p className="text-xs text-white/60 text-center">🎵 Audio Only</p>
             </div>
@@ -764,12 +801,22 @@ export function MediaGallery({ data, platform, isOpen, onClose, initialIndex = 0
             <User className="w-5 h-5 text-[var(--text-muted)]" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-medium text-[var(--text-primary)] truncate">{data.author || 'Unknown'}</p>
+            <p className="font-medium text-[var(--text-primary)] truncate">{displayAuthor}</p>
+            {normalizedAuthorHandle && (
+              <p className="text-xs text-[var(--text-muted)] truncate">{normalizedAuthorHandle}</p>
+            )}
             <p className="text-xs text-[var(--text-muted)]">{platform.charAt(0).toUpperCase() + platform.slice(1)}</p>
           </div>
           {/* Response time badge */}
           {data.responseTime && (
-            <span className="px-2 py-1 text-[10px] rounded-full bg-blue-500/20 text-blue-400">⚡ {data.responseTime}ms</span>
+            <button
+              type="button"
+              onClick={() => setShowResponseJsonModal(true)}
+              className="px-2 py-1 text-[10px] rounded-full bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors"
+              title="View response JSON"
+            >
+              ⚡ {data.responseTime}ms
+            </button>
           )}
           {/* Public/Private badge */}
           <span className={`px-2 py-1 text-[10px] rounded-full ${
@@ -782,7 +829,7 @@ export function MediaGallery({ data, platform, isOpen, onClose, initialIndex = 0
         </div>
 
         {/* Engagement - right after author */}
-        {data.engagement && <EngagementDisplay engagement={data.engagement} className="text-[var(--text-muted)]" />}
+        {data.engagement && <EngagementDisplay engagement={data.engagement} className="text-[11px] text-[var(--text-muted)]" />}
 
         {/* Caption/Description - with show more/less */}
         {data.description && (
@@ -803,10 +850,11 @@ export function MediaGallery({ data, platform, isOpen, onClose, initialIndex = 0
 
         {/* Quality Selector - Pills with size */}
         <FormatSelector
-          formats={currentFormats}
+          formats={selectorFormats}
           selected={selectedFormat}
           onSelect={setSelectedFormat}
           getSize={(f) => fileSizes[f.url] || null}
+          platform={platform}
         />
 
         {/* YouTube size estimation notice */}
@@ -823,69 +871,97 @@ export function MediaGallery({ data, platform, isOpen, onClose, initialIndex = 0
   // Action buttons - rendered in sticky footer
   const actionButtons = (
     <div className="p-4 space-y-3 border-t border-[var(--border-color)]/50 bg-[var(--bg-card)]">
-      {/* YouTube Size Limit Warning */}
-      {platform === 'youtube' && isOverSizeLimit(selectedFormat) && (
+      {/* Size Limit Warning */}
+      {isOverSizeLimit(selectedFormat) && (
         <div className="px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs flex items-center gap-2">
           <span>🚫</span>
-          <span>File terlalu besar (max {MAX_FILESIZE_MB}MB). Pilih kualitas yang lebih rendah.</span>
+          <span>File terlalu besar (max {MAX_FILESIZE_LABEL} / {MAX_FILESIZE_MB}MB). Pilih kualitas yang lebih rendah.</span>
         </div>
       )}
       
       {/* Actions */}
       <div className="flex gap-2">
-        <button
-          onClick={handleDownload}
-          disabled={downloadState.status === 'downloading' || !selectedFormat || isOverSizeLimit(selectedFormat)}
-          title={isOverSizeLimit(selectedFormat) ? `File terlalu besar (max ${MAX_FILESIZE_MB}MB)` : undefined}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[var(--accent-primary)] text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
-        >
-          {isOverSizeLimit(selectedFormat) ? (
-            <>
-              <Download className="w-5 h-5" />
-              Terlalu besar (max {MAX_FILESIZE_MB}MB)
-            </>
-          ) : downloadState.status === 'downloading' ? (
-            <>
-              <Loader2 className="w-5 h-5 animate-spin" />
-              {downloadState.message || (
-                downloadState.loaded > 0 
-                  ? `${(downloadState.loaded / 1024 / 1024).toFixed(1)}MB${downloadState.speed > 0 ? ` · ${(downloadState.speed / 1024 / 1024).toFixed(1)}MB/s` : ''}`
-                  : `${downloadState.progress}%`
-              )}
-            </>
-          ) : downloadState.status === 'done' ? (
-            <>
-              <Check className="w-5 h-5" />
-              Downloaded!
-            </>
-          ) : (
-            <>
-              <Download className="w-5 h-5" />
-              {(() => {
-                const quality = selectedFormat?.quality || 'Download';
-                // For generic "Image X" quality, just show "Download"
-                const isGenericImage = quality.toLowerCase().startsWith('image');
-                return isGenericImage ? 'Download' : quality;
-              })()}
-              {selectedFormat && fileSizes[selectedFormat.url] && ` (${fileSizes[selectedFormat.url]})`}
-            </>
-          )}
-        </button>
-        <button
-          onClick={handleDiscord}
+        {downloadState.status === 'downloading' ? (
+          <div className="downaria-downloading-row flex-1">
+            <Button
+              size="sm"
+              variant="secondary"
+              className="flex-1"
+              disabled
+              leftIcon={<Loader2 className="w-4 h-4 animate-spin" />}
+            >
+              {activeDownloadLabel}
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={cancelDownload}
+              className="downaria-cancel-btn"
+            >
+              Cancel
+            </Button>
+          </div>
+        ) : (
+          <SplitButton
+            label={(() => {
+              if (isOverSizeLimit(selectedFormat)) return `Max ${MAX_FILESIZE_LABEL}`;
+              if (downloadState.status === 'done') return 'Done!';
+              return 'Download';
+            })()}
+            icon={downloadState.status === 'done' ? <Check className="w-4 h-4" /> : <Download className="w-4 h-4" />}
+            onMainClick={handleDownload}
+            disabled={!selectedFormat || isOverSizeLimit(selectedFormat)}
+            size="sm"
+            variant="primary"
+            className="flex-1"
+            options={[
+              {
+                id: 'download-current',
+                label: 'This Item',
+                icon: <Download className="w-4 h-4" />,
+                description: selectedFormat && fileSizes[selectedFormat.url] ? fileSizes[selectedFormat.url] : 'Current selection',
+                onClick: handleDownload,
+              },
+              {
+                id: 'copy-media-link',
+                label: 'Copy Media URL',
+                icon: <Link2 className="w-4 h-4" />,
+                description: 'Copy selected format URL',
+                onClick: () => {
+                  if (selectedFormat?.url) {
+                    navigator.clipboard.writeText(selectedFormat.url);
+                  }
+                },
+              },
+            ]}
+          />
+        )}
+
+        <SplitButton
+          label={'Share'}
+          icon={discordSent[currentItemId] ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
+          onMainClick={handleDiscord}
           disabled={discordSent[currentItemId]}
-          className="p-3 rounded-xl bg-[#5865F2] text-white hover:opacity-90 transition-opacity disabled:opacity-50"
-          title="Send to Discord"
-        >
-          {discordSent[currentItemId] ? <Check className="w-5 h-5" /> : <Send className="w-5 h-5" />}
-        </button>
-        <button
-          onClick={handleCopyLink}
-          className="p-3 rounded-xl bg-[var(--bg-secondary)] text-[var(--text-primary)] hover:bg-[var(--bg-card)] transition-colors"
-          title="Copy Link"
-        >
-          <Link2 className="w-5 h-5" />
-        </button>
+          size="sm"
+          variant="secondary"
+          options={[
+            {
+              id: 'discord',
+              label: 'Send to Discord',
+              icon: <Send className="w-4 h-4" />,
+              description: discordSent[currentItemId] ? 'Already sent' : 'Send via webhook',
+              onClick: handleDiscord,
+              disabled: discordSent[currentItemId],
+            },
+            {
+              id: 'copy-source',
+              label: 'Copy Link',
+              icon: <Link2 className="w-4 h-4" />,
+              description: 'Copy source URL',
+              onClick: handleCopyLink,
+            },
+          ]}
+        />
       </div>
 
       {/* Download Progress Bar - Real-time */}
@@ -896,7 +972,7 @@ export function MediaGallery({ data, platform, isOpen, onClose, initialIndex = 0
             loaded: downloadState.loaded,
             total: downloadState.total,
             speed: downloadState.speed,
-            eta: downloadState.eta,
+            status: downloadState.status,
             message: downloadState.message
           }}
         />
@@ -905,10 +981,56 @@ export function MediaGallery({ data, platform, isOpen, onClose, initialIndex = 0
   );
 
   // Render based on mode
-  return mode === 'fullscreen' ? (
+  const galleryShell = mode === 'fullscreen' ? (
     <FullscreenWrapper isOpen={isOpen} onClose={handleClose} footer={actionButtons}>{content}</FullscreenWrapper>
   ) : (
     <ModalWrapper isOpen={isOpen} onClose={handleClose} footer={actionButtons}>{content}</ModalWrapper>
+  );
+
+  return (
+    <>
+      {galleryShell}
+      <Modal
+        isOpen={showResponseJsonModal}
+        onClose={() => setShowResponseJsonModal(false)}
+        size="xl"
+        title="Response JSON"
+        showTitle
+        bodyClassName="p-4"
+        panelClassName="response-json-modal-panel max-w-2xl w-[min(92vw,860px)] rounded-2xl overflow-hidden"
+        header={(
+          <>
+            <div className="relative">
+              <TrafficLights onClose={() => setShowResponseJsonModal(false)} title="Response JSON" />
+              <button
+                type="button"
+                onClick={() => setShowResponseJsonModal(false)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 inline-flex items-center gap-1.5 text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+              >
+                <span>Sembunyikan</span>
+                <ChevronDown className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="px-6 pt-4 flex items-center justify-between gap-3">
+              <h2 id="modal-title" className="text-lg font-semibold text-[var(--text-primary)]">
+                Response JSON
+              </h2>
+              <button
+                type="button"
+                onClick={handleCopyResponse}
+                className="inline-flex items-center rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] px-3 py-1.5 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]"
+              >
+                Copy response
+              </button>
+            </div>
+          </>
+        )}
+      >
+        <pre className="max-h-[60vh] overflow-auto rounded-lg bg-[var(--bg-secondary)] p-3 text-xs text-[var(--text-secondary)] whitespace-pre-wrap break-words">
+          {responseJsonText}
+        </pre>
+      </Modal>
+    </>
   );
 }
 
@@ -927,7 +1049,7 @@ function ModalWrapper({ children, isOpen, onClose, footer }: { children: React.R
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          className="modal-theme-backdrop fixed inset-0 z-50 flex items-center justify-center p-4"
           onClick={onClose}
         >
           <motion.div
@@ -940,7 +1062,7 @@ function ModalWrapper({ children, isOpen, onClose, footer }: { children: React.R
             onClick={e => e.stopPropagation()}
           >
             {/* Frosted Glass Title Bar with Traffic Lights */}
-            <div className="flex-shrink-0 px-3 py-2.5 bg-[var(--bg-card)]/80 backdrop-blur-md border-b border-[var(--border-color)]/50">
+            <div className="modal-theme-titlebar flex-shrink-0 px-3 py-2.5">
               <div className="flex items-center gap-2">
                 <button
                   onClick={onClose}
@@ -1153,7 +1275,7 @@ function FullscreenWrapper({ children, isOpen, onClose, footer }: { children: Re
             animate={{ opacity: 0.5 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-50 bg-black"
+            className="modal-theme-backdrop fixed inset-0 z-50"
             onClick={onClose}
           />
           
@@ -1174,7 +1296,7 @@ function FullscreenWrapper({ children, isOpen, onClose, footer }: { children: Re
             }}
           >
             {/* Header with traffic lights and hide panel */}
-            <div className="sticky top-0 z-10 bg-[var(--bg-card)] border-b border-[var(--border-color)]/50">
+            <div className="modal-theme-titlebar sticky top-0 z-10">
               {/* Single row: Traffic Lights + Preview + Hide Panel */}
               <div className="flex items-center justify-between px-4 py-3">
                 {/* Left: Traffic Lights + Preview */}

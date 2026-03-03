@@ -13,30 +13,6 @@ export const fetcher = async <T>(url: string): Promise<T> => {
     return res.json();
 };
 
-// Fetcher with credentials (for admin APIs)
-export const adminFetcher = async <T>(url: string): Promise<T> => {
-    const res = await fetch(url, { credentials: 'include' });
-    if (!res.ok) {
-        const error = new Error('An error occurred while fetching the data.');
-        throw error;
-    }
-    return res.json();
-};
-
-// POST fetcher for mutations
-export const postFetcher = async <T>(url: string, data: unknown): Promise<T> => {
-    const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-    });
-    if (!res.ok) {
-        const error = new Error('An error occurred while posting the data.');
-        throw error;
-    }
-    return res.json();
-};
-
 // SWR Configuration presets
 export const SWR_CONFIG = {
     // For data that rarely changes (platform status, settings)

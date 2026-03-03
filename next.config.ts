@@ -14,12 +14,10 @@ const CSP_DIRECTIVES = {
   'font-src': ["'self'", "data:"],
   'connect-src': [
     "'self'",
-    "https://*.supabase.co",
     "https://*.railway.app",
     "https://*.vercel.app",
     "https://va.vercel-scripts.com",
     "https://discord.com",
-    "wss://*.supabase.co",
     // API URL from environment variable
     ...(apiUrl ? [apiUrl] : []),
   ],

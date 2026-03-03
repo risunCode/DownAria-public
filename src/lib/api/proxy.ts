@@ -1,9 +1,7 @@
 /**
  * Proxy URL Helper
- * Builds proxy URLs pointing to backend API
+ * Builds proxy URLs via frontend BFF routes
  */
-
-import { API_URL } from '@/lib/config';
 import type { PlatformId } from '@/lib/types';
 
 export function getProxyUrl(url: string, options?: {
@@ -12,6 +10,7 @@ export function getProxyUrl(url: string, options?: {
     inline?: boolean;
     head?: boolean;
     hls?: boolean;
+    download?: boolean;
 }): string {
     const params = new URLSearchParams();
     params.set('url', url);
@@ -21,8 +20,9 @@ export function getProxyUrl(url: string, options?: {
     if (options?.inline) params.set('inline', '1');
     if (options?.head) params.set('head', '1');
     if (options?.hls) params.set('hls', '1');
-    
-    return `${API_URL}/api/v1/proxy?${params.toString()}`;
+    if (options?.download) params.set('download', '1');
+
+    return `/api/web/proxy?${params.toString()}`;
 }
 
 /**

@@ -1,22 +1,21 @@
 'use client';
 
-import { SidebarLayout } from '@/components/Sidebar';
-import { HistoryList } from '@/components/HistoryList';
-import AnnouncementBanner from '@/components/AnnouncementBanner';
+import { SidebarLayout } from '@/components/layout/Sidebar';
+import { HistoryList } from '@/components/download/HistoryList';
 import { motion } from 'framer-motion';
 import { Shield, HardDrive } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { Suspense } from 'react';
 
 export default function HistoryPage() {
     const t = useTranslations('history');
     
     return (
         <SidebarLayout>
-            <div className="py-8 px-6 lg:px-12">
+            <div className="py-6 px-3 sm:py-8 sm:px-6 lg:px-12">
                 <div className="max-w-4xl mx-auto">
                     {/* Announcements */}
-                    <AnnouncementBanner page="history" />
-                    
+
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -52,7 +51,10 @@ export default function HistoryPage() {
                             </div>
                         </motion.div>
 
-                        <HistoryList />
+                        <Suspense fallback={null}>
+                            <HistoryList />
+                        </Suspense>
+
                     </motion.div>
                 </div>
             </div>

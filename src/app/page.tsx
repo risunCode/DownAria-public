@@ -1,39 +1,29 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense, useCallback, useMemo, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { AlertTriangle, RotateCcw, Settings } from 'lucide-react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { SidebarLayout } from '@/components/Sidebar';
-import { DownloadForm } from '@/components/DownloadForm';
-import { DownloadPreview } from '@/components/DownloadPreview';
-import { HistoryList } from '@/components/HistoryList';
+import { SidebarLayout } from '@/components/layout/Sidebar';
+import { DownloadForm } from '@/components/download/DownloadForm';
+import { DownloadPreview } from '@/components/download/DownloadPreview';
+import { HistoryList } from '@/components/download/HistoryList';
+import { RateLimitModal } from '@/components/ui/RateLimitModal';
 
 import { CardSkeleton } from '@/components/ui/Card';
 import { MagicIcon, BoltIcon, LayersIcon, LockIcon } from '@/components/ui/Icons';
-import { MaintenanceMode } from '@/components/MaintenanceMode';
-import AnnouncementBanner from '@/components/AnnouncementBanner';
-import CompactAdDisplay from '@/components/CompactAdDisplay';
-import { useMaintenanceStatus } from '@/hooks/useMaintenanceStatus';
-import { useStatus } from '@/hooks/useStatus';
 import { PlatformId, MediaData } from '@/lib/types';
-
-import { getPlatformCookie, clearPlatformCookie, getSkipCache } from '@/lib/storage';
+import { ErrorActionTypes } from '@/lib/errors';
+import { addHistory } from '@/lib/storage';
 import { platformDetect, sanitizeUrl } from '@/lib/utils/format';
-import Swal from 'sweetalert2';
-import { analyzeNetworkError, isOnline } from '@/lib/utils/network';
-import { fetchMediaWithCache } from '@/hooks/useScraperCache';
+import { useMediaExtraction } from '@/hooks/useMediaExtraction';
 
 // ============================================================================
 // CONSTANTS
 // ============================================================================
 
-const TITLE_VARIANTS = ['Social Media', 'Facebook', 'Instagram', 'TikTok', 'Twitter', 'Weibo'];
-
-const SWAL_CONFIG = {
-  background: 'var(--bg-card)',
-  color: 'var(--text-primary)',
-  confirmButtonColor: 'var(--accent-primary)',
-};
+const TITLE_VARIANTS = ['Social Media', 'Facebook', 'Instagram', 'Twitter / X', 'Pixiv', 'YouTube Music'];
 
 // ============================================================================
 // COMPONENTS
@@ -70,283 +60,178 @@ function AnimatedTitle() {
   );
 }
 
-// ============================================================================
-// ERROR HANDLERS
-// ============================================================================
-
-function showError(title: string, message: string, options?: {
-  showSettings?: boolean;
-  showAdvanced?: boolean;
-  showRetry?: boolean;
-  onRetry?: () => void;
-  icon?: 'error' | 'warning' | 'info';
-  buttonColor?: string;
-}) {
-  const { showSettings, showAdvanced, showRetry, onRetry, icon = 'error', buttonColor } = options || {};
-
-  Swal.fire({
-    icon,
-    title,
-    text: message,
-    ...SWAL_CONFIG,
-    confirmButtonColor: buttonColor || SWAL_CONFIG.confirmButtonColor,
-    showCancelButton: showSettings || showAdvanced || showRetry,
-    confirmButtonText: showSettings ? '⚙️ Settings' : showAdvanced ? '🔧 Advanced' : showRetry ? '🔄 Retry' : 'OK',
-    cancelButtonText: 'Close',
-  }).then((result) => {
-    if (result.isConfirmed) {
-      if (showSettings) window.location.href = '/settings';
-      if (showAdvanced) window.location.href = '/advanced';
-      if (showRetry && onRetry) onRetry();
-    }
-  });
-}
-
-function showNetworkError(error: unknown, onRetry?: () => void) {
-  const status = analyzeNetworkError(error);
-
-  const iconMap = {
-    'offline': '📡',
-    'timeout': '⏱️',
-    'server-error': '🔧',
-    'cors': '🚫',
-    'unknown': '❌',
-  };
-
-  const message = !status.online
-    ? `${status.suggestion} Check your WiFi or mobile data connection.`
-    : status.suggestion;
-
-  showError(`${iconMap[status.type]} ${status.message}`, message, {
-    icon: status.type === 'server-error' ? 'warning' : 'error',
-    buttonColor: '#6366f1',
-    showRetry: true,
-    onRetry,
-  });
-}
-
-function handleMetaError(errorMsg: string, platform: 'facebook' | 'instagram') {
-  const hasCookie = !!getPlatformCookie(platform);
-  const displayMsg = errorMsg.length > 100 ? errorMsg.substring(0, 100) + '...' : errorMsg;
-
-  if (hasCookie) {
-    showError('Extraction Failed', `${displayMsg} ⚠️ Cookie is set but extraction still failed. Try: Refresh cookie, use HTML extractor in Advanced, or the post may be restricted.`, { showAdvanced: true });
-  } else {
-    showError('Failed to Fetch', `${displayMsg} This content may be private. Add your cookie in Settings to access.`, { showSettings: true, buttonColor: '#f59e0b' });
-  }
-}
-
-export default function Home() {
-  const [platform, setPlatform] = useState<PlatformId>('facebook');
-  const [isLoading, setIsLoading] = useState(false);
-
-  const [mediaData, setMediaData] = useState<MediaData | null>(null);
+function HomeContent() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const {
+    platform,
+    isLoading,
+    mediaData,
+    error: extractionError,
+    responseJson,
+    extract,
+    retry,
+    reset,
+    setPlatform,
+  } = useMediaExtraction({ initialPlatform: 'facebook' });
   const [historyRefresh, setHistoryRefresh] = useState(0);
+  const [rateLimitModalOpen, setRateLimitModalOpen] = useState(false);
+  const [lastSubmittedUrl, setLastSubmittedUrl] = useState<string | null>(null);
+  const [lastDetectedPlatform, setLastDetectedPlatform] = useState<PlatformId>('facebook');
+  const lastPersistedHistoryKeyRef = useRef<string | null>(null);
+  const lastRefetchKeyRef = useRef<string | null>(null);
   const t = useTranslations('home');
-  const tErrors = useTranslations('errors');
-
-  // Check maintenance status
-  const { isFullMaintenance, isApiMaintenance, message: maintenanceMessage } = useMaintenanceStatus();
-  
-  // Get platform status
-  const { platforms: platformStatus } = useStatus();
-
-  // Show maintenance page if full maintenance is active
-  if (isFullMaintenance) {
-    return <MaintenanceMode message={maintenanceMessage} />;
-  }
-
-  // Unified fetch for all platforms using client-side cache
-  const fetchMedia = async (url: string, cookie?: string): Promise<{ success: boolean; data?: MediaData; error?: string; errorCode?: string; fromCache?: boolean }> => {
-    const skipCache = getSkipCache();
-    return fetchMediaWithCache(url, cookie, skipCache);
-  };
 
   const handleDownloadComplete = () => {
     setHistoryRefresh(prev => prev + 1);
   };
 
-
-  const handleSubmit = async (url: string) => {
-    setIsLoading(true);
-    setMediaData(null);
-
-    // Check API maintenance FIRST - fast fail
-    if (isApiMaintenance) {
-      setIsLoading(false);
-      showError('🔧 Under Maintenance', maintenanceMessage || 'API service is under maintenance. Please try again later.', { icon: 'warning' });
-      return;
-    }
-
-    const sanitizedUrl = sanitizeUrl(url);
-    const detectedPlatform = platformDetect(sanitizedUrl) || platform;
-
-    if (detectedPlatform !== platform) {
-      setPlatform(detectedPlatform);
-    }
-
-    // Check if platform is enabled
-    const platformInfo = platformStatus.find(p => p.id === detectedPlatform);
-    if (platformInfo && !platformInfo.enabled) {
-      setIsLoading(false);
-      showError('🔧 Platform Offline', `${platformInfo.name} is temporarily unavailable. Please try again later.`, { icon: 'warning' });
-      return;
-    }
-
-    // Rate limiting handled by server API
-    // Client-side caching moved to IndexedDB (handled by HistoryList)
+  const persistExtractHistory = useCallback(async (extractResult: MediaData, sourceUrl: string, fallbackPlatform: PlatformId) => {
+    const firstFormat = extractResult.formats?.[0];
+    const detectedPlatform = (extractResult.platform as PlatformId | undefined) || fallbackPlatform;
 
     try {
-      // Get platform cookie if available
-      let platformCookie: string | undefined;
-      if (detectedPlatform === 'weibo') {
-        platformCookie = getPlatformCookie('weibo') || undefined;
-      } else if (['facebook', 'instagram'].includes(detectedPlatform)) {
-        platformCookie = getPlatformCookie(detectedPlatform as 'facebook' | 'instagram') || undefined;
-      }
+      await addHistory({
+        platform: detectedPlatform,
+        contentId: sourceUrl,
+        resolvedUrl: sourceUrl,
+        title: extractResult.title || 'Untitled',
+        thumbnail: extractResult.thumbnail || '',
+        author: extractResult.author || 'Unknown',
+        quality: firstFormat?.quality || 'Extracted',
+        type: firstFormat?.type || 'video',
+      });
 
-      // Unified API call for all platforms
-      const result = await fetchMedia(sanitizedUrl, platformCookie);
-
-      if (result.success && result.data) {
-        // Use usedCookie from API response - scraper knows if cookie was actually used
-        const mediaResult = { ...result.data, usedCookie: result.data.usedCookie === true };
-        setMediaData(mediaResult);
-        // Caching handled by IndexedDB when download completes
-        return;
-      }
-
-      // Handle Weibo cookie errors
-      if (detectedPlatform === 'weibo') {
-        if (result.error === 'COOKIE_EXPIRED') {
-          clearPlatformCookie('weibo');
-        }
-
-        if (result.error?.includes('cookie') || result.error?.includes('Cookie') || result.error === 'COOKIE_REQUIRED') {
-          setIsLoading(false);
-
-          const { isConfirmed } = await Swal.fire({
-            icon: 'warning',
-            title: tErrors('weiboCookie.title'),
-            text: `${tErrors('weiboCookie.message')} ${tErrors('weiboCookie.expired')} ${tErrors('weiboCookie.hint')}`,
-            showCancelButton: true,
-            confirmButtonText: tErrors('weiboCookie.goToSettings'),
-            cancelButtonText: 'Cancel',
-            background: '#1a1a1a',
-            color: '#fff',
-            confirmButtonColor: '#6366f1',
-          });
-
-          if (isConfirmed) {
-            window.location.href = '/settings';
-          }
-          return;
-        }
-      }
-
-      // Handle specific error codes from backend
-      const errorCode = result.errorCode;
-      const errorMessage = result.error || 'Failed to fetch';
-
-      // Map error codes to user-friendly messages
-      if (errorCode) {
-        switch (errorCode) {
-          case 'MAINTENANCE':
-            showError('🔧 Under Maintenance', errorMessage || 'Service is under maintenance. Please try again later.', { icon: 'warning' });
-            return;
-          case 'PLATFORM_DISABLED':
-            showError('🔧 Platform Offline', errorMessage || 'This platform is temporarily unavailable. Please try again later.', { icon: 'warning' });
-            return;
-          case 'PRIVATE_CONTENT':
-          case 'COOKIE_REQUIRED':
-          case 'AGE_RESTRICTED':
-            showError('🔒 Login Required', 'This content is private or requires login. Add your cookie in Settings to access.', { showSettings: true, buttonColor: '#f59e0b' });
-            return;
-          case 'COOKIE_EXPIRED':
-            showError('⏰ Admin Cookie Issue', 'Admin cookie sedang bermasalah (perlu verifikasi). Coba gunakan cookie pribadimu di Settings.', { showSettings: true, buttonColor: '#f59e0b' });
-            return;
-          case 'COOKIE_BANNED':
-          case 'CHECKPOINT_REQUIRED':
-            showError('🚫 Account Issue', 'The account requires verification or has been restricted. Try using a different cookie.', { showSettings: true, buttonColor: '#ef4444' });
-            return;
-          case 'NOT_FOUND':
-          case 'DELETED':
-          case 'CONTENT_REMOVED':
-            showError('❌ Content Not Found', 'This content may have been deleted or removed.', { icon: 'error' });
-            return;
-          case 'NO_MEDIA':
-            showError('📭 No Media', 'No downloadable media found in this post.', { icon: 'info' });
-            return;
-          case 'GEO_BLOCKED':
-            showError('🌍 Region Blocked', 'This content is not available in your region.', { icon: 'warning' });
-            return;
-          case 'RATE_LIMITED':
-            showError('⏳ Slow Down!', 'Too many requests. Please wait a moment and try again.', { icon: 'warning', buttonColor: '#f59e0b' });
-            return;
-          case 'BLOCKED':
-            showError('🚫 Blocked', 'Request was blocked by the platform. Try again later.', { icon: 'error' });
-            return;
-        }
-      }
-
-      throw new Error(errorMessage);
-    } catch (error) {
-      // Get error details - check if it's from API response
-      const errorMsg = error instanceof Error ? error.message : 'An error occurred';
-      const displayMsg = errorMsg.length > 100 ? errorMsg.substring(0, 100) + '...' : errorMsg;
-
-      // Check for AbortError (our timeout)
-      if (error instanceof Error && error.name === 'AbortError') {
-        const timeoutMsg = detectedPlatform === 'youtube'
-          ? 'The server is taking too long to respond. YouTube extraction can be slow for some videos. Try again - the result may be cached now.'
-          : 'The server is taking too long to respond. This might be a temporary issue. Try again - the result may be cached now.';
-        showError('⏱️ Request Timeout', timeoutMsg, { icon: 'warning', buttonColor: '#6366f1', showRetry: true, onRetry: () => handleSubmit(url) });
-        return;
-      }
-
-      // Check for network errors FIRST (offline, timeout, server unreachable)
-      const networkStatus = analyzeNetworkError(error);
-      if (networkStatus.type === 'offline' || networkStatus.type === 'timeout' ||
-        errorMsg.toLowerCase().includes('failed to fetch') || !isOnline()) {
-        showNetworkError(error, () => handleSubmit(url));
-        return;
-      }
-
-      // Handle YouTube extraction timeout from backend
-      if (errorMsg.includes('timed out') || errorMsg.includes('timeout')) {
-        const extractionMsg = detectedPlatform === 'youtube'
-          ? 'YouTube video extraction timed out. Some videos take longer to process. Try again - the result may be cached now.'
-          : 'The extraction process timed out. Some videos take longer to process. Try again - the result may be cached now.';
-        showError('⏱️ Extraction Timeout', extractionMsg, { icon: 'warning', buttonColor: '#6366f1', showRetry: true, onRetry: () => handleSubmit(url) });
-        return;
-      }
-
-      // Handle rate limit errors
-      if (errorMsg.includes('Rate limit') || errorMsg.includes('rate limit') || errorMsg.includes('429')) {
-        const resetMatch = errorMsg.match(/(\d+)s/);
-        const resetIn = resetMatch ? parseInt(resetMatch[1]) : 60;
-
-        showError('⏳ Slow Down!', `Whoops, calm down bro! You've made too many requests. Please wait ${resetIn} seconds. Rate limiting helps keep the service fast for everyone.`, { icon: 'warning', buttonColor: '#f59e0b' });
-        return;
-      }
-
-      // Handle different error types
-      if (errorMsg.includes('CHECKPOINT_REQUIRED')) {
-        showError('🚫 Cookie Blocked', 'Facebook detected unusual activity on the admin cookie. The account may be shadow banned or requires verification. Try adding your own cookie in Settings, or wait for admin to update.', { icon: 'warning', buttonColor: '#ef4444', showSettings: true });
-      } else if (errorMsg.includes('maintenance')) {
-        showError('🔧 Under Maintenance', 'We\'re working on improvements. Check back soon!', { icon: 'warning', buttonColor: '#f59e0b' });
-      } else if (errorMsg.includes('disabled') || errorMsg.includes('unavailable')) {
-        showError('⏸️ Service Paused', displayMsg, { icon: 'info', buttonColor: '#3b82f6' });
-      } else if (errorMsg.includes('Unauthorized origin')) {
-        showError('🚫 Unauthorized', 'Request blocked. Please try again or contact support.', { icon: 'error' });
-      } else {
-        showError('❌ Failed', displayMsg);
-      }
-    } finally {
-      setIsLoading(false);
+      setHistoryRefresh(prev => prev + 1);
+    } catch (historyError) {
+      console.error('[Home] Failed to save extraction history:', historyError);
     }
+  }, []);
+
+  const toResetAtSeconds = (value: unknown): number | null => {
+    if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+      if (value > 1_000_000_000_000) return Math.floor(value / 1000);
+      return Math.floor(value);
+    }
+
+    if (typeof value === 'string' && value.trim()) {
+      const numeric = Number(value);
+      if (!Number.isNaN(numeric)) return toResetAtSeconds(numeric);
+
+      const timestamp = Date.parse(value);
+      if (!Number.isNaN(timestamp) && timestamp > 0) {
+        return Math.floor(timestamp / 1000);
+      }
+    }
+
+    return null;
   };
 
+  const rateLimitModalData = useMemo(() => {
+    if (!extractionError) return null;
+
+    const metadata = extractionError.metadata || {};
+    const code = extractionError.code?.toUpperCase();
+    const has429Code = typeof extractionError.code === 'string' && extractionError.code.includes('429');
+    const has429Metadata = metadata.status === 429;
+    const isRateLimited = extractionError.category === 'RATE_LIMIT'
+      || code?.includes('RATE_LIMIT')
+      || has429Code
+      || has429Metadata;
+
+    if (!isRateLimited) return null;
+
+    const resetAt = toResetAtSeconds(metadata.resetAt);
+    if (!resetAt) return null;
+
+    const limit = typeof metadata.limit === 'number' ? metadata.limit : undefined;
+    const windowStr = typeof metadata.window === 'string' ? metadata.window : undefined;
+
+    return {
+      resetAt,
+      limit,
+      window: windowStr,
+      message: extractionError.message,
+    };
+  }, [extractionError]);
+
+  const executeErrorAction = useCallback(async (actionType: string) => {
+    if (actionType === ErrorActionTypes.RETRY || actionType === ErrorActionTypes.WAIT_AND_RETRY) {
+      await retry();
+      return;
+    }
+
+    if (actionType === ErrorActionTypes.OPEN_SETTINGS) {
+      router.push('/settings?tab=cookies');
+      return;
+    }
+
+    if (actionType === ErrorActionTypes.GO_HOME) {
+      router.push('/');
+      return;
+    }
+
+    reset();
+  }, [retry, reset, router]);
+
+  const handleSubmit = async (url: string) => {
+    setLastSubmittedUrl(url);
+    const sanitizedUrl = sanitizeUrl(url);
+    const detectedPlatform = platformDetect(sanitizedUrl) || platform;
+    setLastDetectedPlatform(detectedPlatform);
+    await extract(url);
+  };
+
+  useEffect(() => {
+    const refetchRaw = searchParams.get('refetch');
+    if (!refetchRaw) return;
+
+    const refetchTs = searchParams.get('refetchTs') || '';
+    const refetchPlatform = searchParams.get('refetchPlatform') as PlatformId | null;
+    const refetchKey = `${refetchRaw}|${refetchTs}`;
+    if (lastRefetchKeyRef.current === refetchKey) return;
+    lastRefetchKeyRef.current = refetchKey;
+
+    const refetchUrl = sanitizeUrl(refetchRaw);
+    if (!refetchUrl) return;
+
+    const detectedPlatform = platformDetect(refetchUrl) || refetchPlatform || platform;
+    setLastSubmittedUrl(refetchUrl);
+    setLastDetectedPlatform(detectedPlatform);
+    setPlatform(detectedPlatform);
+    void extract(refetchUrl);
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('refetch');
+    params.delete('refetchPlatform');
+    params.delete('refetchTs');
+    const nextQuery = params.toString();
+    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+  }, [extract, pathname, platform, router, searchParams, setPlatform]);
+
+  useEffect(() => {
+    if (!rateLimitModalData) return;
+    setRateLimitModalOpen(true);
+  }, [rateLimitModalData]);
+
+  useEffect(() => {
+    if (!mediaData) return;
+
+    const sourceUrl = typeof mediaData.url === 'string' && mediaData.url.trim()
+      ? mediaData.url
+      : sanitizeUrl(lastSubmittedUrl || '');
+
+    if (!sourceUrl) return;
+
+    const mediaIdentity = mediaData.formats?.[0]?.url || mediaData.id || mediaData.title;
+    const dedupeKey = `${sourceUrl}|${mediaIdentity}`;
+    if (lastPersistedHistoryKeyRef.current === dedupeKey) return;
+
+    lastPersistedHistoryKeyRef.current = dedupeKey;
+    const fallbackPlatform = (mediaData.platform as PlatformId | undefined) || lastDetectedPlatform || platform;
+    void persistExtractHistory(mediaData, sourceUrl, fallbackPlatform);
+  }, [mediaData, lastSubmittedUrl, lastDetectedPlatform, platform, persistExtractHistory]);
 
 
   // Batch queue handlers
@@ -357,7 +242,6 @@ export default function Home() {
       <div className="py-4 px-3 sm:py-6 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto space-y-4 sm:space-y-6">
           {/* Announcements */}
-          <AnnouncementBanner page="home" />
 
           {/* Compact Hero */}
           <div className="text-center py-2 sm:py-4">
@@ -391,7 +275,6 @@ export default function Home() {
           />
 
           {/* Compact Ad - Below Input (always visible) */}
-          <CompactAdDisplay placement="home-input" maxAds={1} />
 
           {/* Loading */}
           <AnimatePresence>
@@ -404,21 +287,75 @@ export default function Home() {
               <DownloadPreview
                 data={mediaData}
                 platform={platform}
+                responseJson={responseJson}
                 onDownloadComplete={handleDownloadComplete}
               />
             )}
           </AnimatePresence>
 
+          {!isLoading && !mediaData && extractionError && (
+            <div className="glass-card p-4 sm:p-5 border border-red-500/30">
+              <h3 className="text-sm sm:text-base font-semibold text-red-400 mb-1 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" />
+                <span>{extractionError.title}</span>
+              </h3>
+              <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed">{extractionError.message}</p>
+              {extractionError.code && (
+                <p className="text-[11px] text-[var(--text-muted)] mt-2">Code: {extractionError.code}</p>
+              )}
+              <div className="mt-3 flex flex-wrap gap-2">
+                {extractionError.actions.map((action) => (
+                  <button
+                    key={action.type}
+                    type="button"
+                    onClick={() => { void executeErrorAction(action.type); }}
+                    className={action.primary
+                      ? 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--accent-primary)] text-white hover:opacity-90 transition-opacity'
+                      : 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-[var(--border-color)] text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors'}
+                  >
+                    {action.type === ErrorActionTypes.RETRY || action.type === ErrorActionTypes.WAIT_AND_RETRY ? (
+                      <RotateCcw className="w-3.5 h-3.5" />
+                    ) : null}
+                    {action.type === ErrorActionTypes.OPEN_SETTINGS ? (
+                      <Settings className="w-3.5 h-3.5" />
+                    ) : null}
+                    {action.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {rateLimitModalData && (
+            <RateLimitModal
+              isOpen={rateLimitModalOpen}
+              onClose={() => setRateLimitModalOpen(false)}
+              resetAt={rateLimitModalData.resetAt}
+              limit={rateLimitModalData.limit}
+              window={rateLimitModalData.window}
+              message={rateLimitModalData.message}
+            />
+          )}
+
           {/* Download History */}
           <div className="mt-8">
-            <HistoryList refreshTrigger={historyRefresh} compact />
+            <Suspense fallback={null}>
+              <HistoryList refreshTrigger={historyRefresh} compact />
+            </Suspense>
           </div>
 
 
           {/* Compact Ads - Bottom of page */}
-          <CompactAdDisplay placement="home-bottom" maxAds={3} className="mt-6" />
         </div>
       </div>
     </SidebarLayout>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={null}>
+      <HomeContent />
+    </Suspense>
   );
 }

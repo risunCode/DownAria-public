@@ -3,6 +3,10 @@ import { Metadata } from 'next';
 export const metadata: Metadata = {
     title: 'Shared Content | DownAria - Social Media Downloader',
     description: 'Download shared social media content instantly. Fast and easy video downloader for Facebook, Instagram, TikTok, and more.',
+    robots: {
+        index: false,
+        follow: false,
+    },
 };
 
 export default function ShareLayout({
