@@ -46,8 +46,7 @@ export function DownloadForm({
     const [progress, setProgress] = useState(0);
     const [progressText, setProgressText] = useState('');
     const [elapsedMs, setElapsedMs] = useState(0);
-    const lastSubmission = useRef<{ url: string; timestamp: number } | null>(null);
-    const MIN_RESUBMIT_INTERVAL = 5000; // 5 seconds cooldown
+    const autoSubmittedUrlRef = useRef<string | null>(null);
     const progressInterval = useRef<NodeJS.Timeout | null>(null);
     const elapsedInterval = useRef<NodeJS.Timeout | null>(null);
     const startTimeRef = useRef<number>(0);
@@ -127,7 +126,7 @@ export function DownloadForm({
         return () => clearInterval(interval);
     }, [url]);
 
-    // Auto-submit when valid URL detected (with 300ms debounce)
+    // Auto-submit once per unique URL (with 300ms debounce)
     useEffect(() => {
         if (!enableAutoSubmit) return;
         if (url.length > 20 && !isLoading) {
@@ -136,11 +135,8 @@ export function DownloadForm({
                 const detected = platformDetect(url);
                 if (detected) {
                     if (detected !== platform) onPlatformChange(detected);
-                    if (validateUrl(url, detected) && 
-                        (!lastSubmission.current || 
-                         lastSubmission.current.url !== url || 
-                         Date.now() - lastSubmission.current.timestamp >= MIN_RESUBMIT_INTERVAL)) {
-                        lastSubmission.current = { url, timestamp: Date.now() };
+                    if (validateUrl(url, detected) && autoSubmittedUrlRef.current !== url) {
+                        autoSubmittedUrlRef.current = url;
                         onSubmit(url);
                     }
                 }
@@ -167,6 +163,9 @@ export function DownloadForm({
     };
 
     const handleUrlChange = (value: string) => {
+        if (value !== url) {
+            autoSubmittedUrlRef.current = null;
+        }
         setUrl(value);
         setError('');
         if (value.length > 10) {
@@ -184,8 +183,8 @@ export function DownloadForm({
             setJustPasted(true);
             setTimeout(() => setJustPasted(false), 1500);
             setError('');
-            // Reset lastSubmission to allow re-submit
-            lastSubmission.current = null;
+            // Reset auto-submit guard for new pasted URL
+            autoSubmittedUrlRef.current = null;
             const detected = platformDetect(cleanUrl);
             if (detected && detected !== platform) onPlatformChange(detected);
             return true;
@@ -207,8 +206,8 @@ export function DownloadForm({
                     setJustPasted(true);
                     setTimeout(() => setJustPasted(false), 1500);
                     setError('');
-                    // Reset lastSubmission to allow re-submit of same URL
-                    lastSubmission.current = null;
+                    // Reset auto-submit guard for new pasted URL
+                    autoSubmittedUrlRef.current = null;
                     const detected = platformDetect(cleanUrl);
                     if (detected && detected !== platform) onPlatformChange(detected);
                     return;
