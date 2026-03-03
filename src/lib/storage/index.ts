@@ -19,6 +19,7 @@ export {
   addHistory,
   getHistory,
   getHistoryCount,
+  getHistoryTypeCounts,
   getHistoryByPlatform,
   searchHistory,
   deleteHistory,
@@ -36,6 +37,7 @@ export {
   type FullBackupData,
   type HistoryEntry,
   type ExportData,
+  type HistoryTypeCounts,
 } from './indexed-db';
 
 // ═══════════════════════════════════════════════════════════════

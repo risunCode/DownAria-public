@@ -9,6 +9,15 @@ type Props = {
     }>;
 };
 
+function safeJsonLdStringify(value: unknown): string {
+    return JSON.stringify(value)
+        .replace(/</g, '\\u003c')
+        .replace(/>/g, '\\u003e')
+        .replace(/&/g, '\\u0026')
+        .replace(/\u2028/g, '\\u2028')
+        .replace(/\u2029/g, '\\u2029');
+}
+
 // Helper to format text (e.g., "tiktok" -> "TikTok")
 function formatPlatformName(p: string): string {
     const map: Record<string, string> = {
@@ -71,7 +80,7 @@ export default async function Page({ params }: Props) {
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{
-                    __html: JSON.stringify({
+                    __html: safeJsonLdStringify({
                         "@context": "https://schema.org",
                         "@type": "HowTo",
                         "name": `How to Download ${formatPlatformName(platform)} ${platform === 'instagram' ? 'Reels' : 'Videos'}`,

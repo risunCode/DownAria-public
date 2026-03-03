@@ -41,19 +41,41 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Only plain text and emojis are allowed.' }, { status: 400 });
   }
 
-  const content = [
-    '📝 **DownAria Feedback**',
-    `👤 **Name:** ${name}`,
-    `🕒 **Datetime:** ${datetime}`,
-    `💬 **Comment:** ${comment}`,
-  ].join('\n');
+  const parsedDatetime = new Date(datetime);
+  const hasValidDatetime = !Number.isNaN(parsedDatetime.getTime());
+  const embedTimestamp = hasValidDatetime ? parsedDatetime.toISOString() : new Date().toISOString();
 
   try {
     const webhookRes = await fetch(webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        content,
+        embeds: [
+          {
+            title: 'DownAria Feedback',
+            color: 0x38bdf8,
+            footer: {
+              text: 'via DownAria',
+            },
+            timestamp: embedTimestamp,
+            fields: [
+              {
+                name: 'Name',
+                value: name,
+                inline: true,
+              },
+              {
+                name: 'Datetime',
+                value: datetime,
+                inline: true,
+              },
+              {
+                name: 'Comment',
+                value: comment,
+              },
+            ],
+          },
+        ],
         allowed_mentions: { parse: [] },
       }),
     });

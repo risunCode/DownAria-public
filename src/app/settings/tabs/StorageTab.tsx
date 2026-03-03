@@ -64,12 +64,15 @@ export function StorageTab({
               </div>
             </div>
             <button
+              type="button"
               onClick={onToggleSkipCache}
-              className={`relative w-12 h-6 rounded-full transition-colors ${
-                skipCache ? 'bg-emerald-500' : 'bg-[var(--bg-card)] border border-[var(--border-color)]'
+              className={`relative w-12 h-6 rounded-full shrink-0 transition-colors ${
+                skipCache ? 'bg-[var(--accent-primary)]' : 'bg-[var(--bg-card)] border border-[var(--border-color)]'
               }`}
             >
-              <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${skipCache ? 'left-7' : 'left-1'}`} />
+              <span
+                className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${skipCache ? 'translate-x-6' : 'translate-x-0'}`}
+              />
             </button>
           </div>
 

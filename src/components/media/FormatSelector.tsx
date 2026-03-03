@@ -71,7 +71,7 @@ export function FormatSelector({
                 title={needsMerge ? 'HD quality - will merge video + audio' : undefined}
                 className={`format-option px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
                     isSelected
-                        ? 'is-selected bg-[var(--accent-primary)] text-white border-black/35 shadow-md shadow-black/45'
+                        ? 'is-selected bg-[var(--accent-primary)] text-white border-black/35'
                         : 'bg-[var(--bg-secondary)] border-transparent text-[var(--text-muted)] hover:bg-[var(--bg-card)] hover:text-[var(--text-primary)]'
                 }`}
             >

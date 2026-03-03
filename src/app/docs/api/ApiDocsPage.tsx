@@ -33,23 +33,32 @@ type ShapeItem = {
 const endpoints: EndpointDoc[] = [
   {
     method: 'GET',
-    path: '/api/v1/proxy',
-    label: 'Stream / Download Media',
-    summary: 'Proxy/stream downloadable media URL from extraction result.',
-    example: `curl "{BASE_URL}/api/v1/proxy?url=MEDIA_URL"`,
+    path: '/api/web/proxy',
+    label: 'Preview / Stream Media',
+    summary: 'Proxy/stream media URL for preview playback and HLS proxy flow.',
+    example: `curl "{BASE_URL}/api/web/proxy?url=MEDIA_URL"`,
     params: 'url (required) - media URL from extract response',
-    notes: 'Supports size limits and upstream validation.',
+    notes: 'Use this route for preview/stream. Dedicated download uses `/api/web/download`.',
+  },
+  {
+    method: 'GET',
+    path: '/api/web/download',
+    label: 'Dedicated Download Route',
+    summary: 'Download route used by runtime for file output.',
+    example: `curl -L "{BASE_URL}/api/web/download?url=MEDIA_URL&filename=output.mp4"`,
+    params: 'url (required), filename/platform (optional)',
+    notes: 'Backend public equivalent: `GET /api/v1/download`.',
   },
   {
     method: 'POST',
-    path: '/api/v1/merge',
-    label: 'YouTube Fast-Path Merge',
-    summary: 'Use yt-dlp + FFmpeg fast-path from the original YouTube URL (no manual stream fallback).',
-    example: `curl -X POST {BASE_URL}/api/v1/merge \\
+    path: '/api/web/merge',
+    label: 'Merge / Convert',
+    summary: 'Supports YouTube URL mode and direct pair mode (`videoUrl + audioUrl`).',
+    example: `curl -X POST {BASE_URL}/api/web/merge \\
   -H "Content-Type: application/json" \\
   -d '{"url":"YOUTUBE_URL","quality":"1080p","format":"mp4"}'`,
-    params: 'url (required), quality/format/filename/userAgent (optional)',
-    notes: 'Set format to mp3/m4a for audio output, or mp4 for merged video output.',
+    params: 'url (YouTube mode) or videoUrl+audioUrl (pair mode), plus optional quality/format/filename',
+    notes: 'Pair mode is used for frontend paired streams, including HLS audio/video merge path.',
   },
   {
     method: 'GET',
@@ -61,10 +70,10 @@ const endpoints: EndpointDoc[] = [
   },
   {
     method: 'POST',
-    path: '/api/v1/extract',
+    path: '/api/web/extract',
     label: 'Extract Media Metadata',
-    summary: 'Extract media metadata, variants, and auth lane result.',
-    example: `curl -X POST {BASE_URL}/api/v1/extract \\
+    summary: 'Extract media metadata and download variants for runtime flow.',
+    example: `curl -X POST {BASE_URL}/api/web/extract \\
   -H "Content-Type: application/json" \\
   -d '{"url":"POST_URL","cookie":"optional_cookie"}'`,
     params: 'url (required), cookie (optional)',
@@ -80,7 +89,7 @@ const errorCodes: ErrorCodeDoc[] = [
 
   { code: 'PLATFORM_NOT_FOUND', status: 404, category: 'NOT_FOUND', handling: 'Platform pattern is not supported by extractor registry.' },
   { code: 'NO_MEDIA_FOUND', status: 422, category: 'NOT_FOUND', handling: 'Content exists but no downloadable media was detected.' },
-  { code: 'NOT_FOUND', status: 404, category: 'NOT_FOUND', handling: 'Endpoint/route not found under `/api/v1`.' },
+  { code: 'NOT_FOUND', status: 404, category: 'NOT_FOUND', handling: 'Endpoint/route not found under current runtime/public routes.' },
 
   { code: 'TIMEOUT', status: 504, category: 'NETWORK', handling: 'Gateway timeout. Usually upstream latency; retry with backoff.' },
   { code: 'NETWORK_ERROR', status: 502, category: 'NETWORK', handling: 'Upstream/proxy network failure. Retry recommended.' },
@@ -158,15 +167,15 @@ const variantShape: ShapeItem[] = [
 function MacPanel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/45 overflow-hidden">
-      <div className="flex items-center justify-between px-3 py-2 border-b border-[var(--border-color)] bg-[var(--bg-card)]/55">
+      <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-[var(--border-color)] bg-[var(--bg-card)]/55 min-w-0">
         <div className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-full bg-red-400/90" />
           <span className="w-2.5 h-2.5 rounded-full bg-amber-400/90" />
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-400/90" />
         </div>
-        <span className="text-[11px] text-[var(--text-muted)]">{title}</span>
+        <span className="text-[11px] text-[var(--text-muted)] min-w-0 max-w-[65%] truncate text-right">{title}</span>
       </div>
-      <div className="p-3">{children}</div>
+      <div className="p-3 min-w-0">{children}</div>
     </div>
   );
 }
@@ -175,9 +184,9 @@ export function ApiDocsPage() {
   const [showErrorCodes, setShowErrorCodes] = useState(false);
   const [requestTab, setRequestTab] = useState<'curl' | 'powershell' | 'javascript'>('curl');
   const [responseTab, setResponseTab] = useState<'success' | 'error'>('success');
-  const [openEndpoint, setOpenEndpoint] = useState<string | null>('/api/v1/proxy');
+  const [openEndpoint, setOpenEndpoint] = useState<string | null>('/api/web/proxy');
 
-  const otherEndpoints = endpoints.filter((ep) => ep.path !== '/api/v1/extract');
+  const otherEndpoints = endpoints.filter((ep) => ep.path !== '/api/web/extract');
   const rawBaseUrl = (process.env.NEXT_PUBLIC_API_URL || '').trim();
   const normalizedRawBaseUrl = rawBaseUrl.replace(/\/+$/, '');
   const baseUrl = (() => {
@@ -191,17 +200,17 @@ export function ApiDocsPage() {
   })();
 
   const requestExamples = {
-    curl: `curl -X POST ${baseUrl}/api/v1/extract \\
+    curl: `curl -X POST ${baseUrl}/api/web/extract \\
   -H "Content-Type: application/json" \\
   -d '{
     "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
     "cookie": "optional_cookie_string"
   }'`,
-    powershell: `Invoke-RestMethod -Uri "${baseUrl}/api/v1/extract" \\
+    powershell: `Invoke-RestMethod -Uri "${baseUrl}/api/web/extract" \\
   -Method POST \\
   -ContentType "application/json" \\
   -Body '{"url":"https://www.youtube.com/watch?v=dQw4w9WgXcQ"}'`,
-    javascript: `const res = await fetch('/api/v1/extract', {
+    javascript: `const res = await fetch('/api/web/extract', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
@@ -325,8 +334,8 @@ const json = await res.json();`,
                   <Zap className="w-4.5 h-4.5 text-yellow-400" />
                 </div>
                 <div>
-                  <p className="text-base sm:text-lg font-semibold text-[var(--text-primary)] leading-tight">Single Endpoint</p>
-                  <p className="text-xs sm:text-[13px] text-[var(--text-muted)] mt-1.5 leading-relaxed">One extract endpoint for all supported platforms.</p>
+                  <p className="text-base sm:text-lg font-semibold text-[var(--text-primary)] leading-tight">BFF Runtime Routes</p>
+                  <p className="text-xs sm:text-[13px] text-[var(--text-muted)] mt-1.5 leading-relaxed">Frontend calls signed `/api/web/*` routes by default.</p>
                 </div>
               </div>
               <div className="glass-card border border-[var(--border-color)] rounded-xl p-4 sm:p-5 min-h-[128px] sm:min-h-[136px] flex flex-col justify-between bg-gradient-to-br from-emerald-500/8 to-transparent">
@@ -343,8 +352,8 @@ const json = await res.json();`,
                   <Globe className="w-4.5 h-4.5 text-sky-400" />
                 </div>
                 <div>
-                  <p className="text-base sm:text-lg font-semibold text-[var(--text-primary)] leading-tight">Platform Auto Detect</p>
-                  <p className="text-xs sm:text-[13px] text-[var(--text-muted)] mt-1.5 leading-relaxed">No platform param needed; backend detects from URL.</p>
+                  <p className="text-base sm:text-lg font-semibold text-[var(--text-primary)] leading-tight">Split Proxy / Download</p>
+                  <p className="text-xs sm:text-[13px] text-[var(--text-muted)] mt-1.5 leading-relaxed">Preview/stream uses `/proxy`, file output uses `/download`.</p>
                 </div>
               </div>
             </motion.div>
@@ -372,7 +381,7 @@ const json = await res.json();`,
             >
               <div className="flex flex-wrap items-center gap-2 mb-2">
                 <span className="text-[10px] px-2 py-0.5 rounded font-semibold bg-green-500/20 text-green-300">POST</span>
-                <code className="text-sm text-[var(--text-primary)]">/api/v1/extract</code>
+                <code className="text-sm text-[var(--text-primary)]">/api/web/extract</code>
               </div>
               <p className="text-xs text-[var(--text-muted)] mb-4">Extract media information from supported URL with optional cookie lane fallback.</p>
 
@@ -395,7 +404,7 @@ const json = await res.json();`,
                     </button>
                   ))}
                 </div>
-                <pre className="text-[11px] sm:text-xs text-[var(--text-secondary)] overflow-x-auto leading-relaxed">
+                <pre className="w-full max-w-full min-w-0 text-[11px] sm:text-xs text-[var(--text-secondary)] overflow-x-auto leading-relaxed">
                   <code>{requestExamples[requestTab]}</code>
                 </pre>
               </MacPanel>
@@ -419,7 +428,7 @@ const json = await res.json();`,
                       Error
                     </button>
                   </div>
-                  <pre className="text-[11px] sm:text-xs text-[var(--text-secondary)] overflow-x-auto leading-relaxed">
+                  <pre className="w-full max-w-full min-w-0 text-[11px] sm:text-xs text-[var(--text-secondary)] overflow-x-auto leading-relaxed">
                     <code>{responseTab === 'success' ? successResponse : errorResponse}</code>
                   </pre>
                 </MacPanel>
@@ -524,13 +533,13 @@ const json = await res.json();`,
                       <button
                         type="button"
                         onClick={() => setOpenEndpoint((prev) => (prev === ep.path ? null : ep.path))}
-                        className="w-full p-3 sm:p-3.5 flex items-center justify-between gap-2 text-left border-b border-[var(--border-color)]"
+                        className="w-full p-3 sm:p-3.5 flex items-start sm:items-center justify-between gap-2 sm:gap-3 text-left border-b border-[var(--border-color)]"
                       >
                         <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-2 mb-1">
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1">
                             <span className={`text-[10px] px-2 py-0.5 rounded font-semibold ${ep.method === 'GET' ? 'bg-sky-500/20 text-sky-300' : 'bg-green-500/20 text-green-300'}`}>{ep.method}</span>
                             <code className="text-xs text-[var(--text-primary)] break-all">{ep.path}</code>
-                            <span className="text-xs text-[var(--text-muted)]">- {ep.label}</span>
+                            <span className="text-xs text-[var(--text-muted)] basis-full sm:basis-auto">{ep.label}</span>
                           </div>
                           <p className="text-xs text-[var(--text-muted)] leading-relaxed">{ep.summary}</p>
                         </div>
@@ -540,8 +549,8 @@ const json = await res.json();`,
                       {expanded ? (
                         <div className="p-3 sm:p-4 space-y-3">
                           {ep.notes ? <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{ep.notes}</p> : null}
-                          <MacPanel title={`${ep.path.replace('/api/v1/', '')}.example`}>
-                            <pre className="text-[11px] sm:text-xs text-[var(--text-secondary)] overflow-x-auto leading-relaxed">
+                          <MacPanel title={`${ep.path.replace('/api/web/', '').replace('/api/v1/', '')}.example`}>
+                            <pre className="w-full max-w-full min-w-0 text-[11px] sm:text-xs text-[var(--text-secondary)] overflow-x-auto leading-relaxed">
                               <code>{ep.example.replaceAll('{BASE_URL}', baseUrl)}</code>
                             </pre>
                           </MacPanel>
@@ -571,7 +580,7 @@ const json = await res.json();`,
                   </div>
                   <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/50 p-2.5">
                     <p className="text-[11px] font-semibold text-sky-400 mb-1">NOT_FOUND</p>
-                    <p className="text-xs text-[var(--text-muted)] leading-relaxed">Platform/content/route not found in current v1 scope.</p>
+                    <p className="text-xs text-[var(--text-muted)] leading-relaxed">Platform/content/route not found in current runtime/public scope.</p>
                   </div>
                   <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/50 p-2.5">
                     <p className="text-[11px] font-semibold text-yellow-400 mb-1">NETWORK</p>
@@ -622,13 +631,13 @@ const json = await res.json();`,
               <button
                 type="button"
                 onClick={() => setShowErrorCodes((prev) => !prev)}
-                className="w-full flex items-center justify-between gap-3 rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/35 px-3 py-2.5 hover:bg-[var(--bg-secondary)]/55 transition-colors"
+                className="w-full flex items-start sm:items-center justify-between gap-3 rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/35 px-3 py-2.5 hover:bg-[var(--bg-secondary)]/55 transition-colors"
               >
-                <div className="flex items-center gap-2">
+                <div className="flex min-w-0 items-center gap-2">
                   <Code2 className="w-4 h-4 text-[var(--accent-primary)]" />
-                  <span className="text-sm sm:text-base font-semibold text-[var(--text-primary)]">Error Codes Handling</span>
+                  <span className="text-sm sm:text-base font-semibold text-[var(--text-primary)] break-words">Error Codes Handling</span>
                 </div>
-                <div className="flex items-center gap-2 text-[11px] sm:text-xs text-[var(--text-muted)]">
+                <div className="flex items-center gap-2 text-[11px] sm:text-xs text-[var(--text-muted)] shrink-0">
                   <span>{showErrorCodes ? 'Collapse' : 'Expand'}</span>
                   {showErrorCodes ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 </div>
@@ -656,7 +665,7 @@ const json = await res.json();`,
                             <div key={item.code} className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)]/60 p-2.5 sm:p-3">
                               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-1.5">
                                 <code className="text-xs sm:text-sm text-[var(--text-primary)] break-all">{item.code}</code>
-                                <div className="flex items-center gap-2">
+                                <div className="flex flex-wrap items-center gap-2 sm:justify-end">
                                   <span className="text-[10px] px-2 py-0.5 rounded bg-[var(--bg-card)] text-[var(--text-secondary)]">HTTP {item.status}</span>
                                   <span className={`text-[10px] px-2 py-0.5 rounded bg-[var(--bg-card)] ${categoryColor[item.category]}`}>{item.category}</span>
                                 </div>
@@ -714,13 +723,13 @@ const json = await res.json();`,
                   <p className="text-xs text-[var(--text-muted)] leading-relaxed">When code is normalized, inspect `error.metadata.causeCode` for upstream root cause.</p>
                 </div>
               </div>
-              <div className="mt-3 text-[11px] text-[var(--text-muted)] inline-flex items-center gap-1.5">
-                <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
-                This page is synced to current backend code paths under `internal/transport/http` and `internal/core/errors`.
+              <div className="mt-3 text-[11px] text-[var(--text-muted)] flex items-start gap-1.5 leading-relaxed">
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <span className="min-w-0 break-words [overflow-wrap:anywhere]">This page is synced to current frontend runtime routes (`/api/web/*`) and active backend public routes.</span>
               </div>
-              <div className="mt-2 text-[11px] text-[var(--text-muted)] inline-flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-sky-400" />
-                Example JSON is representative; payload shape follows runtime extract result and may vary per platform.
+              <div className="mt-2 text-[11px] text-[var(--text-muted)] flex items-start gap-1.5 leading-relaxed">
+                <Sparkles className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                <span className="min-w-0 break-words [overflow-wrap:anywhere]">Example JSON is representative; payload shape follows runtime extract result and may vary per platform.</span>
               </div>
             </motion.div>
           </div>

@@ -251,17 +251,17 @@ function HomeContent() {
             </p>
             {/* Feature badges */}
             <div className="flex flex-wrap justify-center gap-2 text-[10px] sm:text-xs">
-              <span className="px-2 py-1 rounded-full bg-[var(--bg-card)] text-[var(--text-secondary)] border border-[var(--border-color)] flex items-center gap-1">
-                <MagicIcon className="w-3 h-3 text-purple-400" /> {t('badges.noWatermark')}
+              <span className="px-2 py-1 rounded-full bg-[var(--bg-card)] text-[var(--text-secondary)] border border-[var(--border-color)] flex items-center gap-1 max-w-full min-w-0">
+                <MagicIcon className="w-3 h-3 text-purple-400 shrink-0" /> <span className="break-words [overflow-wrap:anywhere]">{t('badges.noWatermark')}</span>
               </span>
-              <span className="px-2 py-1 rounded-full bg-[var(--bg-card)] text-[var(--text-secondary)] border border-[var(--border-color)] flex items-center gap-1">
-                <BoltIcon className="w-3 h-3 text-yellow-400" /> {t('badges.fastFree')}
+              <span className="px-2 py-1 rounded-full bg-[var(--bg-card)] text-[var(--text-secondary)] border border-[var(--border-color)] flex items-center gap-1 max-w-full min-w-0">
+                <BoltIcon className="w-3 h-3 text-yellow-400 shrink-0" /> <span className="break-words [overflow-wrap:anywhere]">{t('badges.fastFree')}</span>
               </span>
-              <span className="px-2 py-1 rounded-full bg-[var(--bg-card)] text-[var(--text-secondary)] border border-[var(--border-color)] flex items-center gap-1">
-                <LayersIcon className="w-3 h-3 text-blue-400" /> {t('badges.multiQuality')}
+              <span className="px-2 py-1 rounded-full bg-[var(--bg-card)] text-[var(--text-secondary)] border border-[var(--border-color)] flex items-center gap-1 max-w-full min-w-0">
+                <LayersIcon className="w-3 h-3 text-blue-400 shrink-0" /> <span className="break-words [overflow-wrap:anywhere]">{t('badges.multiQuality')}</span>
               </span>
-              <span className="px-2 py-1 rounded-full bg-[var(--bg-card)] text-[var(--text-secondary)] border border-[var(--border-color)] flex items-center gap-1">
-                <LockIcon className="w-3 h-3 text-green-400" /> {t('badges.noLogin')}
+              <span className="px-2 py-1 rounded-full bg-[var(--bg-card)] text-[var(--text-secondary)] border border-[var(--border-color)] flex items-center gap-1 max-w-full min-w-0">
+                <LockIcon className="w-3 h-3 text-green-400 shrink-0" /> <span className="break-words [overflow-wrap:anywhere]">{t('badges.noLogin')}</span>
               </span>
             </div>
           </div>
@@ -286,7 +286,7 @@ function HomeContent() {
             {!isLoading && mediaData && (
               <DownloadPreview
                 data={mediaData}
-                platform={platform}
+                platform={((mediaData.platform as PlatformId | undefined) || platform)}
                 responseJson={responseJson}
                 onDownloadComplete={handleDownloadComplete}
               />

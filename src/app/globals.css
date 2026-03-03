@@ -553,8 +553,8 @@ html.theme-solarized body.has-custom-background .format-selector-surface * {
   background: var(--accent-primary);
   color: #ffffff;
   border-color: color-mix(in srgb, var(--accent-primary) 65%, #111111 35%);
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(0, 0, 0, 0.2);
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+  box-shadow: none;
+  text-shadow: none;
 }
 
 body.has-custom-background .format-selector-surface .format-option {
@@ -583,8 +583,8 @@ body.has-custom-background .format-selector-surface .format-option.is-selected {
   background: var(--accent-primary);
   color: #ffffff;
   border-color: color-mix(in srgb, var(--accent-primary) 58%, #080808 42%);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.58), inset 0 0 0 1px rgba(0, 0, 0, 0.28);
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.45);
+  box-shadow: none;
+  text-shadow: none;
 }
 
 /* Light/Solarized custom background: keep selector buttons fully solid */

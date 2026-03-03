@@ -223,6 +223,18 @@ export function validateUrl(url: string, platform: PlatformId): boolean {
 }
 
 /**
+ * Validate generic public URL (no platform whitelist)
+ */
+export function validatePublicHttpUrl(url: string): boolean {
+    try {
+        const parsed = new URL(url);
+        return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    } catch {
+        return false;
+    }
+}
+
+/**
  * Sanitize pasted text to extract URL
  * Handles garbage text around URLs (TikTok shares, etc.)
  */

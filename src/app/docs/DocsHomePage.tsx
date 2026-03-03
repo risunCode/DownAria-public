@@ -7,7 +7,7 @@ import { SidebarLayout } from '@/components/layout/Sidebar';
 import { DocsNavbar } from '@/components/docs/DocsNavbar';
 
 const highlights = [
-    { icon: Zap, title: 'Public API first', desc: 'This docs section focuses on the public `v1` routes for extraction and downloads.' },
+    { icon: Zap, title: 'BFF runtime first', desc: 'Frontend runtime traffic uses signed `/api/web/*` routes.' },
     { icon: Shield, title: 'Clear response contract', desc: 'Each error includes category and metadata, so frontend handling is predictable and easier to debug.' },
     { icon: Shield, title: 'Safer cookie flow', desc: 'Use your private cookie only when needed for protected content.' },
     { icon: Settings, title: 'Easy setup', desc: 'Open Settings to manage cookies, language, theme, and cache behavior.' },
@@ -70,11 +70,12 @@ export function DocsHomePage() {
                             transition={{ delay: 0.14 }}
                             className="glass-card p-4 sm:p-5 border border-[var(--border-color)] rounded-xl"
                         >
-                            <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-3">Quick API path (v1)</h2>
+                            <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-3">Quick runtime API path</h2>
                             <ul className="space-y-2 text-xs text-[var(--text-muted)] list-disc pl-4">
-                                <li>Extract metadata with <code className="text-[var(--text-secondary)]">POST /api/v1/extract</code></li>
-                                <li>Stream or download media with <code className="text-[var(--text-secondary)]">GET /api/v1/proxy</code></li>
-                                <li>Use YouTube fast-path merge/audio with <code className="text-[var(--text-secondary)]">POST /api/v1/merge</code></li>
+                                <li>Extract metadata with <code className="text-[var(--text-secondary)]">POST /api/web/extract</code></li>
+                                <li>Preview or stream media with <code className="text-[var(--text-secondary)]">GET /api/web/proxy</code></li>
+                                <li>Download file output with <code className="text-[var(--text-secondary)]">GET /api/web/download</code></li>
+                                <li>Merge via YouTube URL mode or direct pair mode on <code className="text-[var(--text-secondary)]">POST /api/web/merge</code></li>
                                 <li>Check server health with <code className="text-[var(--text-secondary)]">GET /health</code></li>
                             </ul>
                         </motion.div>

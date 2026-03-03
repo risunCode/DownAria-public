@@ -268,11 +268,13 @@ export function SeasonalSettings() {
         <button
           onClick={() => handleExperimentalChange(!experimentalEnabled)}
           className={cn(
-            'relative w-12 h-6 rounded-full transition-colors',
+            'relative w-12 h-6 rounded-full shrink-0 transition-colors',
             experimentalEnabled ? 'bg-[var(--accent-primary)]' : 'bg-[var(--bg-card)] border border-[var(--border-color)]'
           )}
         >
-          <span className={cn('absolute top-1 w-4 h-4 rounded-full bg-white transition-all', experimentalEnabled ? 'left-7' : 'left-1')} />
+          <span
+            className={cn('absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform', experimentalEnabled ? 'translate-x-6' : 'translate-x-0')}
+          />
         </button>
       </div>
 
@@ -528,11 +530,13 @@ export function SeasonalSettings() {
                         <button
                           onClick={handleSoundToggle}
                           className={cn(
-                            'relative w-10 h-5 rounded-full transition-colors',
+                            'relative w-12 h-6 rounded-full shrink-0 transition-colors',
                             backgroundSoundEnabled ? 'bg-[var(--accent-primary)]' : 'bg-[var(--bg-card)] border border-[var(--border-color)]'
                           )}
                         >
-                          <span className={cn('absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all', backgroundSoundEnabled ? 'left-5' : 'left-0.5')} />
+                          <span
+                            className={cn('absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform', backgroundSoundEnabled ? 'translate-x-6' : 'translate-x-0')}
+                          />
                         </button>
                       </div>
 
@@ -573,11 +577,13 @@ export function SeasonalSettings() {
                     <button
                       onClick={handleBackgroundEnabledToggle}
                       className={cn(
-                        'relative w-10 h-5 rounded-full transition-colors',
+                        'relative w-12 h-6 rounded-full shrink-0 transition-colors',
                         backgroundEnabledState ? 'bg-[var(--accent-primary)]' : 'bg-[var(--bg-card)] border border-[var(--border-color)]'
                       )}
                     >
-                      <span className={cn('absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all', backgroundEnabledState ? 'left-5' : 'left-0.5')} />
+                      <span
+                        className={cn('absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform', backgroundEnabledState ? 'translate-x-6' : 'translate-x-0')}
+                      />
                     </button>
                   </div>
                 </div>

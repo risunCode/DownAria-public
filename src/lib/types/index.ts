@@ -51,6 +51,8 @@ export interface MediaFormat {
     resolution?: string;
     label?: string;
     hasAudio?: boolean;
+    pairedAudioUrl?: string;
+    pairedVideoUrl?: string;
     requestedAudioFormat?: 'mp3' | 'm4a';
     isSyntheticAudioOption?: boolean;
     canConvertAudio?: boolean;

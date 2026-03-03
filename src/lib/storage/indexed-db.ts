@@ -32,6 +32,14 @@ export interface HistoryEntry {
     type?: 'video' | 'image' | 'audio';
 }
 
+
+export interface HistoryTypeCounts {
+    all: number;
+    video: number;
+    image: number;
+    audio: number;
+}
+
 export interface ExportData {
     version: number;
     exportedAt: number;
@@ -202,6 +210,35 @@ export async function getHistoryCount(): Promise<number> {
         const request = store.count();
         
         request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
+}
+
+export async function getHistoryTypeCounts(): Promise<HistoryTypeCounts> {
+    const database = await openDB();
+
+    return new Promise((resolve, reject) => {
+        const tx = database.transaction(HISTORY_STORE, 'readonly');
+        const store = tx.objectStore(HISTORY_STORE);
+        const counts: HistoryTypeCounts = { all: 0, video: 0, image: 0, audio: 0 };
+        const request = store.openCursor(null, 'prev');
+
+        request.onsuccess = (event) => {
+            const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
+            if (cursor) {
+                counts.all += 1;
+                const type = (cursor.value as HistoryEntry).type;
+                if (type === 'video' || type === 'image' || type === 'audio') {
+                    counts[type] += 1;
+                } else {
+                    counts.video += 1;
+                }
+                cursor.continue();
+                return;
+            }
+            resolve(counts);
+        };
+
         request.onerror = () => reject(request.error);
     });
 }

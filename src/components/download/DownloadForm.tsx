@@ -2,13 +2,13 @@
 
 import { useState, useEffect, FormEvent, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Download, Clipboard, Check } from 'lucide-react';
+import { ArrowRight, Clipboard, Check } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { LightbulbIcon, PlatformIcon } from '@/components/ui/Icons';
 import { PlatformId, PLATFORMS } from '@/lib/types';
-import { validateUrl, platformDetect, sanitizeUrl } from '@/lib/utils/format';
+import { validatePublicHttpUrl, platformDetect, sanitizeUrl } from '@/lib/utils/format';
 
 interface DownloadFormProps {
     platform: PlatformId;
@@ -46,7 +46,11 @@ export function DownloadForm({
     const [progress, setProgress] = useState(0);
     const [progressText, setProgressText] = useState('');
     const [elapsedMs, setElapsedMs] = useState(0);
-    const autoSubmittedUrlRef = useRef<string | null>(null);
+    const lastAutoSubmittedUrlRef = useRef<string | null>(null);
+    const autoSubmitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const isLoadingRef = useRef(isLoading);
+    const onSubmitRef = useRef(onSubmit);
+    const onPlatformChangeRef = useRef(onPlatformChange);
     const progressInterval = useRef<NodeJS.Timeout | null>(null);
     const elapsedInterval = useRef<NodeJS.Timeout | null>(null);
     const startTimeRef = useRef<number>(0);
@@ -63,6 +67,18 @@ export function DownloadForm({
             setUrl(initialUrl);
         }
     }, [initialUrl]);
+
+    useEffect(() => {
+        isLoadingRef.current = isLoading;
+    }, [isLoading]);
+
+    useEffect(() => {
+        onSubmitRef.current = onSubmit;
+    }, [onSubmit]);
+
+    useEffect(() => {
+        onPlatformChangeRef.current = onPlatformChange;
+    }, [onPlatformChange]);
 
     // Progress bar animation when loading
     useEffect(() => {
@@ -126,24 +142,44 @@ export function DownloadForm({
         return () => clearInterval(interval);
     }, [url]);
 
-    // Auto-submit once per unique URL (with 300ms debounce)
-    useEffect(() => {
-        if (!enableAutoSubmit) return;
-        if (url.length > 20 && !isLoading) {
-            // Debounce URL detection by 300ms to avoid rapid detection while typing
-            const debounceTimer = setTimeout(() => {
-                const detected = platformDetect(url);
-                if (detected) {
-                    if (detected !== platform) onPlatformChange(detected);
-                    if (validateUrl(url, detected) && autoSubmittedUrlRef.current !== url) {
-                        autoSubmittedUrlRef.current = url;
-                        onSubmit(url);
-                    }
-                }
-            }, 300);
-            return () => clearTimeout(debounceTimer);
+    const clearAutoSubmitTimer = () => {
+        if (autoSubmitTimeoutRef.current) {
+            clearTimeout(autoSubmitTimeoutRef.current);
+            autoSubmitTimeoutRef.current = null;
         }
-    }, [enableAutoSubmit, isLoading, onPlatformChange, onSubmit, platform, url]);
+    };
+
+    const autoSubmitIfValid = (rawUrl: string) => {
+        if (!enableAutoSubmit || isLoadingRef.current) return;
+
+        const cleanUrl = sanitizeUrl(rawUrl);
+        if (!cleanUrl || cleanUrl === lastAutoSubmittedUrlRef.current) return;
+
+        const detected = platformDetect(cleanUrl);
+
+        if (!validatePublicHttpUrl(cleanUrl)) return;
+
+        if (detected && detected !== platform) {
+            onPlatformChangeRef.current(detected);
+        }
+
+        lastAutoSubmittedUrlRef.current = cleanUrl;
+        onSubmitRef.current(cleanUrl);
+    };
+
+    const scheduleAutoSubmit = (rawUrl: string, delay = 180) => {
+        if (!enableAutoSubmit) return;
+        clearAutoSubmitTimer();
+        autoSubmitTimeoutRef.current = setTimeout(() => {
+            autoSubmitIfValid(rawUrl);
+        }, delay);
+    };
+
+    useEffect(() => {
+        return () => {
+            clearAutoSubmitTimer();
+        };
+    }, []);
 
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
@@ -153,19 +189,15 @@ export function DownloadForm({
         const detected = platformDetect(url);
         if (detected && detected !== platform) onPlatformChange(detected);
         
-        const target = detected || platform;
-        if (!validateUrl(url, target)) {
-            const platformName = PLATFORMS.find(p => p.id === target)?.name || target;
-            setError(tErrors('invalidPlatformUrl', { platform: platformName }));
+        const cleanUrl = sanitizeUrl(url) || url.trim();
+        if (!validatePublicHttpUrl(cleanUrl)) {
+            setError(tErrors('invalidUrl'));
             return;
         }
-        onSubmit(url);
+        onSubmit(cleanUrl);
     };
 
     const handleUrlChange = (value: string) => {
-        if (value !== url) {
-            autoSubmittedUrlRef.current = null;
-        }
         setUrl(value);
         setError('');
         if (value.length > 10) {
@@ -183,10 +215,9 @@ export function DownloadForm({
             setJustPasted(true);
             setTimeout(() => setJustPasted(false), 1500);
             setError('');
-            // Reset auto-submit guard for new pasted URL
-            autoSubmittedUrlRef.current = null;
             const detected = platformDetect(cleanUrl);
             if (detected && detected !== platform) onPlatformChange(detected);
+            scheduleAutoSubmit(cleanUrl);
             return true;
         }
         return false;
@@ -206,10 +237,9 @@ export function DownloadForm({
                     setJustPasted(true);
                     setTimeout(() => setJustPasted(false), 1500);
                     setError('');
-                    // Reset auto-submit guard for new pasted URL
-                    autoSubmittedUrlRef.current = null;
                     const detected = platformDetect(cleanUrl);
                     if (detected && detected !== platform) onPlatformChange(detected);
+                    scheduleAutoSubmit(cleanUrl);
                     return;
                 }
                 if (text && !cleanUrl) {
@@ -248,19 +278,18 @@ export function DownloadForm({
             const text = e.clipboardData?.getData('text');
             if (text) {
                 const cleanUrl = sanitizeUrl(text);
-                if (cleanUrl && cleanUrl !== url) {
+                if (cleanUrl) {
                     const detected = platformDetect(cleanUrl);
-                    if (detected) {
-                        setUrl(cleanUrl);
-                        setError('');
-                        if (detected !== platform) onPlatformChange(detected);
-                    }
+                    setUrl(cleanUrl);
+                    setError('');
+                    if (detected && detected !== platform) onPlatformChange(detected);
+                    scheduleAutoSubmit(cleanUrl);
                 }
             }
         };
         window.addEventListener('paste', handler);
         return () => window.removeEventListener('paste', handler);
-    }, [platform, url]);
+    }, [enableAutoSubmit, platform, scheduleAutoSubmit]);
 
     return (
         <motion.form
@@ -278,31 +307,38 @@ export function DownloadForm({
                 {/* Card content - no hover effects */}
                 <div className="bg-[var(--bg-card)] border border-[var(--border-color)] p-4 sm:p-6 space-y-4 relative rounded-lg">
                 {/* Rotating tip or platform indicator */}
-                <div className="flex items-center justify-center text-sm h-6">
+                <div className="flex flex-wrap items-center justify-center gap-1.5 text-xs sm:text-sm min-h-6 text-center">
                     {url ? (
-                        <div className="flex items-center gap-2">
-                            <span className="text-[var(--text-muted)]">{t('downloadingFrom')}</span>
-                            <span 
-                                className="font-semibold px-2 py-0.5 rounded-md border"
-                                style={{ 
-                                    background: currentPlatform?.id === 'twitter' ? 'var(--bg-secondary)' : `${currentPlatform?.color}20`,
-                                    color: currentPlatform?.id === 'twitter' ? 'var(--text-primary)' : currentPlatform?.color,
-                                    borderColor: currentPlatform?.id === 'twitter' ? 'var(--border-color)' : `${currentPlatform?.color}55`,
-                                }}
-                            >
-                                <PlatformIcon platform={currentPlatform?.id || ''} className="w-4 h-4" /> {currentPlatform?.name}
-                            </span>
+                        <div className="flex flex-wrap items-center justify-center gap-2 min-w-0">
+                            {isLoading ? (
+                                <span className="text-[var(--text-muted)]">{t('processingLink')}</span>
+                            ) : (
+                                <>
+                                    <span className="text-[var(--text-muted)]">{t('downloadingFrom')}</span>
+                                    <span 
+                                        className="inline-flex items-center gap-1 font-semibold px-2 py-0.5 rounded-md border max-w-full"
+                                        style={{ 
+                                            background: currentPlatform?.id === 'twitter' ? 'var(--bg-secondary)' : `${currentPlatform?.color}20`,
+                                            color: currentPlatform?.id === 'twitter' ? 'var(--text-primary)' : currentPlatform?.color,
+                                            borderColor: currentPlatform?.id === 'twitter' ? 'var(--border-color)' : `${currentPlatform?.color}55`,
+                                        }}
+                                    >
+                                        <PlatformIcon platform={currentPlatform?.id || ''} className="w-4 h-4 shrink-0" />
+                                        <span className="break-words [overflow-wrap:anywhere]">{currentPlatform?.name}</span>
+                                    </span>
+                                </>
+                            )}
                         </div>
                     ) : (
-                        <span className="text-[var(--text-muted)] text-xs flex items-center gap-1">
+                        <span className="text-[var(--text-muted)] text-xs flex flex-wrap items-center justify-center gap-1 break-words [overflow-wrap:anywhere]">
                             <LightbulbIcon className="w-3 h-3 text-yellow-500" /> {t(`tips.${TIP_KEYS[tipIndex]}`)}
                         </span>
                     )}
                 </div>
 
                 {/* Input row */}
-                <div className="flex flex-col sm:flex-row gap-3">
-                    <div className="flex-[2]">
+                <div className="flex flex-col sm:flex-row items-stretch gap-2 min-w-0">
+                    <div className="flex-1 min-w-0">
                         <Input
                             ref={inputRef}
                             type="url"
@@ -318,26 +354,28 @@ export function DownloadForm({
                             maxLength={2000}
                             error={error}
                             disabled={isLoading}
-                            className="w-full"
+                            className="w-full py-2.5 pl-10 pr-3 text-sm sm:py-4 sm:pl-12 sm:pr-12 sm:text-base"
                         />
                     </div>
-                    <div className="flex gap-2 shrink-0">
+                    <div className="flex gap-1.5 sm:gap-2 shrink-0 w-full sm:w-auto">
                         <Button
                             type="button"
                             variant="secondary"
+                            size="sm"
                             onClick={handlePaste}
                             disabled={isLoading}
-                            className="whitespace-nowrap"
+                            className="flex-1 sm:flex-none min-w-0 px-2 sm:px-3"
                         >
                             {justPasted ? <Check className="w-4 h-4 text-green-500" /> : <Clipboard className="w-4 h-4" />}
-                            <span className="ml-1.5">{justPasted ? t('pasted') : t('paste')}</span>
+                            <span className="ml-1 text-xs sm:text-sm truncate">{justPasted ? t('pasted') : t('paste')}</span>
                         </Button>
                         <Button
                             type="submit"
-                            className="whitespace-nowrap"
+                            size="sm"
+                            className="flex-1 sm:flex-none min-w-0 px-2 sm:px-3"
                         >
-                            <Download className="w-4 h-4" />
-                            <span className="ml-1.5">{t('go')}</span>
+                            <ArrowRight className="w-4 h-4" />
+                            <span className="ml-1 text-xs sm:text-sm truncate">{t('go')}</span>
                         </Button>
                     </div>
                 </div>

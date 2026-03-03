@@ -1,6 +1,6 @@
 // DownAria Service Worker - Offline First PWA
 // Cache version - update this on each deploy or use build timestamp
-const BUILD_TIME = '20260303074134'; // YYYYMMDD format - UPDATE ON DEPLOY
+const BUILD_TIME = '20260303135116'; // YYYYMMDD format - UPDATE ON DEPLOY
 const CACHE_VERSION = `v6-${BUILD_TIME}`;
 const STATIC_CACHE = `downaria-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `downaria-dynamic-${CACHE_VERSION}`;
@@ -9,8 +9,6 @@ const API_CACHE = `downaria-api-${CACHE_VERSION}`;
 // App shell - core files needed for offline
 const APP_SHELL = [
   '/',
-  '/history',
-  '/settings',
   '/about',
   '/icon.png',
   '/icon-512.png',
@@ -24,6 +22,10 @@ const CACHEABLE_API = [
 
 // Cache duration for API responses (5 minutes)
 const API_CACHE_TTL = 5 * 60 * 1000;
+const API_CACHE_TIME_HEADER = 'x-downaria-sw-cached-at';
+
+// Stateful pages should avoid long-lived cache entries
+const STATEFUL_PAGES = ['/history', '/settings'];
 
 // Install - pre-cache app shell
 self.addEventListener('install', (event) => {
@@ -94,6 +96,39 @@ function isStaticAsset(pathname) {
   return pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$/);
 }
 
+function isStatefulPage(pathname) {
+  return STATEFUL_PAGES.some((page) => pathname === page || pathname.startsWith(`${page}/`));
+}
+
+async function cacheApiResponseWithTimestamp(request, response) {
+  const cache = await caches.open(API_CACHE);
+  const cloned = response.clone();
+  const body = await cloned.blob();
+  const headers = new Headers(cloned.headers);
+  headers.set(API_CACHE_TIME_HEADER, String(Date.now()));
+  const stampedResponse = new Response(body, {
+    status: cloned.status,
+    statusText: cloned.statusText,
+    headers,
+  });
+  await cache.put(request, stampedResponse);
+}
+
+async function getFreshCachedApiResponse(request) {
+  const cache = await caches.open(API_CACHE);
+  const cached = await cache.match(request);
+  if (!cached) return null;
+
+  const cachedAt = Number(cached.headers.get(API_CACHE_TIME_HEADER) || 0);
+  const age = Date.now() - cachedAt;
+  if (!cachedAt || age > API_CACHE_TTL) {
+    await cache.delete(request);
+    return null;
+  }
+
+  return cached;
+}
+
 // Handle API requests - Network first, cache fallback
 async function handleApiRequest(request) {
   const url = new URL(request.url);
@@ -105,17 +140,14 @@ async function handleApiRequest(request) {
     const response = await fetch(request);
     
     if (response.ok && shouldCache) {
-      const cache = await caches.open(API_CACHE);
-      // Store with timestamp
-      const responseToCache = response.clone();
-      cache.put(request, responseToCache);
+      await cacheApiResponseWithTimestamp(request, response);
     }
     
     return response;
   } catch (error) {
     // Offline - try cache
     if (shouldCache) {
-      const cached = await caches.match(request);
+      const cached = await getFreshCachedApiResponse(request);
       if (cached) {
         console.log('[SW] Serving cached API:', url.pathname);
         return cached;
@@ -160,10 +192,13 @@ async function handleStaticRequest(request) {
 
 // Handle page requests - Network first with cache fallback
 async function handlePageRequest(request) {
+  const url = new URL(request.url);
+  const stateful = isStatefulPage(url.pathname);
+
   // ALWAYS try network first for pages to get fresh content
   try {
     const response = await fetch(request);
-    if (response.ok) {
+    if (response.ok && !stateful) {
       // Cache the fresh response for offline use
       const cache = await caches.open(DYNAMIC_CACHE);
       cache.put(request, response.clone());
@@ -171,10 +206,12 @@ async function handlePageRequest(request) {
     return response;
   } catch (error) {
     // Network failed - try cache (offline mode)
-    const cached = await caches.match(request);
-    if (cached) {
-      console.log('[SW] Serving cached page (offline):', request.url);
-      return cached;
+    if (!stateful) {
+      const cached = await caches.match(request);
+      if (cached) {
+        console.log('[SW] Serving cached page (offline):', request.url);
+        return cached;
+      }
     }
     // No cache - return home page as fallback
     return caches.match('/');

@@ -1,6 +1,44 @@
 import { NextResponse } from 'next/server';
 import { buildWebSignatureHeaders, resolveGatewayOrigin } from '../_internal/signature';
 
+function buildLocalProxyURL(target: string, platform?: string): string {
+  const params = new URLSearchParams();
+  params.set('url', target);
+  params.set('inline', '1');
+  params.set('hls', '1');
+  if (platform) params.set('platform', platform);
+  return `/api/web/proxy?${params.toString()}`;
+}
+
+function toAbsoluteURL(candidate: string, base: string): string {
+  try {
+    return new URL(candidate, base).toString();
+  } catch {
+    return candidate;
+  }
+}
+
+function rewriteM3U8Body(body: string, sourceURL: string, platform?: string): string {
+  const lines = body.split(/\r?\n/);
+  return lines
+    .map((line) => {
+      const trimmed = line.trim();
+      if (!trimmed) return line;
+
+      if (trimmed.startsWith('#')) {
+        if (!trimmed.includes('URI="')) return line;
+        return line.replace(/URI="([^"]+)"/g, (_m, uri) => {
+          const absolute = toAbsoluteURL(uri, sourceURL);
+          return `URI="${buildLocalProxyURL(absolute, platform)}"`;
+        });
+      }
+
+      const absolute = toAbsoluteURL(trimmed, sourceURL);
+      return buildLocalProxyURL(absolute, platform);
+    })
+    .join('\n');
+}
+
 export async function GET(request: Request) {
   const backendBase = (process.env.NEXT_PUBLIC_API_URL || '').trim();
   const sharedSecret = (process.env.WEB_INTERNAL_SHARED_SECRET || '').trim();
@@ -47,6 +85,21 @@ export async function GET(request: Request) {
     for (const key of passHeaders) {
       const value = upstream.headers.get(key);
       if (value) headers.set(key, value);
+    }
+
+    const contentType = (upstream.headers.get('content-type') || '').toLowerCase();
+    const sourceURL = inputUrl.searchParams.get('url') || '';
+    const platform = inputUrl.searchParams.get('platform') || undefined;
+
+    if (sourceURL && (contentType.includes('application/vnd.apple.mpegurl') || contentType.includes('application/x-mpegurl'))) {
+      const text = await upstream.text();
+      const rewritten = rewriteM3U8Body(text, sourceURL, platform);
+      headers.delete('content-length');
+      headers.set('content-type', 'application/vnd.apple.mpegurl; charset=utf-8');
+      return new Response(rewritten, {
+        status: upstream.status,
+        headers,
+      });
     }
 
     return new Response(upstream.body, {

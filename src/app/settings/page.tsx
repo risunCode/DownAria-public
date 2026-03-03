@@ -56,6 +56,15 @@ const TABS = [
   { id: 'integrations' as TabId, label: 'Integrations', icon: Zap, title: 'Integrations' },
 ];
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export default function SettingsPage() {
   const t = useTranslations('settings');
   const refreshLocale = useLocaleRefresh();
@@ -585,7 +594,7 @@ export default function SettingsPage() {
     const result = await Swal.fire({
       icon: 'question',
       title: t('storage.backup.restoreConfirm'),
-      html: `<p>File: <strong>${file.name}</strong></p><p class="text-sm mt-2">${t('storage.backup.restoreConfirmDesc')}</p>`,
+      html: `<p>File: <strong>${escapeHtml(file.name)}</strong></p><p class="text-sm mt-2">${escapeHtml(t('storage.backup.restoreConfirmDesc'))}</p>`,
       showCancelButton: true,
       confirmButtonText: t('storage.backup.restore'),
       background: 'var(--bg-card)',
@@ -605,14 +614,14 @@ export default function SettingsPage() {
       setUserCookies(getAllCookieStatus());
 
       const parts = [
-        `<p><strong>${imported.historyImported}</strong> history items</p>`,
-        `<p><strong>${imported.settingsImported}</strong> settings</p>`,
+        `<p><strong>${escapeHtml(String(imported.historyImported))}</strong> history items</p>`,
+        `<p><strong>${escapeHtml(String(imported.settingsImported))}</strong> settings</p>`,
       ];
       if (imported.cookiesImported > 0) {
-        parts.push(`<p><strong>${imported.cookiesImported}</strong> cookies restored</p>`);
+        parts.push(`<p><strong>${escapeHtml(String(imported.cookiesImported))}</strong> cookies restored</p>`);
       }
       if (imported.historySkipped > 0) {
-        parts.push(`<p class="text-sm text-gray-400">${imported.historySkipped} duplicates skipped</p>`);
+        parts.push(`<p class="text-sm text-gray-400">${escapeHtml(String(imported.historySkipped))} duplicates skipped</p>`);
       }
 
       Swal.fire({

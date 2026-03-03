@@ -49,7 +49,7 @@
       "pixiv": "Pixiv",
       "youtube": "YouTube"
     },
-    "subtitle": "Free social media downloads for Facebook, Instagram, Twitter/X, Pixiv, and YouTube Music, fast and easy.",
+    "subtitle": "Free social media downloader for almost any public link. Powered by risunCode Native Extractor and yt-dlp plugin.",
     "badges": {
       "noWatermark": "No Watermark",
       "fastFree": "Fast & Free",
@@ -62,13 +62,14 @@
     "pasteUrl": "Paste video URL...",
     "paste": "Paste",
     "pasted": "Done",
-    "go": "Download",
+    "go": "Go",
     "downloadingFrom": "Downloading from",
+    "processingLink": "Processing Link",
     "progress": {
       "starting": "Starting...",
       "connecting": "Connecting...",
       "fetching": "Fetching page...",
-      "extracting": "Extracting media...",
+      "extracting": "Processing Link",
       "validating": "Validating URLs...",
       "almostDone": "Almost done...",
       "done": "Done!"

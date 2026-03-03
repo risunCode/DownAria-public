@@ -1,5 +1,11 @@
 # 🎵 DownAria - Frontend
 
+# Visit Downaria Official 
+- https://downaria.vercel.app
+
+# This Development Version
+- https://down-aria.vercel.app
+
 Modern web frontend for DownAria media extraction and download flow. Built with **Next.js**, **TypeScript**, and **Tailwind CSS**.
 
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org/)
@@ -35,8 +41,9 @@ Modern web frontend for DownAria media extraction and download flow. Built with 
 |---------|-------------|
 | 🌐 **Multi-Platform Support** | YouTube, Instagram, Twitter/X, Facebook, TikTok, Pixiv |
 | 🎯 **Auto-Detect Platform** | URL platform detection on submit |
-| 📦 **Unified Extraction UX** | Uses backend extract/proxy/merge flow with normalized responses |
-| 🎬 **Preview + Download** | Video/image/audio preview with format selector |
+| 📦 **BFF Runtime Flow** | Frontend runtime uses signed `/api/web/*` gateway routes |
+| 🎬 **Preview + Download** | Preview/stream via `/api/web/proxy`, file download via `/api/web/download` |
+| 🎞️ **Paired Stream Merge** | Supports direct pair merge (`videoUrl + audioUrl`) and YouTube URL mode |
 | 🔁 **History Refetch** | Re-run extraction from history item directly to home |
 | ⏱️ **Rate Limit UX** | Modal with reset-aware countdown and retry hints |
 | ⚙️ **Settings Tabs** | Basic, Cookies, Storage, Integrations |
@@ -63,10 +70,18 @@ Modern web frontend for DownAria media extraction and download flow. Built with 
 
 ## 🔌 API Integration
 
-Frontend integrates with `DownAria-API` backend:
+Frontend runtime uses local BFF routes (signed gateway):
+
+- `POST /api/web/extract`
+- `GET /api/web/proxy`
+- `GET /api/web/download`
+- `POST /api/web/merge`
+
+Backend public routes are still available for direct integrations (`/api/v1/*`), including:
 
 - `POST /api/v1/extract`
 - `GET /api/v1/proxy`
+- `GET /api/v1/download`
 - `POST /api/v1/merge`
 - `GET /api/settings`
 
@@ -99,10 +114,12 @@ Defined in `.env.example`.
 
 | Variable | Purpose |
 |----------|---------|
-| `NEXT_PUBLIC_APP_URL` | Frontend URL |
+| `NEXT_PUBLIC_APP_URL` | Frontend origin used by web gateway signature/origin resolution |
+| `NEXT_PUBLIC_BASE_URL` | Canonical public app URL for metadata and links |
 | `NEXT_PUBLIC_API_URL` | Backend API URL |
-| `NEXT_PUBLIC_STORAGE_KEY` | Optional storage namespace |
+| `WEB_INTERNAL_SHARED_SECRET` | Shared secret for signed `/api/web/*` gateway calls |
 | `FEEDBACK_DISCORD_WEBHOOK_URL` | Server-side webhook for About feedback API |
+| `VERCEL` | Deployment/runtime indicator |
 | `LOG_LEVEL` | Runtime log level |
 | `NODE_ENV` | App environment |
 
@@ -112,6 +129,8 @@ Defined in `.env.example`.
 
 - `prebuild` updates service worker build timestamp.
 - `prebuild` copies root `CHANGELOG.md` into `public/Changelog.md` for docs changelog page.
+- Frontend runtime traffic uses `/api/web/*` BFF routes; `/proxy` is preview/stream and `/download` is the dedicated file route.
+- Environment values are read from both shared config and server route handlers (`process.env` in `src/app/api/**`).
 - This project is frontend runtime; backend service is in sibling project `DownAria-API`.
 
 ---

@@ -190,7 +190,7 @@ function ShareContent() {
             {!isLoading && mediaData && (
               <DownloadPreview
                 data={mediaData}
-                platform={platform}
+                platform={((mediaData.platform as PlatformId | undefined) || platform)}
                 responseJson={responseJson}
                 onDownloadComplete={handleDownloadComplete}
               />

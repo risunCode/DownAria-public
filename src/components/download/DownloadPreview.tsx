@@ -1022,8 +1022,8 @@ export function DownloadPreview({ data, platform, responseJson, onDownloadComple
             {/* Header */}
             <div className="mb-3 sm:mb-4">
                 <div className="flex items-start justify-between gap-2 mb-1">
-                    <h3 className="text-sm sm:text-base font-semibold text-[var(--text-primary)] line-clamp-1">{data.title}</h3>
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <h3 className="flex-1 min-w-0 text-sm sm:text-base font-semibold text-[var(--text-primary)] line-clamp-1 break-words">{data.title}</h3>
+                    <div className="flex items-center justify-end gap-1.5 flex-shrink-0 flex-wrap max-w-[45%]">
                         {/* Response time FIRST, then public/private badge */}
                         {data.responseTime && (
                             <button
@@ -1045,11 +1045,11 @@ export function DownloadPreview({ data, platform, responseJson, onDownloadComple
                 </div>
                 <div className="space-y-1.5">
                     {hasAuthorMeta && (
-                        <div className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">
-                            <User className="w-3 h-3" />
-                            <span className="font-medium text-[var(--text-primary)]">{displayAuthor || 'Unknown'}</span>
+                        <div className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] min-w-0 flex-wrap">
+                            <User className="w-3 h-3 shrink-0" />
+                            <span className="font-medium text-[var(--text-primary)] min-w-0 truncate max-w-full">{displayAuthor || 'Unknown'}</span>
                             {normalizedAuthorHandle && (
-                                <span className="text-[var(--text-muted)]">{normalizedAuthorHandle}</span>
+                                <span className="text-[var(--text-muted)] min-w-0 truncate max-w-full">{normalizedAuthorHandle}</span>
                             )}
                         </div>
                     )}
@@ -1067,7 +1067,7 @@ export function DownloadPreview({ data, platform, responseJson, onDownloadComple
                         <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--text-muted)] mb-1">
                             {t('descriptionTitle')}
                         </p>
-                        <p className="text-xs text-[var(--text-secondary)] line-clamp-2">
+                        <p className="text-xs text-[var(--text-secondary)] line-clamp-2 break-words [overflow-wrap:anywhere] max-w-full">
                             {data.description.length > 150 
                                 ? data.description.replace(/\n+/g, ' ').substring(0, 150) + '...'
                                 : data.description.replace(/\n+/g, ' ')

@@ -40,12 +40,12 @@ export default function HistoryPage() {
                             <div className="p-2 rounded-lg bg-[var(--accent-primary)]/10 shrink-0">
                                 <Shield className="w-4 h-4 text-[var(--accent-primary)]" />
                             </div>
-                            <div className="text-sm">
+                            <div className="text-sm min-w-0">
                                 <p className="text-[var(--text-secondary)]">
                                     <span className="font-medium text-[var(--text-primary)]">{t('privacy.title')}</span>{' '}
                                     {t('privacy.description')}
                                 </p>
-                                <p className="text-[var(--text-muted)] text-xs mt-1 flex items-center gap-1">
+                                <p className="text-[var(--text-muted)] text-xs mt-1 flex items-center gap-1 flex-wrap min-w-0 break-words">
                                     <HardDrive className="w-3 h-3" /> {t('privacy.storage')}
                                 </p>
                             </div>

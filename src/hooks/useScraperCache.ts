@@ -107,6 +107,12 @@ function inferSourceType(itemType: string | undefined, variant: ExtractResult['m
   if (mime.startsWith('image/')) return 'image';
 
   const format = typeof variant.format === 'string' ? variant.format.toLowerCase() : '';
+  const formatId = typeof variant.formatId === 'string' ? variant.formatId.toLowerCase() : '';
+  if (formatId.includes('audio')) return 'audio';
+
+  const variantUrl = typeof variant.url === 'string' ? variant.url.toLowerCase() : '';
+  if (/(?:[_\-/]audio(?:[_\-/]|\.)|audio\.m3u8)/.test(variantUrl)) return 'audio';
+
   const audioExt = new Set(['m4a', 'mp3', 'aac', 'opus', 'ogg', 'wav', 'flac', 'weba']);
   const imageExt = new Set(['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif']);
   if (audioExt.has(format)) return 'audio';

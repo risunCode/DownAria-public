@@ -1,50 +1,55 @@
 # Frontend Architecture and Request Flow
 
-This document reflects the current frontend implementation after the latest config and API flow refactors.
+This document reflects the current DownAria frontend runtime behavior.
 
-## 1) Architecture layers
+## 1) Layers
 
 ### UI layer
-- Main downloader page: `src/app/page.tsx`
-- Share page: `src/app/share/page.tsx`
-- URL input form: `src/components/download/DownloadForm.tsx`
-- Preview and download actions: `src/components/download/DownloadPreview.tsx`
-- History and public stats: `src/components/download/HistoryList.tsx`, `src/components/download/PublicStats.tsx`
+- Home page: `src/app/page.tsx`
+- URL input + actions: `src/components/download/DownloadForm.tsx`
+- Preview and download controls: `src/components/download/DownloadPreview.tsx`
+- History + stats: `src/components/download/HistoryList.tsx`, `src/components/download/PublicStats.tsx`
 
 ### Orchestration layer
-- Extract and cache orchestration: `src/hooks/useScraperCache.ts`
-- Public settings fetch (SWR): `src/hooks/useUpdatePrompt.ts`
+- Extract/cache orchestration: `src/hooks/useScraperCache.ts`
+- Selector and download flow utilities: `src/lib/utils/media.ts`
 
-### Network layer
-- API client (timeout and retry): `src/lib/api/client.ts`
-- Proxy URL builder: `src/lib/api/proxy.ts`
-- Download helper (regular, HLS, merge): `src/lib/utils/media.ts`
+### Network layer (frontend runtime BFF)
+- `POST /api/web/extract`
+- `GET /api/web/proxy`
+- `GET /api/web/download`
+- `POST /api/web/merge`
 
 ### Storage layer
 - Storage facade: `src/lib/storage/index.ts`
-- IndexedDB cache and history: `src/lib/storage/indexed-db.ts`
+- IndexedDB cache/history: `src/lib/storage/indexed-db.ts`
 
-### Config layer
-- Single runtime env source: `src/lib/config.ts`
+## 2) Main Flow
 
-## 2) Main request flow (Extract -> Preview -> Download)
+1. User submits URL in `DownloadForm`.
+2. App resolves cache or calls `POST /api/web/extract`.
+3. Extract result is normalized into preview/selector state.
+4. Download path is selected by media type:
+   - Preview/stream path: `/api/web/proxy`
+   - Regular file download path: `/api/web/download`
+   - Merge path: `/api/web/merge`
 
-1. User submits a URL in `DownloadForm`; the main handler runs in `src/app/page.tsx`.
-2. The URL is sanitized and platform-detected, then routed into the cache/extract flow (`fetchMediaWithCache` / `useScraperCache`).
-3. On cache miss, the frontend calls `POST /api/web/extract` via `api.post(...)`.
-4. The backend response is normalized into the `MediaData` shape and rendered by `DownloadPreview`.
-5. When the user downloads:
-   - Normal flow: media URL is wrapped by `getProxyUrl` -> `GET /api/web/proxy`.
-   - Merge/convert flow: `POST /api/web/merge`.
-   - Legacy HLS flow: playlist and segments via `GET /api/v1/proxy`.
+## 3) Merge + HLS Behavior
 
-## 3) Secondary flows
+- Merge supports two active request shapes:
+  - YouTube URL mode (`url` + optional quality/format)
+  - Direct pair mode (`videoUrl + audioUrl`)
+- Frontend format building includes paired audio/video behavior for HLS flows.
+- When paired audio exists (or is derived), frontend can route through merge for final output.
 
-- Public stats: polls `GET /api/v1/stats/public` every 20 seconds (`PublicStats`).
-- Update prompt/settings: `GET /api/settings` via SWR (`useUpdatePrompt`).
-- Discord helper (client-side): checks media size/proxy metadata using `GET /api/v1/proxy` before webhook send (`discord-webhook.ts`).
+## 4) Secondary Flows
 
-## 4) Implementation notes
+- Public stats: `GET /api/v1/stats/public`.
+- Runtime settings/update prompt: `GET /api/settings`.
+- Discord manual send: user confirmation dialog + mention sanitization before webhook calls.
+- Feedback route (`/api/feedback`): sends structured Discord embed fields (Name/Datetime/Comment).
 
-- The frontend runtime no longer reads `process.env` in multiple places; values are centralized in `src/lib/config.ts`.
-- End-user application traffic primarily uses `/api/web/*`, with compatibility flows still using `/api/v1/proxy` and `/api/v1/stats/public`.
+## 5) Environment Usage Notes
+
+- Runtime values are not sourced from a single module only.
+- `process.env` is read in multiple server route handlers (for example `src/app/api/web/*`, `src/app/api/feedback/route.ts`) and in shared config (`src/lib/config.ts`).

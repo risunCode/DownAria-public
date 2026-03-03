@@ -23,10 +23,12 @@ import { formatRelativeTime } from '@/lib/utils/format';
 import {
   getHistory,
   getHistoryCount,
+  getHistoryTypeCounts,
   deleteHistory,
   clearHistory,
   initStorage,
   type HistoryEntry,
+  type HistoryTypeCounts,
 } from '@/lib/storage';
 import { PlatformIcon, VideoIcon, ImageIcon, MusicIcon } from '@/components/ui/Icons';
 import { getProxiedThumbnail } from '@/lib/api/proxy';
@@ -58,6 +60,12 @@ function sanitizeExternalHttpUrl(value: string): string | null {
   }
 }
 
+function toDisplayPlatformLabel(platformId: string, platformName?: string): string {
+  if (platformName) return platformName;
+  if (!platformId) return 'Unknown';
+  return platformId.charAt(0).toUpperCase() + platformId.slice(1);
+}
+
 interface HistoryListProps {
   refreshTrigger?: number;
   compact?: boolean;
@@ -80,6 +88,7 @@ export function HistoryList({ refreshTrigger, compact = false, maxItems = 2 }: H
   const [isLoaded, setIsLoaded] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState(0);
+  const [typeCountsState, setTypeCountsState] = useState<HistoryTypeCounts>({ all: 0, video: 0, image: 0, audio: 0 });
 
   const pageFromQuery = Number.parseInt(searchParams.get('page') ?? '1', 10);
   const limitFromQuery = Number.parseInt(searchParams.get('limit') ?? `${DEFAULT_PAGE_SIZE}`, 10);
@@ -88,6 +97,7 @@ export function HistoryList({ refreshTrigger, compact = false, maxItems = 2 }: H
   const currentLimit = !compact && PAGE_SIZE_OPTIONS.includes(limitFromQuery as PageSize)
     ? (limitFromQuery as PageSize)
     : DEFAULT_PAGE_SIZE;
+  const shouldUsePagedFetch = !compact && searchQuery.trim() === '' && mediaFilter === 'all';
 
   const updatePaginationParams = useCallback(
     (page: number, limit: PageSize, replace = false) => {
@@ -113,20 +123,53 @@ export function HistoryList({ refreshTrigger, compact = false, maxItems = 2 }: H
   const loadHistory = useCallback(async () => {
     try {
       await initStorage();
+
+      if (compact) {
+        const [entries, total, counts] = await Promise.all([
+          getHistory(maxItems + 1, 0),
+          getHistoryCount(),
+          getHistoryTypeCounts(),
+        ]);
+        setHistory(entries.map(idbToHistoryItem));
+        setTotalCount(total);
+        setTypeCountsState(counts);
+        return;
+      }
+
+      if (shouldUsePagedFetch) {
+        const offset = (currentPage - 1) * currentLimit;
+        const [entries, total, counts] = await Promise.all([
+          getHistory(currentLimit, offset),
+          getHistoryCount(),
+          getHistoryTypeCounts(),
+        ]);
+        setHistory(entries.map(idbToHistoryItem));
+        setTotalCount(total);
+        setTypeCountsState(counts);
+        return;
+      }
+
       const [entries, total] = await Promise.all([
-        getHistory(compact ? maxItems + 1 : 1000, 0),
+        getHistory(1000, 0),
         getHistoryCount(),
       ]);
       setHistory(entries.map(idbToHistoryItem));
       setTotalCount(total);
+      setTypeCountsState({
+        all: entries.length,
+        video: entries.filter((h) => (h.type || 'video') === 'video').length,
+        image: entries.filter((h) => h.type === 'image').length,
+        audio: entries.filter((h) => h.type === 'audio').length,
+      });
     } catch (err) {
       console.error('[HistoryList] Failed to load history:', err);
       setHistory([]);
       setTotalCount(0);
+      setTypeCountsState({ all: 0, video: 0, image: 0, audio: 0 });
     } finally {
       setIsLoaded(true);
     }
-  }, [compact, maxItems]);
+  }, [compact, maxItems, shouldUsePagedFetch, currentPage, currentLimit]);
 
   useEffect(() => {
     loadHistory();
@@ -139,14 +182,16 @@ export function HistoryList({ refreshTrigger, compact = false, maxItems = 2 }: H
     return matchesSearch && matchesType;
   });
 
-  const typeCounts = {
-    all: history.length,
-    video: history.filter((h) => h.type === 'video').length,
-    image: history.filter((h) => h.type === 'image').length,
-    audio: history.filter((h) => h.type === 'audio').length,
-  };
+  const typeCounts = shouldUsePagedFetch
+    ? typeCountsState
+    : {
+        all: history.length,
+        video: history.filter((h) => h.type === 'video').length,
+        image: history.filter((h) => h.type === 'image').length,
+        audio: history.filter((h) => h.type === 'audio').length,
+      };
 
-  const totalFiltered = filteredHistory.length;
+  const totalFiltered = shouldUsePagedFetch ? totalCount : filteredHistory.length;
   const totalPages = compact ? 1 : Math.max(1, Math.ceil(totalFiltered / currentLimit));
   const normalizedCurrentPage = Math.min(currentPage, totalPages);
   const paginationOffset = (currentPage - 1) * currentLimit;
@@ -258,7 +303,9 @@ export function HistoryList({ refreshTrigger, compact = false, maxItems = 2 }: H
 
   const displayedHistory = compact
     ? filteredHistory.slice(0, maxItems)
-    : filteredHistory.slice(paginationOffset, paginationOffset + currentLimit);
+    : shouldUsePagedFetch
+      ? filteredHistory
+      : filteredHistory.slice(paginationOffset, paginationOffset + currentLimit);
 
   return (
     <div className="space-y-4">
@@ -266,10 +313,10 @@ export function HistoryList({ refreshTrigger, compact = false, maxItems = 2 }: H
         <h2 className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
           <Clock className="w-5 h-5 text-[var(--accent-primary)]" />
           History
-          {!compact && <span className="text-sm font-normal text-[var(--text-muted)]">({filteredHistory.length})</span>}
+          {!compact && <span className="text-sm font-normal text-[var(--text-muted)]">({totalFiltered})</span>}
         </h2>
 
-        <div className="flex gap-2 w-full sm:w-auto">
+        <div className="flex gap-2 w-full sm:w-auto flex-wrap sm:flex-nowrap">
           {!compact && (
             <div className="relative flex-1 sm:flex-none">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
@@ -277,7 +324,10 @@ export function HistoryList({ refreshTrigger, compact = false, maxItems = 2 }: H
                 type="text"
                 placeholder="Search..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  if (!compact && currentPage !== 1) updatePaginationParams(1, currentLimit, true);
+                }}
                 className="w-full sm:w-48 pl-9 pr-3 py-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)]"
               />
             </div>
@@ -308,7 +358,10 @@ export function HistoryList({ refreshTrigger, compact = false, maxItems = 2 }: H
             return (
               <button
                 key={type}
-                onClick={() => setMediaFilter(type)}
+                onClick={() => {
+                  setMediaFilter(type);
+                  if (!compact && currentPage !== 1) updatePaginationParams(1, currentLimit, true);
+                }}
                 className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
                   mediaFilter === type
                     ? 'bg-[var(--accent-primary)] text-white'
@@ -337,6 +390,7 @@ export function HistoryList({ refreshTrigger, compact = false, maxItems = 2 }: H
           <AnimatePresence mode="popLayout">
             {displayedHistory.map((item, index) => {
               const platformConfig = PLATFORMS.find((p) => p.id === item.platform);
+              const platformLabel = toDisplayPlatformLabel(item.platform, platformConfig?.name);
               const safeExternalUrl = sanitizeExternalHttpUrl(item.url);
               return (
                 <motion.div
@@ -371,13 +425,14 @@ export function HistoryList({ refreshTrigger, compact = false, maxItems = 2 }: H
                         <h4 className="text-sm font-medium text-[var(--text-primary)] line-clamp-1">{item.title}</h4>
                         <div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-[var(--text-muted)]">
                           <span
-                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded"
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded max-w-full min-w-0"
                             style={{ backgroundColor: `${platformConfig?.color}15`, color: platformConfig?.color }}
                           >
                             <PlatformIcon platform={item.platform} className="w-3 h-3" />
+                            <span className="truncate max-w-[9rem] sm:max-w-[12rem]">{platformLabel}</span>
                           </span>
                           <span className="flex items-center gap-1 min-w-0">
-                            {getTypeIcon(item.type)} {item.quality}
+                            {getTypeIcon(item.type)} <span className="truncate">{item.quality}</span>
                           </span>
                           <span className="hidden sm:inline">{formatRelativeTime(item.downloadedAt)}</span>
                         </div>
@@ -456,8 +511,8 @@ export function HistoryList({ refreshTrigger, compact = false, maxItems = 2 }: H
             </select>
           </div>
 
-          <div className="flex items-center justify-between sm:justify-end gap-2">
-            <span className="text-sm text-[var(--text-secondary)]">Page {normalizedCurrentPage} of {totalPages}</span>
+          <div className="flex items-center justify-between sm:justify-end gap-2 flex-wrap">
+            <span className="text-xs sm:text-sm text-[var(--text-secondary)]">Page {normalizedCurrentPage} of {totalPages}</span>
             <div className="flex items-center gap-1">
               <Button
                 variant="secondary"

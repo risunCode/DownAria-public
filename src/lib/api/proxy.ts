@@ -25,6 +25,19 @@ export function getProxyUrl(url: string, options?: {
     return `/api/web/proxy?${params.toString()}`;
 }
 
+export function getDownloadUrl(url: string, options?: {
+    filename?: string;
+    platform?: string;
+}): string {
+    const params = new URLSearchParams();
+    params.set('url', url);
+
+    if (options?.filename) params.set('filename', options.filename);
+    if (options?.platform) params.set('platform', options.platform);
+
+    return `/api/web/download?${params.toString()}`;
+}
+
 /**
  * Get proxied thumbnail URL - ALL thumbnails go through proxy
  * This ensures consistent loading across all platforms

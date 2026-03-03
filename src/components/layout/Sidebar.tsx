@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { History, Info, Menu, X, Home, Settings, Sun, Moon, Sparkles, ChevronDown, BookOpen, Clock, Globe, User, Image, Volume2 } from 'lucide-react';
+import { History, Info, Menu, X, Home, Settings, Sun, Moon, Sparkles, ChevronDown, BookOpen, Clock, Globe, User, Image, Volume2, Link2 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -428,6 +428,19 @@ function SidebarContent({ navLinks, platforms, isActive, onNavigate }: SidebarCo
                                 <span className="text-sm leading-none">{platform.label}</span>
                             </div>
                         ))}
+
+                        <a
+                            href="https://github.com/yt-dlp/yt-dlp"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-2 flex items-start gap-2.5 px-3 py-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-card)] text-[var(--text-secondary)] hover:border-[var(--accent-primary)]/40 hover:text-[var(--text-primary)] transition-colors"
+                        >
+                            <Link2 className="w-4 h-4 mt-0.5 text-[var(--accent-primary)] shrink-0" />
+                            <div className="min-w-0">
+                                <p className="text-[11px] leading-tight font-medium">+1000 platform via yt-dlp</p>
+                                <p className="text-[10px] text-[var(--text-muted)] truncate">github.com/yt-dlp/yt-dlp</p>
+                            </div>
+                        </a>
                     </div>
                 </div>
             </nav>

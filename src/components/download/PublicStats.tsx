@@ -7,10 +7,10 @@ const POLLING_INTERVAL_MS = 20_000;
 const FRESHNESS_TICK_MS = 5_000;
 
 const PLACEHOLDER_STATS = {
-  todayVisits: 999_999_999,
-  totalVisits: 999_999_999,
-  totalExtractions: 999_999_999,
-  totalDownloads: 999_999_999,
+  todayVisits: 999_999,
+  totalVisits: 999_999,
+  totalExtractions: 999_999,
+  totalDownloads: 999_999,
 };
 
 function formatNumber(value: number): string {
@@ -99,10 +99,10 @@ export function PublicStats() {
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between px-1">
-        <p className="text-[11px] text-[var(--text-muted)]">{freshnessText}</p>
-        <div className="flex items-center gap-1.5 text-[11px] text-[var(--text-muted)]">
-          <Radio className="w-3 h-3" />
+      <div className="flex flex-wrap items-center justify-between gap-1.5 px-1">
+        <p className="text-[11px] text-[var(--text-muted)] break-words [overflow-wrap:anywhere]">{freshnessText}</p>
+        <div className="flex items-center gap-1.5 text-[11px] text-[var(--text-muted)] min-w-0">
+          <Radio className="w-3 h-3 shrink-0" />
           <span>Polling every {POLLING_INTERVAL_MS / 1000}s</span>
         </div>
       </div>
@@ -116,15 +116,15 @@ export function PublicStats() {
                 {card.detailLines ? (
                   <>
                     <p className={`text-xs sm:text-sm font-semibold ${card.color}`}>{card.label}</p>
-                    <p className="text-[9px] sm:text-xs text-[var(--text-muted)]">{card.detailLines[0]}</p>
-                    <p className="text-[9px] sm:text-xs text-[var(--text-muted)]">{card.detailLines[1]}</p>
+                    <p className="text-[9px] sm:text-xs text-[var(--text-muted)] leading-tight break-words">{card.detailLines[0]}</p>
+                    <p className="text-[9px] sm:text-xs text-[var(--text-muted)] leading-tight break-words">{card.detailLines[1]}</p>
                   </>
                 ) : (
                   <>
                     <p className={`text-base sm:text-2xl font-bold ${card.color}`}>
                       {typeof card.value === 'number' ? formatNumber(card.value) : card.value}
                     </p>
-                    <p className="text-[9px] sm:text-xs text-[var(--text-muted)]">{card.label}</p>
+                    <p className="text-[9px] sm:text-xs text-[var(--text-muted)] leading-tight break-words">{card.label}</p>
                   </>
                 )}
               </div>

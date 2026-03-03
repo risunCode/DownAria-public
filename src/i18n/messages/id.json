@@ -48,7 +48,7 @@
       "twitter": "Twitter",
       "weibo": "Weibo"
     },
-    "subtitle": "Download Social Media Gratis untuk Facebook, Instagram, Twitter/X, Pixiv, dan YouTube/Music dengan cepat dan mudah.",
+    "subtitle": "Downloader media sosial gratis untuk hampir semua link publik. Didukung risunCode Native Extractor dan plugin yt-dlp.",
     "badges": {
       "noWatermark": "Tanpa Watermark",
       "fastFree": "Cepat & Gratis",
@@ -61,13 +61,14 @@
     "pasteUrl": "Tempel URL video...",
     "paste": "Tempel",
     "pasted": "Selesai",
-    "go": "Download",
+    "go": "Go",
     "downloadingFrom": "Download dari",
+    "processingLink": "Processing Link",
     "progress": {
       "starting": "Memulai...",
       "connecting": "Menghubungkan...",
       "fetching": "Mengambil halaman...",
-      "extracting": "Mengekstrak media...",
+      "extracting": "Processing Link",
       "validating": "Memvalidasi URL...",
       "almostDone": "Hampir selesai...",
       "done": "Selesai!"

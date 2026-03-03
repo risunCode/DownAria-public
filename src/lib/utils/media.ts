@@ -10,7 +10,7 @@
 
 import { MediaData, MediaFormat, PlatformId } from '@/lib/types';
 import { formatBytes } from './format';
-import { getProxyUrl } from '@/lib/api/proxy';
+import { getDownloadUrl, getProxyUrl } from '@/lib/api/proxy';
 
 function getMergeEndpoint(): string {
     return '/api/web/merge';
@@ -375,27 +375,156 @@ export function buildYouTubeSelectorFormats(formats: MediaFormat[]): MediaFormat
 }
 
 export function buildSelectorFormats(formats: MediaFormat[], platform: PlatformId, includeSyntheticAudio: boolean = true): MediaFormat[] {
+	const sortGenericFormats = (items: MediaFormat[]): MediaFormat[] => {
+		const score = (format: MediaFormat): number => {
+			const qualityText = `${format.quality || ''} ${format.resolution || ''} ${format.label || ''}`.toLowerCase();
+			const isAudio = format.type === 'audio' || qualityText.includes('audio');
+			const isVideo = format.type === 'video' || qualityText.includes('video');
+			const isImage = format.type === 'image';
+
+			let base = 0;
+			if (isVideo) base += 1_000_000;
+			else if (isImage) base += 100_000;
+			else if (isAudio) base += 10_000;
+
+			base += parseNumericQuality(qualityText) * 100;
+			if (qualityText.includes('original') || qualityText.includes('source')) base += 60_000;
+			if (qualityText.includes('4k') || qualityText.includes('2160')) base += 40_000;
+			if (qualityText.includes('1440')) base += 30_000;
+			if (qualityText.includes('1080')) base += 20_000;
+			if (qualityText.includes('720')) base += 10_000;
+			if (typeof format.height === 'number' && format.height > 0) base += format.height * 80;
+			if (typeof format.width === 'number' && format.width > 0) base += Math.round(format.width * 0.2);
+			if (typeof format.bitrate === 'number' && format.bitrate > 0) base += Math.round(format.bitrate);
+			if (typeof format.filesize === 'number' && format.filesize > 0) base += Math.round(format.filesize / (1024 * 1024));
+			return base;
+		};
+
+		return [...items].sort((a, b) => score(b) - score(a));
+	};
+
+	const normalizeHlsPairKey = (urlValue: string): string => {
+		try {
+			const parsed = new URL(urlValue);
+			const host = parsed.host.toLowerCase();
+			const path = parsed.pathname
+				.toLowerCase()
+				.replace(/\.(m3u8|mp4|ts)$/g, '')
+				.replace(/[-_\/.]?(audio|video)([-_\/.]|$)/g, '$2')
+				.replace(/[-_]+/g, '-')
+				.replace(/\d{3,4}p/g, '')
+				.replace(/\d{2,4}w/g, '')
+				.replace(/\b(hi|lo|low|high)\b/g, '')
+				.replace(/-+/g, '-')
+				.replace(/^-|-$/g, '');
+			return `${host}|${path}`;
+		} catch {
+			return urlValue.toLowerCase();
+		}
+	};
+
+	const deriveHlsAudioCandidates = (videoUrl: string): string[] => {
+		const candidates = new Set<string>();
+		const patterns: Array<[RegExp, string]> = [
+			[/_video\.m3u8(?=$|\?)/i, '_audio.m3u8'],
+			[/-video\.m3u8(?=$|\?)/i, '-audio.m3u8'],
+			[/\/video\.m3u8(?=$|\?)/i, '/audio.m3u8'],
+			[/_av\.m3u8(?=$|\?)/i, '_audio.m3u8'],
+			[/-av\.m3u8(?=$|\?)/i, '-audio.m3u8'],
+			[/_\d{2,4}w\.m3u8(?=$|\?)/i, '_audio.m3u8'],
+			[/_\d{3,4}p\.m3u8(?=$|\?)/i, '_audio.m3u8'],
+		];
+
+		for (const [pattern, replacement] of patterns) {
+			if (pattern.test(videoUrl)) {
+				candidates.add(videoUrl.replace(pattern, replacement));
+			}
+		}
+
+		try {
+			const parsed = new URL(videoUrl);
+			const pathname = parsed.pathname.toLowerCase();
+			if (!pathname.includes('audio')) {
+				parsed.pathname = parsed.pathname.replace(/\.m3u8$/i, '_audio.m3u8');
+				candidates.add(parsed.toString());
+			}
+		} catch {
+			// ignore
+		}
+
+		return Array.from(candidates);
+	};
+
     if (platform === 'youtube') {
         return buildYouTubeSelectorFormats(formats);
     }
 
-    if (!includeSyntheticAudio || formats.length === 0) {
-        return formats;
+    if (formats.length === 0) {
+		return [];
     }
 
-    const hasAudio = formats.some((format) => format.type === 'audio');
-    if (hasAudio) {
-        return formats;
-    }
+	const baseFormats = formats.map((format) => ({ ...format }));
+	const hlsAudioFormats = baseFormats.filter((format) => format.type === 'audio' && isHlsFormat(format));
+	const hlsAudioByPairKey = new Map<string, MediaFormat>();
 
-    const sourceVideo = formats.find((format) => format.type === 'video');
+	for (const audioFormat of hlsAudioFormats) {
+		hlsAudioByPairKey.set(normalizeHlsPairKey(audioFormat.url), audioFormat);
+	}
+
+	const syntheticHlsAudio: MediaFormat[] = [];
+	for (const format of baseFormats) {
+		if (format.type !== 'video' || !isHlsFormat(format)) continue;
+
+		const pairKey = normalizeHlsPairKey(format.url);
+		const matchedAudio = hlsAudioByPairKey.get(pairKey);
+		const derivedCandidates = deriveHlsAudioCandidates(format.url);
+		const resolvedAudioUrl = matchedAudio?.url || derivedCandidates[0] || '';
+
+		if (!resolvedAudioUrl) continue;
+
+		format.pairedAudioUrl = resolvedAudioUrl;
+		if (format.hasAudio === false || format.needsMerge || !matchedAudio) {
+			format.needsMerge = true;
+		}
+
+		if (!matchedAudio && includeSyntheticAudio) {
+			syntheticHlsAudio.push({
+				...format,
+				type: 'audio',
+				quality: 'Audio',
+				label: 'Audio',
+				url: resolvedAudioUrl,
+				pairedVideoUrl: format.url,
+				format: 'm3u8',
+				extension: 'm3u8',
+				isHLS: true,
+				filesize: undefined,
+				filesizeEstimated: true,
+				isSyntheticAudioOption: true,
+				needsMerge: false,
+			});
+		}
+	}
+
+	const mergedFormats = includeSyntheticAudio ? [...baseFormats, ...syntheticHlsAudio] : baseFormats;
+
+    if (!includeSyntheticAudio) {
+		return sortGenericFormats(mergedFormats);
+	}
+
+    const hasAudio = mergedFormats.some((format) => format.type === 'audio');
+	if (hasAudio) {
+		return sortGenericFormats(mergedFormats);
+	}
+
+    const sourceVideo = mergedFormats.find((format) => format.type === 'video');
     if (!sourceVideo) {
-        return formats;
+        return mergedFormats;
     }
 
-    if (sourceVideo.needsMerge || sourceVideo.hasAudio === false) {
-        return formats;
-    }
+	if (sourceVideo.needsMerge || sourceVideo.hasAudio === false) {
+		return sortGenericFormats(mergedFormats);
+	}
 
     const estimatedAudioSize = typeof sourceVideo.filesize === 'number' && sourceVideo.filesize > 0
         ? Math.max(1, Math.round(sourceVideo.filesize * 0.1))
@@ -430,7 +559,7 @@ export function buildSelectorFormats(formats: MediaFormat[], platform: PlatformI
         label: 'MP3',
     };
 
-    return [...formats, m4aOption, mp3Option];
+	return sortGenericFormats([...mergedFormats, m4aOption, mp3Option]);
 }
 
 export function dedupeYouTubeFormats(formats: MediaFormat[]): MediaFormat[] {
@@ -527,39 +656,43 @@ export function getYouTubePreviewNotice(format: MediaFormat | null, platform: Pl
 }
 
 /**
- * Find preferred format from list (HD video > any video > HD image > first)
+ * Find preferred format from list (auto-select highest quality)
  */
 export function findPreferredFormat(formats: MediaFormat[]): MediaFormat | undefined {
-    // First try HD video
-    let preferred = formats.find(f =>
-        (f.type === 'video' || f.quality.toLowerCase().includes('video')) && (
-            f.quality.toLowerCase().includes('hd') ||
-            f.quality.toLowerCase().includes('1080') ||
-            f.quality.toLowerCase().includes('720')
-        )
-    );
-    // If no HD video, find any video
-    if (!preferred) {
-        preferred = formats.find(f =>
-            f.type === 'video' || f.quality.toLowerCase().includes('video')
-        );
-    }
-    // If no video, find HD non-audio
-    if (!preferred) {
-        preferred = formats.find(f =>
-            f.type !== 'audio' && !f.quality.toLowerCase().includes('audio') && (
-                f.quality.toLowerCase().includes('hd') ||
-                f.quality.toLowerCase().includes('1080')
-            )
-        );
-    }
-    // Fallback to first non-audio, then first
-    if (!preferred) {
-        preferred = formats.find(f =>
-            f.type !== 'audio' && !f.quality.toLowerCase().includes('audio')
-        ) || formats[0];
-    }
-    return preferred;
+    if (formats.length === 0) return undefined;
+
+    const candidates = formats.filter((format) => !format.isSyntheticAudioOption);
+    const source = candidates.length > 0 ? candidates : formats;
+
+    const score = (format: MediaFormat): number => {
+        const qualityText = `${format.quality || ''} ${format.resolution || ''} ${format.label || ''}`.toLowerCase();
+        const isAudio = format.type === 'audio' || qualityText.includes('audio');
+        const isVideo = format.type === 'video' || qualityText.includes('video');
+        const isImage = format.type === 'image';
+
+        let base = 0;
+        if (isVideo) base += 1_000_000;
+        else if (isImage) base += 100_000;
+        else if (isAudio) base += 10_000;
+
+        const numericQuality = parseNumericQuality(qualityText);
+        base += numericQuality * 100;
+
+        if (qualityText.includes('original') || qualityText.includes('source')) base += 60_000;
+        if (qualityText.includes('4k') || qualityText.includes('2160')) base += 40_000;
+        if (qualityText.includes('1440')) base += 30_000;
+        if (qualityText.includes('1080')) base += 20_000;
+        if (qualityText.includes('720')) base += 10_000;
+
+        if (typeof format.height === 'number' && format.height > 0) base += format.height * 80;
+        if (typeof format.width === 'number' && format.width > 0) base += Math.round(format.width * 0.2);
+        if (typeof format.bitrate === 'number' && format.bitrate > 0) base += Math.round(format.bitrate);
+        if (typeof format.filesize === 'number' && format.filesize > 0) base += Math.round(format.filesize / (1024 * 1024));
+
+        return base;
+    };
+
+    return [...source].sort((a, b) => score(b) - score(a))[0];
 }
 
 /**
@@ -888,6 +1021,15 @@ export interface YouTubeMergeResult {
     error?: string;
 }
 
+interface ServerMergeRequestPayload {
+    url?: string;
+    quality?: string;
+    filename?: string;
+    format?: string;
+    videoUrl?: string;
+    audioUrl?: string;
+}
+
 async function extractMergeError(response: Response): Promise<string> {
     const fallback = `HTTP ${response.status}${response.statusText ? ` ${response.statusText}` : ''}`;
     const bodyText = await response.text().catch(() => '');
@@ -1094,6 +1236,25 @@ export async function downloadMergedYouTube(
     requestedAudioFormat?: string,
     abortSignal?: AbortSignal
 ): Promise<YouTubeMergeResult> {
+    return downloadMergedByServer(
+        {
+            url: youtubeUrl,
+            quality,
+            filename,
+            format: requestedAudioFormat || undefined,
+        },
+        onProgress,
+        estimatedSize,
+        abortSignal,
+    );
+}
+
+export async function downloadMergedByServer(
+    payload: ServerMergeRequestPayload,
+    onProgress: (progress: YouTubeMergeProgress) => void,
+    estimatedSize?: number,
+    abortSignal?: AbortSignal,
+): Promise<YouTubeMergeResult> {
     try {
         // Check if already aborted
         if (abortSignal?.aborted) {
@@ -1109,12 +1270,7 @@ export async function downloadMergedYouTube(
             response = await fetch(getMergeEndpoint(), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    url: youtubeUrl,
-                    quality,
-                    filename,
-                    format: requestedAudioFormat || undefined
-                }),
+                body: JSON.stringify(payload),
                 signal: abortSignal
             });
         } catch (fetchError) {
@@ -1134,7 +1290,7 @@ export async function downloadMergedYouTube(
         const contentLength = response.headers.get('content-length');
 
         // Extract filename from Content-Disposition
-        let finalFilename = filename;
+        let finalFilename = payload.filename || '';
         if (disposition) {
             // Try RFC 5987 filename*=UTF-8''... (most reliable)
             const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
@@ -1151,7 +1307,7 @@ export async function downloadMergedYouTube(
 
         // Final fallback: usage of 'filename' parameter if extraction fails
         if (!finalFilename || finalFilename.trim() === '') {
-            finalFilename = filename;
+            finalFilename = payload.filename || 'downaria_output.mp4';
         }
 
         // Get actual file size from Content-Length header
@@ -1357,10 +1513,13 @@ export async function downloadMedia(
                 ? format.filename.replace(/\.[^.]+$/, `.${format.requestedAudioFormat}`)
                 : `downaria_output.${format.requestedAudioFormat}`;
 
-            const result = await downloadMergedYouTube(
-                format.url,
-                format.quality,
-                audioFilename,
+            const result = await downloadMergedByServer(
+                {
+                    url: format.url,
+                    quality: format.quality,
+                    filename: audioFilename,
+                    format: format.requestedAudioFormat,
+                },
                 (p) => {
                     const status = p.status === 'done' ? 'done'
                         : p.status === 'error' ? 'error'
@@ -1377,7 +1536,6 @@ export async function downloadMedia(
                     });
                 },
                 format.filesize,
-                format.requestedAudioFormat,
                 abortSignal
             );
 
@@ -1388,7 +1546,42 @@ export async function downloadMedia(
             return { success: true, blob: result.blob, filename: result.filename || fallbackAudioName };
         }
 
-        // Case 2: HLS/m3u8 stream (non-YouTube)
+        // Case 2: paired video+audio stream (non-YouTube)
+        if (format.type === 'video' && format.pairedAudioUrl && (format.needsMerge || format.hasAudio === false || isHlsFormat(format))) {
+            onProgress?.({ status: 'merging', percent: 0, loaded: 0, total: 0, speed: 0, message: 'Merging video + audio...' });
+
+            const mergedFilename = (format.filename || 'downaria_output.mp4').replace(/\.(m3u8|ts|mp4|webm|mkv|mov)$/i, '.mp4');
+            const result = await downloadMergedByServer(
+                {
+                    videoUrl: format.url,
+                    audioUrl: format.pairedAudioUrl,
+                    filename: mergedFilename,
+                },
+                (p) => {
+                    const status = p.status === 'done' ? 'done'
+                        : p.status === 'error' ? 'error'
+                            : p.status === 'downloading' ? 'downloading'
+                                : 'merging';
+                    onProgress?.({
+                        status,
+                        percent: p.percent || 0,
+                        loaded: p.loaded || 0,
+                        total: p.total || 0,
+                        speed: (p as { speed?: number }).speed || 0,
+                        message: p.message,
+                    });
+                },
+                format.filesize,
+                abortSignal,
+            );
+
+            if (!result.success || !result.blob) {
+                return { success: false, error: result.error || 'Merge failed' };
+            }
+            return { success: true, blob: result.blob, filename: result.filename || mergedFilename };
+        }
+
+        // Case 3: HLS/m3u8 stream (non-YouTube)
         if (isHlsFormat(format)) {
             filename = 'downaria_hls.mp4';
             const result = await downloadHLSAsMP4(format.url, filename, (p) => {
@@ -1409,9 +1602,9 @@ export async function downloadMedia(
             return { success: true, filename };
         }
 
-        // Case 3: Regular direct download
-        const proxyUrl = getProxyUrl(format.url, { filename, platform, download: true });
-        const response = await fetch(proxyUrl, { signal: abortSignal });
+        // Case 4: Regular direct download
+        const downloadUrl = getDownloadUrl(format.url, { filename, platform });
+        const response = await fetch(downloadUrl, { signal: abortSignal });
         if (!response.ok) throw new Error(`Download failed: ${response.status}`);
 
         const contentLength = response.headers.get('content-length');

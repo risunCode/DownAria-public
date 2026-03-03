@@ -1,32 +1,32 @@
-# Process Environment Variables
+# Environment Variables (Current Usage)
 
-This document lists the `process.env` variables currently used after the centralized config refactor.
+This document lists active `process.env` usage in the current frontend repository.
 
-## 1) Single source of truth (runtime app)
+## Runtime app + server routes
 
-All runtime frontend env reads are centralized in `src/lib/config.ts`:
+### `NEXT_PUBLIC_API_URL`
+- Used by server gateway routes in `src/app/api/web/*` to forward requests to backend.
+- Also used by shared config consumers (`src/lib/config.ts` and API-related client modules).
 
-- `NEXT_PUBLIC_API_URL` -> `API_URL`
-- `NEXT_PUBLIC_BASE_URL` -> `BASE_URL`
-- `NODE_ENV` -> `IS_DEV`, `IS_PROD`
-- `VERCEL` -> `IS_VERCEL`
+### `WEB_INTERNAL_SHARED_SECRET`
+- Used in `src/app/api/web/*` for request-signature headers.
 
-Other modules import constants from `src/lib/config.ts` instead of reading `process.env` directly.
+### `NEXT_PUBLIC_APP_URL`
+- Used in `src/app/api/web/_internal/signature.ts` as preferred origin for gateway forwarding/signing context.
 
-Usage examples:
+### `FEEDBACK_DISCORD_WEBHOOK_URL`
+- Used in `src/app/api/feedback/route.ts` for feedback webhook delivery.
 
-- `API_URL`: `src/lib/api/client.ts`, `src/lib/api/proxy.ts`, `src/hooks/useUpdatePrompt.ts`, `src/components/download/PublicStats.tsx`, `src/lib/utils/media.ts`
-- `BASE_URL`: `src/app/layout.tsx`, `src/components/core/StructuredData.tsx`, `src/lib/utils/discord-webhook.ts`
-- `IS_DEV` / `IS_VERCEL`: `src/app/layout.tsx`, `src/lib/utils/discord-webhook.ts`
+### `NEXT_PUBLIC_BASE_URL`
+- Used by shared config (`src/lib/config.ts`) for canonical app URL in metadata/link helpers.
 
-## 2) Variables still read directly (build config)
+### `NODE_ENV`
+- Used in `src/lib/config.ts` (`IS_DEV` / `IS_PROD`) and gateway origin logic.
 
-Outside the runtime app, `next.config.ts` still reads:
+### `VERCEL`
+- Used in `src/lib/config.ts` (`IS_VERCEL`).
 
-- `NEXT_PUBLIC_API_URL`
+## Important Note
 
-Purpose: include the API origin in Content Security Policy (`connect-src`) during Next.js build/start.
-
-## 3) Notes on other variables
-
-Variables present in `.env.example` but not currently read by active frontend code paths remain optional and do not affect the main extract/download flow.
+- Env usage is intentionally split across shared config and route handlers.
+- Do not assume a single centralized runtime env source; several server routes read `process.env` directly.

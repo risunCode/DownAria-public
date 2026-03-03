@@ -12,7 +12,7 @@
  */
 
 import Swal from 'sweetalert2';
-import { formatNumber } from './format';
+import { formatBytes, formatNumber } from './format';
 import { BASE_URL, IS_DEV } from '@/lib/config';
 import { getProxyUrl as buildProxyUrl } from '@/lib/api/proxy';
 import { 
@@ -24,6 +24,15 @@ import {
 
 const APP_NAME = 'DownAria';
 const LARGE_FILE_THRESHOLD = 10 * 1024 * 1024; // 10MB - Discord stops auto-embedding above this
+
+function escapeHtml(value: string): string {
+    return value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
 
 const getAppIcon = () => {
     if (typeof window !== 'undefined') {
@@ -88,6 +97,15 @@ function markSent(key: string): void {
 
 function getInlineProxyUrl(mediaUrl: string, platform: string): string {
     return buildProxyUrl(mediaUrl, { platform: platform.toLowerCase(), inline: true });
+}
+
+function normalizeMentionContent(raw: string | undefined): string {
+    const value = (raw || '').trim();
+    if (!value) return '';
+
+    // Only allow real Discord mention tokens, ignore accidental text like "aa"
+    const mentionTokenRe = /^(?:@everyone|@here|<@!?\d+>|<@&\d+>)(?:\s+(?:@everyone|@here|<@!?\d+>|<@&\d+>))*$/;
+    return mentionTokenRe.test(value) ? value : '';
 }
 
 // Get file size via HEAD request through proxy (returns 0 if unknown)
@@ -210,210 +228,150 @@ async function sendFileToDiscord(
 export async function sendDiscordNotification(data: {
     platform: string;
     title: string;
-    quality: string;
+    quality?: string;
     thumbnail?: string;
     mediaUrl?: string;
     mediaType?: 'video' | 'image' | 'audio';
+    contentType?: string;
     sourceUrl?: string;
     author?: string;
     engagement?: { likes?: number; comments?: number; shares?: number; views?: number };
-    fileSize?: number; // NEW: Pass file size from download button to skip HEAD request
+    fileSize?: number;
 }, manual = false): Promise<{ sent: boolean; reason?: string; details?: string }> {
     const settings = getUserDiscordSettings();
 
-    if (!settings?.enabled || !settings?.webhookUrl) {
-        return { sent: false, reason: 'no_webhook' };
+    if (!settings?.enabled) {
+        return { sent: false, reason: 'disabled' };
     }
 
     if (!manual && !settings.autoSend) {
-        return { sent: false, reason: 'auto_disabled' };
+        return { sent: false, reason: 'auto_send_disabled' };
     }
 
-    // Check rate limit
-    const waitMs = getRateLimitWait();
-    if (waitMs > 1000) {
-        const waitSec = Math.ceil(waitMs / 1000);
-        return { sent: false, reason: 'rate_limited', details: `Rate limited. Try again in ${waitSec}s` };
+    if (!settings?.webhookUrl) {
+        return { sent: false, reason: 'no_webhook' };
     }
 
-    // Check duplicate
-    const messageKey = getMessageKey(data);
-    if (isDuplicate(messageKey)) {
-        return { sent: false, reason: 'duplicate', details: 'Already sent in the last minute' };
-    }
+    let sendPhase: 'first' | 'second' = 'first';
 
     try {
         const appIcon = getAppIcon();
         const isWeibo = data.platform.toLowerCase() === 'weibo';
 
-        // Build embed
-        const fields: Array<{ name: string; value: string; inline: boolean }> = [];
-        if (data.title) {
-            fields.push({
-                name: 'Caption',
-                value: data.title.length > 200 ? data.title.substring(0, 200) + '...' : data.title,
-                inline: false
+        const linkTarget = data.mediaUrl
+            ? (isWeibo ? getInlineProxyUrl(data.mediaUrl, data.platform) : data.mediaUrl)
+            : data.sourceUrl;
+
+        if (!linkTarget) {
+            return { sent: false, reason: 'no_link' };
+        }
+
+        if (manual) {
+            const sendMethodLabel = settings.sendMethod === 'single'
+                ? 'Single message'
+                : 'Double message (link + embed)';
+            const fileSizeLabel = data.fileSize && data.fileSize > 0 ? formatBytes(data.fileSize) : 'Unknown';
+
+            const confirm = await Swal.fire({
+                icon: 'question',
+                title: 'Send to Discord?',
+                html: `<div style="text-align:left">` +
+                    `<div><b>Platform:</b> ${escapeHtml(data.platform || 'Unknown')}</div>` +
+                    `<div><b>Type:</b> ${escapeHtml(data.mediaType || data.contentType || data.quality || 'media')}</div>` +
+                    `<div><b>Size:</b> ${escapeHtml(fileSizeLabel)}</div>` +
+                    `<div><b>Method:</b> ${escapeHtml(sendMethodLabel)}</div>` +
+                    `</div>`,
+                showCancelButton: true,
+                confirmButtonText: 'Send',
+                cancelButtonText: 'Cancel',
+                background: 'var(--bg-card)',
+                color: 'var(--text-primary)',
+                confirmButtonColor: 'var(--accent-primary)',
             });
-        }
-        if (data.author) {
-            fields.push({ name: 'Author', value: data.author, inline: true });
-        }
-        if (data.engagement) {
-            const parts: string[] = [];
-            if (data.engagement.views) parts.push(`${formatNumber(data.engagement.views)} views`);
-            if (data.engagement.likes) parts.push(`${formatNumber(data.engagement.likes)} likes`);
-            if (data.engagement.comments) parts.push(`${formatNumber(data.engagement.comments)} comments`);
-            if (data.engagement.shares) parts.push(`${formatNumber(data.engagement.shares)} shares`);
-            if (parts.length > 0) {
-                fields.push({ name: 'Engagement', value: parts.join(' · '), inline: true });
+
+            if (!confirm.isConfirmed) {
+                return { sent: false, reason: 'cancelled' };
             }
         }
 
-        const embed: Record<string, unknown> = {
-            author: { name: `${data.platform} Downloader` },
-            color: parseInt(settings.embedColor.replace('#', ''), 16),
+        const fields: Array<{ name: string; value: string; inline: boolean }> = [];
+
+        const platformLabel = data.platform?.trim() || 'Unknown Platform';
+        const typeOrContentType = data.mediaType?.trim() || data.contentType?.trim() || data.quality?.trim();
+        const markdownLabel = typeOrContentType ? `${platformLabel} ${typeOrContentType}` : platformLabel;
+        const linkMarkdown = `[${markdownLabel}](${linkTarget})`;
+
+        fields.push({ name: 'Platform', value: platformLabel, inline: true });
+
+        if (typeOrContentType) {
+            fields.push({ name: 'Type', value: typeOrContentType, inline: true });
+        }
+
+        if (data.author) {
+            fields.push({ name: 'Author', value: data.author, inline: true });
+        }
+
+        if (data.fileSize && data.fileSize > 0) {
+            fields.push({ name: 'Size', value: formatBytes(data.fileSize), inline: true });
+        }
+
+        const parsedColor = parseInt((settings.embedColor || '#5865F2').replace('#', ''), 16);
+        const embedColor = Number.isNaN(parsedColor) ? parseInt('5865F2', 16) : parsedColor;
+
+        const metadataEmbed: Record<string, unknown> = {
+            author: { name: `${platformLabel} Downloader` },
+            title: 'Open Media Source',
+            color: embedColor,
             fields,
             footer: { text: settings.footerText || 'via DownAria', icon_url: appIcon },
             timestamp: new Date().toISOString(),
         };
 
         if (data.sourceUrl) {
-            embed.url = data.sourceUrl;
-            embed.title = 'Open Source';
+            metadataEmbed.url = data.sourceUrl;
         }
 
-        // Handle media display
-        if (data.mediaType === 'image' && data.mediaUrl) {
-            // Photos: Use BIG image (bottom)
-            embed.image = { url: isWeibo ? getInlineProxyUrl(data.mediaUrl, data.platform) : data.mediaUrl };
-        } else if (data.thumbnail) {
-            // Videos/Other: Use THUMBNAIL (small, top-right)
-            // This ensures we always have a visual, but avoids overriding the video player in 'link' mode.
-            embed.thumbnail = { url: isWeibo ? getInlineProxyUrl(data.thumbnail!, data.platform) : data.thumbnail! };
+        if (data.thumbnail) {
+            metadataEmbed.thumbnail = { url: isWeibo ? getInlineProxyUrl(data.thumbnail, data.platform) : data.thumbnail };
         }
 
-        // Canonical method: always 2-message link flow for video
-        const mediaLabel = `${data.platform} ${data.quality || (data.mediaType === 'video' ? 'Video' : 'Media')}`;
+        const mention = normalizeMentionContent(settings.mention);
 
-        // UNIFIED CONFIRMATION DIALOG ---------------------------------------
-        // If manual, show dialog for BOTH Upload and Link logic to ensure consistency.
-        if (manual) {
-            const result = await Swal.fire({
-                title: 'Send to Discord?',
-                html: `
-                    <div class="text-left text-sm space-y-2 mt-4">
-                        <div class="grid grid-cols-[80px_1fr] gap-2">
-                            <span class="text-[var(--text-muted)]">Platform:</span>
-                            <span class="font-medium text-[var(--text-primary)]">${data.platform}</span>
-                            
-                            <span class="text-[var(--text-muted)]">Type:</span>
-                            <span class="font-medium text-[var(--text-primary)] flex items-center gap-1">
-                                ${data.mediaType === 'video' ? '📹 Video' : '📷 Image'}
-                            </span>
-                            
-                            <span class="text-[var(--text-muted)]">Quality:</span>
-                            <span class="font-medium text-[var(--text-primary)]">${data.quality || 'Standard'}</span>
-
-                            <span class="text-[var(--text-muted)]">Method:</span>
-                            <span class="font-medium text-green-500">
-                                Link + Embed (2 messages)
-                            </span>
-                        </div>
-                        <p class="text-[10px] text-[var(--text-muted)] mt-3 pt-3 border-t border-[var(--border-color)]">
-                            Sends link first, then metadata embed. No direct media upload from your device.
-                        </p>
-                    </div>
-                `,
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonText: 'Send',
-                cancelButtonText: 'Cancel',
-                confirmButtonColor: '#5865F2',
-                background: 'var(--bg-card)',
-                color: 'var(--text-primary)',
-                reverseButtons: true
-            });
-
-            if (!result.isConfirmed) {
-                return { sent: false, reason: 'cancelled' };
-            }
-
-            // Loading removed to run in background
-        }
-        // -------------------------------------------------------------------
-
-        // Canonical send flow for video
-        if (data.mediaType === 'video' && data.mediaUrl) {
-            const videoLinkUrl = isWeibo ? getInlineProxyUrl(data.mediaUrl, data.platform) : data.mediaUrl;
-
-            if (IS_DEV) console.log('[Discord] Using canonical 2x send method (Link -> Embed)');
-
-            const result1 = await sendToWebhook(settings.webhookUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    username: APP_NAME,
-                    avatar_url: appIcon,
-                    content: `${settings.mention ? settings.mention + ' ' : ''}[${mediaLabel}](${videoLinkUrl})`,
-                }),
-            });
-
-            if (!result1.ok) {
-                if (result1.status === 429) {
-                    return { sent: false, reason: 'rate_limited', details: `Rate limited. Try again in ${result1.retryAfter || 5}s` };
-                }
-                return { sent: false, reason: `error_${result1.status}`, details: result1.error };
-            }
-
-            markSent(messageKey);
-            await new Promise(r => setTimeout(r, 2000));
-
-            const result2 = await sendToWebhook(settings.webhookUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    username: APP_NAME,
-                    avatar_url: appIcon,
-                    embeds: [embed],
-                }),
-            });
-
-            if (!result2.ok) {
-                return { sent: true, details: 'Link sent, embed failed' };
-            }
-
-            return { sent: true };
-        } else if (data.thumbnail) {
-            // Videos/Other: Use THUMBNAIL (small, top-right)
-            // This ensures we always have a visual, but avoids overriding the video player in 'link' mode.
-            embed.thumbnail = { url: isWeibo ? getInlineProxyUrl(data.thumbnail!, data.platform) : data.thumbnail! };
-        }
-
-        // Send embed
-        const result = await sendToWebhook(settings.webhookUrl, {
+        const firstResponse = await fetch(settings.webhookUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 username: APP_NAME,
                 avatar_url: appIcon,
-                content: settings.mention || undefined,
-                embeds: [embed],
+                content: linkMarkdown,
             }),
         });
 
-        if (result.ok) {
-            markSent(messageKey);
-            return { sent: true };
+        if (!firstResponse.ok && firstResponse.status !== 204) {
+            return { sent: false, reason: `error_first_${firstResponse.status}` };
         }
 
-        if (result.status === 429) {
-            return { sent: false, reason: 'rate_limited', details: `Rate limited. Try again in ${result.retryAfter || 5}s` };
+        sendPhase = 'second';
+
+        const secondResponse = await fetch(settings.webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                username: APP_NAME,
+                avatar_url: appIcon,
+                ...(mention ? { content: mention } : {}),
+                embeds: [metadataEmbed],
+            }),
+        });
+
+        if (!secondResponse.ok && secondResponse.status !== 204) {
+            return { sent: false, reason: `error_second_${secondResponse.status}` };
         }
 
-        return { sent: false, reason: `error_${result.status}`, details: result.error };
-    } catch (err) {
-        console.error('[Discord] Send error:', err);
-        return { sent: false, reason: 'error', details: err instanceof Error ? err.message : 'Unknown error' };
+        return { sent: true };
+    } catch (error) {
+        console.error('[Discord] Send error:', error);
+        return { sent: false, reason: `error_${sendPhase}_network` };
     }
 }
 
