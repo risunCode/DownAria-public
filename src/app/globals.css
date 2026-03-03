@@ -648,9 +648,9 @@ body.has-custom-background .modal-solid {
 }
 
 .response-json-backdrop {
-  background: color-mix(in srgb, var(--modal-overlay) 82%, rgba(6, 10, 20, 0.42));
-  backdrop-filter: blur(max(var(--modal-overlay-blur), 10px));
-  -webkit-backdrop-filter: blur(max(var(--modal-overlay-blur), 10px));
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(12px) brightness(0.8);
+  -webkit-backdrop-filter: blur(12px) brightness(0.8);
 }
 
 body.has-custom-background .response-json-modal-panel {
