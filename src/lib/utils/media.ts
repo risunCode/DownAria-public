@@ -10,6 +10,11 @@
 
 import { MediaData, MediaFormat, PlatformId } from '@/lib/types';
 import { formatBytes } from './format';
+import { getProxyUrl } from '@/lib/api/proxy';
+
+function getMergeEndpoint(): string {
+    return '/api/web/merge';
+}
 
 // ============================================================================
 // DOWNLOAD UTILITIES (from download-utils.ts)
@@ -603,7 +608,7 @@ export type ProgressCallback = (progress: HLSDownloadProgress) => void;
  */
 async function parseM3U8(m3u8Url: string): Promise<string[]> {
     // Fetch via proxy to bypass CORS
-    const proxyUrl = `/api/web/proxy?url=${encodeURIComponent(m3u8Url)}&inline=1`;
+    const proxyUrl = getProxyUrl(m3u8Url, { inline: true });
     const res = await fetch(proxyUrl);
 
     if (!res.ok) {
@@ -641,7 +646,7 @@ async function parseM3U8(m3u8Url: string): Promise<string[]> {
  * Download a single segment with retry
  */
 async function downloadSegment(url: string, retries = 3): Promise<ArrayBuffer> {
-    const proxyUrl = `/api/web/proxy?url=${encodeURIComponent(url)}`;
+    const proxyUrl = getProxyUrl(url);
 
     for (let attempt = 1; attempt <= retries; attempt++) {
         try {
@@ -1101,7 +1106,7 @@ export async function downloadMergedYouTube(
         let response: Response;
         try {
             // Call merge API with abort signal
-            response = await fetch('/api/web/merge', {
+            response = await fetch(getMergeEndpoint(), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -1247,8 +1252,6 @@ export function isYouTubeUrl(url: string): boolean {
 // ============================================================================
 // UNIFIED DOWNLOAD HELPER
 // ============================================================================
-
-import { getProxyUrl } from '@/lib/api/proxy';
 
 export interface DownloadProgress {
     status: 'idle' | 'downloading' | 'merging' | 'done' | 'error';
