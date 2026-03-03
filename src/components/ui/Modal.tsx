@@ -14,6 +14,7 @@ interface ModalProps {
     bodyClassName?: string;
     panelClassName?: string;
     header?: React.ReactNode;
+    backdropClassName?: string;
 }
 
 const sizes = {
@@ -33,6 +34,7 @@ export function Modal({
     bodyClassName,
     panelClassName,
     header,
+    backdropClassName,
 }: ModalProps) {
     const dialogRef = useRef<HTMLDivElement>(null);
     const previouslyFocusedElementRef = useRef<HTMLElement | null>(null);
@@ -125,7 +127,7 @@ export function Modal({
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
-                        className="modal-theme-backdrop fixed inset-0 z-50"
+                        className={`modal-theme-backdrop fixed inset-0 z-50 ${backdropClassName || ''}`}
                     />
 
                     {/* Modal */}

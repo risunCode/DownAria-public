@@ -647,6 +647,12 @@ body.has-custom-background .modal-solid {
   overflow: hidden !important;
 }
 
+.response-json-backdrop {
+  background: color-mix(in srgb, var(--modal-overlay) 82%, rgba(6, 10, 20, 0.42));
+  backdrop-filter: blur(max(var(--modal-overlay-blur), 10px));
+  -webkit-backdrop-filter: blur(max(var(--modal-overlay-blur), 10px));
+}
+
 body.has-custom-background .response-json-modal-panel {
   background: var(--bg-card) !important;
   backdrop-filter: none !important;

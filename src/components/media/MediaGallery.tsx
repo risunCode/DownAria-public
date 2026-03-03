@@ -997,7 +997,8 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
         title="Response JSON"
         showTitle
         bodyClassName="p-4"
-        panelClassName="response-json-modal-panel max-w-2xl w-[min(92vw,860px)] rounded-2xl overflow-hidden"
+        backdropClassName="response-json-backdrop z-[70]"
+        panelClassName="response-json-modal-panel z-[71] max-w-2xl w-[min(92vw,860px)] rounded-2xl overflow-hidden"
         header={(
           <>
             <div className="relative">

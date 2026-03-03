@@ -284,10 +284,11 @@ export function DownloadForm({
                         <div className="flex items-center gap-2">
                             <span className="text-[var(--text-muted)]">{t('downloadingFrom')}</span>
                             <span 
-                                className="font-semibold px-2 py-0.5 rounded-md"
+                                className="font-semibold px-2 py-0.5 rounded-md border"
                                 style={{ 
-                                    background: `${currentPlatform?.color}20`,
-                                    color: currentPlatform?.color 
+                                    background: currentPlatform?.id === 'twitter' ? 'var(--bg-secondary)' : `${currentPlatform?.color}20`,
+                                    color: currentPlatform?.id === 'twitter' ? 'var(--text-primary)' : currentPlatform?.color,
+                                    borderColor: currentPlatform?.id === 'twitter' ? 'var(--border-color)' : `${currentPlatform?.color}55`,
                                 }}
                             >
                                 <PlatformIcon platform={currentPlatform?.id || ''} className="w-4 h-4" /> {currentPlatform?.name}
