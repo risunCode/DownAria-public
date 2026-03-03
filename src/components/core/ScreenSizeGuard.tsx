@@ -3,7 +3,9 @@
 import { useEffect, useRef } from 'react';
 import Swal from 'sweetalert2';
 
-const SHRINK_DELTA_PX = 8;
+const WIDTH_SHRINK_DELTA_PX = 24;
+const OVERFLOW_TOLERANCE_PX = 6;
+const WARNING_COOLDOWN_MS = 8000;
 
 function getViewportSize(): { width: number; height: number } {
   if (window.visualViewport) {
@@ -21,6 +23,7 @@ function getViewportSize(): { width: number; height: number } {
 export function ScreenSizeGuard() {
   const isShowingRef = useRef(false);
   const prevSizeRef = useRef<{ width: number; height: number } | null>(null);
+  const lastWarningAtRef = useRef(0);
 
   const shouldIgnoreResizeWarning = () => {
     const active = document.activeElement as HTMLElement | null;
@@ -32,9 +35,20 @@ export function ScreenSizeGuard() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
+    const hasHorizontalOverflow = () => {
+      const doc = document.documentElement;
+      if (!doc) return false;
+      const viewportWidth = Math.floor(window.innerWidth);
+      return doc.scrollWidth - viewportWidth > OVERFLOW_TOLERANCE_PX;
+    };
+
     const showWarning = () => {
       if (isShowingRef.current || Swal.isVisible()) return;
+      const now = Date.now();
+      if (now - lastWarningAtRef.current < WARNING_COOLDOWN_MS) return;
+
       isShowingRef.current = true;
+      lastWarningAtRef.current = now;
 
       void Swal.fire({
         icon: 'warning',
@@ -61,10 +75,11 @@ export function ScreenSizeGuard() {
         return;
       }
 
-      const widthShrunk = current.width < previous.width - SHRINK_DELTA_PX;
-      const heightShrunk = current.height < previous.height - SHRINK_DELTA_PX;
+      const widthShrunk = current.width < previous.width - WIDTH_SHRINK_DELTA_PX;
+      const horizontalOverflow = hasHorizontalOverflow();
 
-      if ((widthShrunk || heightShrunk) && !shouldIgnoreResizeWarning()) {
+      // Ignore height-only viewport changes from mobile browser chrome while scrolling.
+      if (!shouldIgnoreResizeWarning() && (horizontalOverflow || (widthShrunk && horizontalOverflow))) {
         showWarning();
       }
 
@@ -73,6 +88,10 @@ export function ScreenSizeGuard() {
 
     const initTimer = window.setTimeout(() => {
       prevSizeRef.current = getViewportSize();
+      // Initial check catches real horizontal overflow without waiting for resize events.
+      if (!shouldIgnoreResizeWarning() && hasHorizontalOverflow()) {
+        showWarning();
+      }
     }, 120);
 
     const onResize = () => {

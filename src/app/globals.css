@@ -935,13 +935,13 @@ body.has-custom-background [class*="backdrop"] {
 /* Shiny border animation for preview cards */
 .shiny-border {
   position: relative;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .shiny-border::before {
   content: "";
   position: absolute;
-  inset: -1px;
+  inset: 0;
   border-radius: inherit;
   padding: 2px;
   background: conic-gradient(from var(--border-angle, 0deg),
