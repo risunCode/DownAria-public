@@ -3,14 +3,6 @@
  * Builds proxy URLs via frontend BFF routes
  */
 import type { PlatformId } from '@/lib/types';
-import { API_URL } from '@/lib/config';
-
-function requireApiUrl(): string {
-    if (!API_URL) {
-        throw new Error('NEXT_PUBLIC_API_URL is not configured');
-    }
-    return API_URL;
-}
 
 export function getProxyUrl(url: string, options?: {
     filename?: string;
@@ -30,7 +22,7 @@ export function getProxyUrl(url: string, options?: {
     if (options?.hls) params.set('hls', '1');
     if (options?.download) params.set('download', '1');
 
-    return `${requireApiUrl()}/api/web/proxy?${params.toString()}`;
+    return `/api/web/proxy?${params.toString()}`;
 }
 
 /**

@@ -11,13 +11,9 @@
 import { MediaData, MediaFormat, PlatformId } from '@/lib/types';
 import { formatBytes } from './format';
 import { getProxyUrl } from '@/lib/api/proxy';
-import { API_URL } from '@/lib/config';
 
 function getMergeEndpoint(): string {
-    if (!API_URL) {
-        throw new Error('NEXT_PUBLIC_API_URL is not configured');
-    }
-    return `${API_URL}/api/web/merge`;
+    return '/api/web/merge';
 }
 
 // ============================================================================
