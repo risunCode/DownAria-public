@@ -37,6 +37,9 @@ import {
   setBackgroundSound,
   setBackgroundVolume,
   setBackgroundEnabled,
+  setParticleIntensity,
+  setParticleOpacity,
+  setParticleSpeed,
   processBackgroundFile,
   clearCustomBackground,
   formatFileSize,
@@ -77,6 +80,9 @@ export function SeasonalSettings() {
   const [backgroundSoundEnabled, setBackgroundSoundEnabled] = useState(false);
   const [backgroundVolumeState, setBackgroundVolumeState] = useState(50);
   const [backgroundEnabledState, setBackgroundEnabledState] = useState(true);
+  const [particleIntensity, setParticleIntensityState] = useState(50);
+  const [particleOpacity, setParticleOpacityState] = useState(50);
+  const [particleSpeed, setParticleSpeedState] = useState(100);
   const [isUploading, setIsUploading] = useState(false);
   const [hasShownWarning, setHasShownWarning] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -94,6 +100,9 @@ export function SeasonalSettings() {
     setBackgroundSoundEnabled(settings.backgroundSound);
     setBackgroundVolumeState(settings.backgroundVolume);
     setBackgroundEnabledState(settings.backgroundEnabled);
+    setParticleIntensityState(settings.intensity ?? 50);
+    setParticleOpacityState(settings.particleOpacity ?? 50);
+    setParticleSpeedState(settings.particleSpeed ?? 100);
     if (settings.customBackground) {
       setHasBackground(true);
       setBackgroundInfo({
@@ -113,6 +122,9 @@ export function SeasonalSettings() {
       setBackgroundSoundEnabled(s.backgroundSound);
       setBackgroundVolumeState(s.backgroundVolume);
       setBackgroundEnabledState(s.backgroundEnabled);
+      setParticleIntensityState(s.intensity ?? 50);
+      setParticleOpacityState(s.particleOpacity ?? 50);
+      setParticleSpeedState(s.particleSpeed ?? 100);
       if (s.customBackground) {
         setHasBackground(true);
         setBackgroundInfo({ type: s.customBackground.type, size: s.customBackground.size });
@@ -186,6 +198,21 @@ export function SeasonalSettings() {
     setBackgroundEnabled(newValue);
   };
 
+  const handleParticleIntensityChange = (value: number) => {
+    setParticleIntensityState(value);
+    setParticleIntensity(value);
+  };
+
+  const handleParticleSpeedChange = (value: number) => {
+    setParticleSpeedState(value);
+    setParticleSpeed(value);
+  };
+
+  const handleParticleOpacityChange = (value: number) => {
+    setParticleOpacityState(value);
+    setParticleOpacity(value);
+  };
+
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -232,7 +259,7 @@ export function SeasonalSettings() {
       {/* Enable Toggle */}
       <div className="flex items-center justify-between p-4 rounded-xl border border-[var(--border-color)] hover:border-[var(--accent-primary)] transition-all">
         <div className="flex items-center gap-3">
-          <Sparkles className={cn('w-5 h-5', experimentalEnabled ? 'text-purple-500' : 'text-[var(--text-muted)]')} />
+          <Sparkles className={cn('w-5 h-5', experimentalEnabled ? 'text-[var(--accent-primary)]' : 'text-[var(--text-muted)]')} />
           <div>
             <p className="text-sm font-medium text-[var(--text-primary)]">Enable Experimental Features</p>
             <p className="text-xs text-[var(--text-muted)]">Access beta features and early previews</p>
@@ -242,7 +269,7 @@ export function SeasonalSettings() {
           onClick={() => handleExperimentalChange(!experimentalEnabled)}
           className={cn(
             'relative w-12 h-6 rounded-full transition-colors',
-            experimentalEnabled ? 'bg-purple-500' : 'bg-[var(--bg-card)] border border-[var(--border-color)]'
+            experimentalEnabled ? 'bg-[var(--accent-primary)]' : 'bg-[var(--bg-card)] border border-[var(--border-color)]'
           )}
         >
           <span className={cn('absolute top-1 w-4 h-4 rounded-full bg-white transition-all', experimentalEnabled ? 'left-7' : 'left-1')} />
@@ -272,9 +299,9 @@ export function SeasonalSettings() {
             </div>
 
             {/* Seasonal Effects */}
-            <div className="p-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)]/35 hover:border-purple-500/50 transition-all">
+            <div className="p-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)]/35 hover:border-[var(--accent-primary)]/50 transition-all">
               <div className="flex items-center gap-3 mb-3">
-                <Sparkles className="w-5 h-5 text-purple-500" />
+                <Sparkles className="w-5 h-5 text-[var(--accent-primary)]" />
                 <div>
                   <p className="text-sm font-medium text-[var(--text-primary)]">Seasonal Effects</p>
                   <p className="text-xs text-[var(--text-muted)]">Particle animations (snow, cherry blossoms, leaves)</p>
@@ -288,8 +315,8 @@ export function SeasonalSettings() {
                     className={cn(
                       'flex flex-col items-center gap-1 p-2 rounded-xl border transition-all bg-[var(--bg-card)]/35',
                       seasonalMode === option.id
-                        ? 'bg-purple-500/20 border-purple-500 text-purple-400'
-                        : 'border-[var(--border-color)] text-[var(--text-secondary)] hover:border-purple-500/50'
+                        ? 'bg-[var(--accent-primary)]/20 border-[var(--accent-primary)] text-[var(--accent-primary)]'
+                        : 'border-[var(--border-color)] text-[var(--text-secondary)] hover:border-[var(--accent-primary)]/50'
                     )}
                   >
                     <span className="text-lg">{option.emoji}</span>
@@ -297,17 +324,70 @@ export function SeasonalSettings() {
                   </button>
                 ))}
               </div>
+
+              <div className="space-y-4 mt-4 pt-4 border-t border-[var(--border-color)]">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Leaf className="w-4 h-4 text-[var(--text-muted)]" />
+                    <span className="text-xs text-[var(--text-secondary)]">Particle Intensity</span>
+                  </div>
+                  <Slider
+                    value={particleIntensity}
+                    min={0}
+                    max={200}
+                    onChange={handleParticleIntensityChange}
+                    showValue
+                    valueFormat={(v) => `${v}%`}
+                    color="blue"
+                  />
+                  <p className="text-[10px] text-[var(--text-muted)]">Increase or decrease total floating items (up to 200%)</p>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <ArrowUpDown className="w-4 h-4 text-[var(--text-muted)]" />
+                    <span className="text-xs text-[var(--text-secondary)]">Fall Speed</span>
+                  </div>
+                  <Slider
+                    value={particleSpeed}
+                    min={50}
+                    max={150}
+                    onChange={handleParticleSpeedChange}
+                    showValue
+                    valueFormat={(v) => `${v}%`}
+                    color="blue"
+                  />
+                  <p className="text-[10px] text-[var(--text-muted)]">Lower = slower floating, higher = faster falling</p>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Eye className="w-4 h-4 text-[var(--text-muted)]" />
+                    <span className="text-xs text-[var(--text-secondary)]">Particle Opacity</span>
+                  </div>
+                  <Slider
+                    value={particleOpacity}
+                    min={10}
+                    max={100}
+                    onChange={handleParticleOpacityChange}
+                    showValue
+                    valueFormat={(v) => `${v}%`}
+                    color="blue"
+                  />
+                  <p className="text-[10px] text-[var(--text-muted)]">Make particles more subtle or more visible</p>
+                </div>
+              </div>
             </div>
 
             {/* Custom Background */}
-            <div className="p-4 rounded-xl border border-[var(--border-color)] hover:border-purple-500/50 transition-all">
+            <div className="p-4 rounded-xl border border-[var(--border-color)] hover:border-[var(--accent-primary)]/50 transition-all">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                   {hasBackground ? (
                     backgroundInfo?.type === 'video' ? (
-                      <Video className="w-5 h-5 text-purple-500" />
+                      <Video className="w-5 h-5 text-[var(--accent-primary)]" />
                     ) : (
-                      <Image className="w-5 h-5 text-purple-500" />
+                      <Image className="w-5 h-5 text-[var(--accent-primary)]" />
                     )
                   ) : (
                     <Image className="w-5 h-5 text-[var(--text-muted)]" />
@@ -375,7 +455,7 @@ export function SeasonalSettings() {
                       onChange={handleOpacityChange}
                       showValue
                       valueFormat={(v) => `${v}%`}
-                      color="purple"
+                      color="blue"
                     />
                     <p className="text-[10px] text-[var(--text-muted)]">Best on dark theme and 8% transparency</p>
                   </div>
@@ -393,7 +473,7 @@ export function SeasonalSettings() {
                       onChange={handleBlurChange}
                       showValue
                       valueFormat={(v) => `${v}px`}
-                      color="purple"
+                      color="blue"
                     />
                   </div>
 
@@ -410,7 +490,7 @@ export function SeasonalSettings() {
                       onChange={handleZoomChange}
                       showValue
                       valueFormat={(v) => `${v}%`}
-                      color="purple"
+                      color="blue"
                     />
                     <p className="text-[10px] text-[var(--text-muted)]">65% - 150%</p>
                   </div>
@@ -428,7 +508,7 @@ export function SeasonalSettings() {
                       onChange={handleBackgroundPositionYChange}
                       showValue
                       valueFormat={(v) => `${v}%`}
-                      color="purple"
+                      color="blue"
                     />
                     <p className="text-[10px] text-[var(--text-muted)]">0% = Up, 100% = Down</p>
                   </div>
@@ -439,7 +519,7 @@ export function SeasonalSettings() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           {backgroundSoundEnabled ? (
-                            <Volume2 className="w-4 h-4 text-purple-500" />
+                            <Volume2 className="w-4 h-4 text-[var(--accent-primary)]" />
                           ) : (
                             <VolumeX className="w-4 h-4 text-[var(--text-muted)]" />
                           )}
@@ -449,7 +529,7 @@ export function SeasonalSettings() {
                           onClick={handleSoundToggle}
                           className={cn(
                             'relative w-10 h-5 rounded-full transition-colors',
-                            backgroundSoundEnabled ? 'bg-purple-500' : 'bg-[var(--bg-card)] border border-[var(--border-color)]'
+                            backgroundSoundEnabled ? 'bg-[var(--accent-primary)]' : 'bg-[var(--bg-card)] border border-[var(--border-color)]'
                           )}
                         >
                           <span className={cn('absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all', backgroundSoundEnabled ? 'left-5' : 'left-0.5')} />
@@ -470,7 +550,7 @@ export function SeasonalSettings() {
                             onChange={handleVolumeChange}
                             showValue
                             valueFormat={(v) => `${v}%`}
-                            color="purple"
+                            color="blue"
                           />
                         </div>
                       )}
@@ -481,7 +561,7 @@ export function SeasonalSettings() {
                   <div className="flex items-center justify-between pt-3 mt-3 border-t border-[var(--border-color)]">
                     <div className="flex items-center gap-2">
                       {backgroundEnabledState ? (
-                        <Eye className="w-4 h-4 text-purple-500" />
+                         <Eye className="w-4 h-4 text-[var(--accent-primary)]" />
                       ) : (
                         <EyeOff className="w-4 h-4 text-[var(--text-muted)]" />
                       )}
@@ -494,7 +574,7 @@ export function SeasonalSettings() {
                       onClick={handleBackgroundEnabledToggle}
                       className={cn(
                         'relative w-10 h-5 rounded-full transition-colors',
-                        backgroundEnabledState ? 'bg-purple-500' : 'bg-[var(--bg-card)] border border-[var(--border-color)]'
+                        backgroundEnabledState ? 'bg-[var(--accent-primary)]' : 'bg-[var(--bg-card)] border border-[var(--border-color)]'
                       )}
                     >
                       <span className={cn('absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all', backgroundEnabledState ? 'left-5' : 'left-0.5')} />

@@ -604,6 +604,14 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
     }
   }, [responseJsonText]);
 
+  const youtubeQuality = (selectedFormat?.quality || '').toLowerCase();
+  const canDirectPlayYoutubeVideo =
+    platform === 'youtube' &&
+    selectedFormat?.type === 'video' &&
+    (youtubeQuality.includes('360') || !selectedFormat.needsMerge);
+  const showYoutubePreviewUnavailable =
+    platform === 'youtube' && selectedFormat?.type === 'video' && !canDirectPlayYoutubeVideo;
+
   const content = (
     <>
       {/* Media Preview - max height to prevent overflow */}
@@ -614,25 +622,43 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
         onTouchEnd={handleTouchEnd}
       >
         {selectedFormat?.type === 'video' ? (
-          // YouTube video-only (needsMerge) - show thumbnail with warning, no video player
-          platform === 'youtube' && selectedFormat.needsMerge ? (
-            <div className="w-full h-full flex flex-col items-center justify-center relative">
+          // YouTube video preview gate: allow direct playback for 360p/progressive
+          showYoutubePreviewUnavailable ? (
+            <div className="w-full h-full relative flex items-center justify-center bg-gradient-to-b from-[var(--bg-secondary)] to-black">
               {currentThumbnail && (
                 <Image
                   src={getProxiedThumbnail(currentThumbnail, platform)}
-                  alt={data.title || 'Video'}
+                  alt={data.title || 'YouTube video'}
                   fill
-                  className="object-cover"
+                  className="object-cover opacity-35 blur-md"
                   unoptimized
                 />
               )}
-              <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-3">
-                <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center">
-                  <Play className="w-8 h-8 text-white ml-1" />
+              <div className="relative z-10 w-[92%] sm:w-[82%] max-w-2xl mx-4 p-3 sm:p-4 rounded-xl border border-white/15 bg-black/45 backdrop-blur-sm">
+                <div className="grid grid-cols-[96px_1fr] sm:grid-cols-[140px_1fr] gap-3 sm:gap-4 items-center">
+                  <div className="relative w-24 h-16 sm:w-36 sm:h-24 rounded-lg overflow-hidden border border-white/15 bg-black/35">
+                    {currentThumbnail ? (
+                      <Image
+                        src={getProxiedThumbnail(currentThumbnail, platform)}
+                        alt={data.title || 'YouTube thumbnail'}
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Play className="w-6 h-6 text-white/70" />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="text-left">
+                    <p className="text-sm font-medium text-white">Preview unavailable for this format</p>
+                    <p className="text-xs text-white/70 mt-1">
+                      360p and audio formats can be played directly. Other YouTube video qualities stay downloadable.
+                    </p>
+                  </div>
                 </div>
-                <span className="px-4 py-2 text-sm font-medium bg-black/70 text-amber-400 rounded-lg backdrop-blur-sm border border-amber-400/30">
-                  🔇 Preview tidak tersedia - dapat diputar setelah download
-                </span>
               </div>
             </div>
           ) : (

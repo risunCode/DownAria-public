@@ -44,8 +44,12 @@ export interface SeasonalSettings {
   customBackground: CustomBackground | null;
   /** Enable particles with custom background */
   particlesWithBackground: boolean;
-  /** Particle intensity: 0-100 */
+  /** Particle intensity: 0-200 */
   intensity: number;
+  /** Particle opacity: 10-100 */
+  particleOpacity: number;
+  /** Particle fall speed multiplier: 50-150 */
+  particleSpeed: number;
   /** Background opacity: 0-100 */
   backgroundOpacity: number;
   /** Card opacity: 0-100 */
@@ -79,6 +83,8 @@ const DEFAULT_SETTINGS: SeasonalSettings = {
   customBackground: null,
   particlesWithBackground: true,
   intensity: 50,
+  particleOpacity: 50,
+  particleSpeed: 100,
   backgroundOpacity: 20,
   cardOpacity: 85,
   backgroundBlur: 0,
@@ -449,10 +455,24 @@ export function setCardOpacity(opacity: number): void {
 }
 
 /**
- * Set particle intensity (0-100)
+ * Set particle intensity (0-200)
  */
 export function setParticleIntensity(intensity: number): void {
-  saveSeasonalSettings({ intensity: Math.max(0, Math.min(100, intensity)) });
+  saveSeasonalSettings({ intensity: Math.max(0, Math.min(200, intensity)) });
+}
+
+/**
+ * Set particle opacity (10-100)
+ */
+export function setParticleOpacity(opacity: number): void {
+  saveSeasonalSettings({ particleOpacity: Math.max(10, Math.min(100, opacity)) });
+}
+
+/**
+ * Set particle fall speed (50-150)
+ */
+export function setParticleSpeed(speed: number): void {
+  saveSeasonalSettings({ particleSpeed: Math.max(50, Math.min(150, speed)) });
 }
 
 /**

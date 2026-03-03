@@ -270,13 +270,13 @@ export function DownloadForm({
             className="w-full"
         >
             {/* Animated border wrapper - always spinning */}
-            <div className="relative rounded-2xl p-[2px]">
+            <div className="relative rounded-lg p-[2px]">
                 {/* Spinning gradient border - always visible */}
                 <div 
-                    className="absolute inset-0 rounded-2xl bg-[conic-gradient(from_var(--border-angle),var(--accent-primary)_0%,transparent_10%,transparent_90%,var(--accent-primary)_100%)] animate-spin-slow opacity-45"
+                    className="absolute inset-0 rounded-lg bg-[conic-gradient(from_var(--border-angle),var(--accent-primary)_0%,transparent_10%,transparent_90%,var(--accent-primary)_100%)] animate-spin-slow opacity-45"
                 />
                 {/* Card content - no hover effects */}
-                <div className="bg-[var(--bg-card)] border border-[var(--border-color)] p-4 sm:p-6 space-y-4 relative rounded-2xl">
+                <div className="bg-[var(--bg-card)] border border-[var(--border-color)] p-4 sm:p-6 space-y-4 relative rounded-lg">
                 {/* Rotating tip or platform indicator */}
                 <div className="flex items-center justify-center text-sm h-6">
                     {url ? (
@@ -301,8 +301,8 @@ export function DownloadForm({
                 </div>
 
                 {/* Input row */}
-                <div className="flex flex-col sm:flex-row gap-2">
-                    <div className="flex-1">
+                <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="flex-[2]">
                         <Input
                             ref={inputRef}
                             type="url"
@@ -321,20 +321,20 @@ export function DownloadForm({
                             className="w-full"
                         />
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 shrink-0">
                         <Button
                             type="button"
                             variant="secondary"
                             onClick={handlePaste}
                             disabled={isLoading}
-                            className="flex-1 sm:flex-none"
+                            className="whitespace-nowrap"
                         >
                             {justPasted ? <Check className="w-4 h-4 text-green-500" /> : <Clipboard className="w-4 h-4" />}
-                            <span className="ml-1.5 sm:inline">{justPasted ? t('pasted') : t('paste')}</span>
+                            <span className="ml-1.5">{justPasted ? t('pasted') : t('paste')}</span>
                         </Button>
                         <Button
                             type="submit"
-                            className="flex-1 sm:flex-none"
+                            className="whitespace-nowrap"
                         >
                             <Download className="w-4 h-4" />
                             <span className="ml-1.5">{t('go')}</span>

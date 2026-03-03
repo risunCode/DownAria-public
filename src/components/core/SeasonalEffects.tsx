@@ -73,18 +73,32 @@ interface ParticleData {
   rotate: boolean;
 }
 
-function generateParticles(config: ParticleConfig): ParticleData[] {
+function generateParticles(config: ParticleConfig, intensity: number, speed: number): ParticleData[] {
   const rand = (min: number, max: number) => Math.random() * (max - min) + min;
+  const normalizedIntensity = Math.max(0, Math.min(200, intensity));
+  const normalizedSpeed = Math.max(50, Math.min(150, speed));
+
+  // Denser particle field without raising slider max beyond 200.
+  // 0% still visible, 200% becomes significantly more crowded.
+  const densityBoost = 0.9 + normalizedIntensity / 65;
+  const rawCount = config.count * densityBoost + normalizedIntensity * 0.12;
+  const count = Math.min(180, Math.max(6, Math.round(rawCount)));
+
+  // More lively horizontal movement at higher intensity.
+  const swingBoost = 1 + normalizedIntensity / 220;
+  const durationFactor = 100 / normalizedSpeed;
   
-  return Array.from({ length: config.count }, (_, i) => ({
+  return Array.from({ length: count }, (_, i) => ({
     id: i,
     emoji: config.emoji[Math.floor(Math.random() * config.emoji.length)],
     size: rand(config.size.min, config.size.max),
     opacity: rand(config.opacity.min, config.opacity.max),
     left: Math.random() * 100,
-    duration: rand(config.duration.min, config.duration.max),
-    delay: Math.random() * -20, // Stagger start times
-    swing: rand(-config.swing, config.swing),
+    // Inject faster particles periodically so the scene feels busier.
+    duration: rand(config.duration.min, config.duration.max) * durationFactor * (i % 5 === 0 ? 0.72 : 1),
+    // Heavier negative delay spread avoids synchronized gaps.
+    delay: -rand(0, 32) - (i % 3) * 6,
+    swing: rand(-config.swing * swingBoost, config.swing * swingBoost),
     rotate: config.rotate,
   }));
 }
@@ -264,8 +278,12 @@ export function SeasonalEffects() {
   // Generate particles (memoized, doesn't change with modal state)
   const particles = useMemo(() => {
     if (!settings || settings.season === 'off') return [];
-    return generateParticles(PARTICLE_CONFIGS[settings.season]);
-  }, [settings?.season]);
+    return generateParticles(
+      PARTICLE_CONFIGS[settings.season],
+      settings.intensity ?? 50,
+      settings.particleSpeed ?? 100
+    );
+  }, [settings?.season, settings?.intensity, settings?.particleSpeed]);
 
   // Apply custom background class and opacity to body
   useEffect(() => {
@@ -400,6 +418,8 @@ export function SeasonalEffects() {
     settings.season !== 'off' && 
     (!settings.customBackground || settings.particlesWithBackground);
 
+  const particleLayerOpacity = Math.max(10, Math.min(100, settings.particleOpacity ?? 50)) / 100;
+
   // Card opacity from settings (default 75% when custom background is set - best for readability)
   const cardOpacity = showCustomBackground ? (settings.cardOpacity ?? 75) / 100 : 1;
 
@@ -412,7 +432,7 @@ export function SeasonalEffects() {
 
       {/* CSS-Only Particles - BEHIND content, slightly transparent */}
       {showParticles && particles.length > 0 && (
-        <div className="fixed inset-0 pointer-events-none overflow-hidden opacity-50" style={{ zIndex: 1 }}>
+        <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1, opacity: particleLayerOpacity }}>
           {particles.map((p) => (
             <div
               key={p.id}

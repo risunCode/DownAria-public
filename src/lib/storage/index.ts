@@ -70,6 +70,11 @@ export {
   applyTheme,
   initTheme,
   cleanupAutoTheme,
+  getAccentColor,
+  applyAccentColor,
+  saveAccentColor,
+  initAccentColor,
+  ACCENT_COLOR_PRESETS,
   getPlatformCookie,
   savePlatformCookie,
   clearPlatformCookie,
@@ -95,6 +100,7 @@ export {
   type ResolvedTheme,
   type CookiePlatform,
   type LanguagePreference,
+  type AccentColorType,
 } from './settings';
 
 // ═══════════════════════════════════════════════════════════════
@@ -115,6 +121,8 @@ export {
   setBackgroundEnabled,
   setCardOpacity,
   setParticleIntensity,
+  setParticleOpacity,
+  setParticleSpeed,
   setParticlesWithBackground,
   setRandomInterval,
   resetSeasonalSettings,

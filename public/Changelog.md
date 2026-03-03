@@ -2,6 +2,25 @@
 
 All notable changes to DownAria will be documented in this file.
 
+## [2.1.0_v2] - 2026-03-03
+
+### 🔧 Improvements
+- Added accent color presets in Basic settings (`New Color`, `Old DownAria`, and preset variants) with runtime apply.
+- Merged Accent Color controls into the Theme section and reordered Language to appear first in Basic settings.
+- Added fast mobile header dropdown controls for Experimental settings: toggle Seasonal Effects, Custom Background, and Background Sound.
+- Expanded Seasonal Effects controls with sliders for particle intensity, fall speed, and particle opacity.
+- Updated placeholder public stats values to `999 999 999` display format.
+
+### 🐛 Fixed
+- Fixed YouTube merge/download filename usage so frontend now forwards backend-provided filenames.
+- Fixed duplicate/awkward YouTube preview states by improving 360p direct-play handling and unavailable-preview messaging.
+- Fixed Accent Color legacy value handling by forcing invalid stored presets to fallback safely.
+
+### 🎨 UI/UX
+- Refined YouTube preview fallback panel to a split layout (thumbnail left, info right) for clearer context.
+- Reduced overly rounded controls and aligned action styles with current 2.1 visual direction.
+- Added reset action for Experimental values directly in the Experimental section header.
+
 ## [2.1.0] - 2026-03-01
 
 ### 🚀 Project Revived New DownAria 2.1 

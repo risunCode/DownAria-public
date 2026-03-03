@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Download, History, Info, Menu, X, Github, Heart, Palette, Sun, Moon, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { FacebookIcon, InstagramIcon, XTwitterIcon, TiktokIcon } from '@/components/ui/Icons';
-import { ThemeType, saveTheme, initTheme } from '@/lib/storage';
+import { ThemeType, saveTheme, initTheme, initAccentColor } from '@/lib/storage';
 
 const THEMES: { id: ThemeType; label: string; icon: typeof Sun }[] = [
     { id: 'light', label: 'Light', icon: Sun },
@@ -21,6 +21,7 @@ export function Header() {
 
     useEffect(() => {
         const theme = initTheme();
+        initAccentColor();
         setCurrentTheme(theme);
     }, []);
 

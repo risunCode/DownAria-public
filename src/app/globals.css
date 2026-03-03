@@ -11,9 +11,9 @@
   --bg-card-rgb: 255, 255, 255;
   --bg-card-hover: #f0f0f0;
 
-  --accent-primary: #6366f1;
-  --accent-secondary: #8b5cf6;
-  --accent-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  --accent-primary: #e85d4a;
+  --accent-secondary: #f97316;
+  --accent-gradient: linear-gradient(135deg, #e85d4a 0%, #f97316 100%);
 
   --text-primary: #1a1a1a;
   --text-secondary: #525252;
@@ -47,9 +47,9 @@
   --bg-card-rgb: 255, 255, 255;
   --bg-card-hover: #f0f0f0;
 
-  --accent-primary: #6366f1;
-  --accent-secondary: #8b5cf6;
-  --accent-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  --accent-primary: #e85d4a;
+  --accent-secondary: #f97316;
+  --accent-gradient: linear-gradient(135deg, #e85d4a 0%, #f97316 100%);
 
   --text-primary: #1a1a1a;
   --text-secondary: #525252;
@@ -74,9 +74,9 @@
   --bg-card-rgb: 255, 255, 255;
   --bg-card-hover: #f5f0e1;
 
-  --accent-primary: #5046e5;
-  --accent-secondary: #7c3aed;
-  --accent-gradient: linear-gradient(135deg, #5046e5 0%, #7c3aed 100%);
+  --accent-primary: #d94f3d;
+  --accent-secondary: #e85d04;
+  --accent-gradient: linear-gradient(135deg, #d94f3d 0%, #e85d04 100%);
 
   --text-primary: #1c1917;
   --text-secondary: #3f3f46;
@@ -204,9 +204,9 @@
   --bg-card-rgb: 28, 33, 40;
   --bg-card-hover: #252c35;
 
-  --accent-primary: #58a6ff;
-  --accent-secondary: #79c0ff;
-  --accent-gradient: linear-gradient(135deg, #58a6ff 0%, #79c0ff 100%);
+  --accent-primary: #ff7b59;
+  --accent-secondary: #ff9f7a;
+  --accent-gradient: linear-gradient(135deg, #ff7b59 0%, #ff9f7a 100%);
 
   --text-primary: #e6edf3;
   --text-secondary: #8b949e;
@@ -299,7 +299,7 @@ body {
 .glass-card {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
-  border-radius: 16px;
+  border-radius: 8px;
   transition: all 0.3s ease;
 }
 
@@ -738,7 +738,7 @@ body.has-custom-background [class*="backdrop"] {
   color: white;
   font-weight: 600;
   padding: 0.75rem 1.5rem;
-  border-radius: 12px;
+  border-radius: 6px;
   border: none;
   cursor: pointer;
   transition: opacity 0.2s ease;
@@ -760,7 +760,7 @@ body.has-custom-background [class*="backdrop"] {
 /* Platform tabs */
 .platform-tab {
   padding: 0.75rem 1.25rem;
-  border-radius: 10px;
+  border-radius: 6px;
   font-weight: 500;
   transition: all 0.3s ease;
   cursor: pointer;
@@ -802,7 +802,7 @@ body.has-custom-background [class*="backdrop"] {
   padding: 1rem 1.25rem;
   background: var(--bg-secondary);
   border: 2px solid var(--border-color);
-  border-radius: 12px;
+  border-radius: 6px;
   color: var(--text-primary);
   font-size: 1rem;
   transition: all 0.3s ease;
@@ -813,7 +813,7 @@ body.has-custom-background [class*="backdrop"] {
 .input-url:focus {
   outline: none;
   border-color: var(--accent-primary);
-  box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+  box-shadow: 0 0 20px rgba(232, 93, 74, 0.2);
 }
 
 .input-url::placeholder {
@@ -872,7 +872,7 @@ body.has-custom-background [class*="backdrop"] {
 /* Quality badges */
 .quality-badge {
   padding: 0.5rem 1rem;
-  border-radius: 8px;
+  border-radius: 4px;
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;

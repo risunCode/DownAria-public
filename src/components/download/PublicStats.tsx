@@ -7,16 +7,14 @@ const POLLING_INTERVAL_MS = 20_000;
 const FRESHNESS_TICK_MS = 5_000;
 
 const PLACEHOLDER_STATS = {
-  todayVisits: 4,
-  totalVisits: 168,
-  totalExtractions: 380,
-  totalDownloads: 464,
+  todayVisits: 999_999_999,
+  totalVisits: 999_999_999,
+  totalExtractions: 999_999_999,
+  totalDownloads: 999_999_999,
 };
 
 function formatNumber(value: number): string {
-  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
-  return String(value);
+  return value.toLocaleString('en-US').replace(/,/g, ' ');
 }
 
 function getFreshnessText(lastUpdatedAt: number | null, now: number): string {

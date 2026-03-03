@@ -1305,8 +1305,8 @@ export async function downloadMedia(
             return { success: false, error: 'Download cancelled' };
         }
 
-        // No frontend filename generation. Prefer backend/upstream filename.
-        let filename = '';
+        // Use filename from backend (format.filename) if available
+        let filename = format.filename || '';
 
         // Case 1: ALL YouTube downloads go through backend merge endpoint
         if (platform === 'youtube') {
@@ -1321,7 +1321,7 @@ export async function downloadMedia(
             const result = await downloadMergedYouTube(
                 data.url, // Original YouTube URL
                 qualityParam, // e.g., "1080p", "720p", "320kbps", "MP3"
-                filename,
+                filename, // Send backend-generated filename
                 (p) => {
                     const status = p.status === 'done' ? 'done'
                         : p.status === 'error' ? 'error'
@@ -1352,10 +1352,15 @@ export async function downloadMedia(
         if (format.type === 'audio' && format.isSyntheticAudioOption && format.requestedAudioFormat) {
             onProgress?.({ status: 'merging', percent: 0, loaded: 0, total: 0, speed: 0, message: 'Processing on server...' });
 
+            // Generate audio filename from original filename
+            const audioFilename = format.filename
+                ? format.filename.replace(/\.[^.]+$/, `.${format.requestedAudioFormat}`)
+                : `downaria_output.${format.requestedAudioFormat}`;
+
             const result = await downloadMergedYouTube(
                 format.url,
                 format.quality,
-                filename,
+                audioFilename,
                 (p) => {
                     const status = p.status === 'done' ? 'done'
                         : p.status === 'error' ? 'error'

@@ -35,9 +35,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                     {/* Rotating gradient border */}
                     {glowAnimation && (
                         <div 
-                            className="absolute -inset-[2px] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                            className="absolute -inset-[2px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500"
                             style={{
-                                background: 'linear-gradient(90deg, #6366f1, #8b5cf6, #d946ef, #f43f5e, #f97316, #eab308, #22c55e, #06b6d4, #6366f1)',
+                                background: 'linear-gradient(90deg, #e85d4a, #f97316, #eab308, #22c55e, #06b6d4, #6366f1, #8b5cf6, #e85d4a)',
                                 backgroundSize: '300% 100%',
                                 animation: 'gradient-rotate 6s linear infinite',
                                 filter: 'blur(4px)',
@@ -48,9 +48,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                     {/* Solid rotating border (visible line) */}
                     {glowAnimation && (
                         <div 
-                            className="absolute -inset-[1px] rounded-xl opacity-0 group-hover:opacity-70 transition-opacity duration-500"
+                            className="absolute -inset-[1px] rounded-lg opacity-0 group-hover:opacity-70 transition-opacity duration-500"
                             style={{
-                                background: 'linear-gradient(90deg, #6366f1, #8b5cf6, #d946ef, #f43f5e, #f97316, #eab308, #22c55e, #06b6d4, #6366f1)',
+                                background: 'linear-gradient(90deg, #e85d4a, #f97316, #eab308, #22c55e, #06b6d4, #6366f1, #8b5cf6, #e85d4a)',
                                 backgroundSize: '300% 100%',
                                 animation: 'gradient-rotate 6s linear infinite',
                             }}
@@ -58,7 +58,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                     )}
                     
                     {/* Input container */}
-                    <div className="relative bg-[var(--bg-secondary)] rounded-xl">
+                    <div className="relative bg-[var(--bg-secondary)] rounded-lg">
                         <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] z-10">
                             <Link className="w-5 h-5" />
                         </div>
@@ -70,12 +70,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                             className={`
                                 relative w-full pl-12 pr-12 py-4
                                 bg-[var(--bg-secondary)]
-                                border-2 rounded-xl
+                                border-2 rounded-lg
                                 text-[var(--text-primary)] text-base
                                 placeholder:text-[var(--text-muted)]
                                 transition-all duration-200
                                 focus:outline-none
-                                focus:shadow-[0_0_20px_rgba(99,102,241,0.3)]
+                                focus:shadow-[0_0_20px_rgba(232,93,74,0.3)]
                                 disabled:opacity-50 disabled:cursor-not-allowed
                                 ${className}
                             `}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { History, Info, Menu, X, Home, Settings, Sun, Moon, Sparkles, ChevronDown, BookOpen, Clock, Globe, User } from 'lucide-react';
+import { History, Info, Menu, X, Home, Settings, Sun, Moon, Sparkles, ChevronDown, BookOpen, Clock, Globe, User, Image, Volume2 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -13,7 +13,7 @@ import {
     YoutubeIcon,
     GlobeIcon,
 } from '@/components/ui/Icons';
-import { ThemeType, saveTheme, initTheme, getTheme } from '@/lib/storage';
+import { ThemeType, saveTheme, initTheme, getTheme, initAccentColor, getSeasonalSettings, setBackgroundEnabled, setBackgroundSound, setSeasonalMode } from '@/lib/storage';
 import { useTranslations } from 'next-intl';
 
 const THEMES: { id: ThemeType; label: string; icon: typeof Sun }[] = [
@@ -42,6 +42,9 @@ export function SidebarLayout({ children }: SidebarProps) {
     const [themeOpen, setThemeOpen] = useState(false);
     const [profileOpen, setProfileOpen] = useState(false);
     const [currentTheme, setCurrentTheme] = useState<ThemeType>('dark');
+    const [seasonalEnabled, setSeasonalEnabled] = useState(true);
+    const [quickBackgroundEnabled, setQuickBackgroundEnabled] = useState(true);
+    const [quickBackgroundSound, setQuickBackgroundSound] = useState(false);
     const themeRef = useRef<HTMLDivElement>(null);
     const profileRef = useRef<HTMLDivElement>(null);
     const pathname = usePathname();
@@ -49,7 +52,30 @@ export function SidebarLayout({ children }: SidebarProps) {
 
     useEffect(() => {
         initTheme(); // Apply theme to DOM
+        initAccentColor(); // Apply accent color to DOM
         setCurrentTheme(getTheme()); // Get saved preference (including 'auto')
+
+        const seasonal = getSeasonalSettings();
+        setSeasonalEnabled(seasonal.mode !== 'off');
+        setQuickBackgroundEnabled(seasonal.backgroundEnabled !== false);
+        setQuickBackgroundSound(seasonal.backgroundSound === true);
+    }, []);
+
+    useEffect(() => {
+        const syncQuickSettings = () => {
+            const seasonal = getSeasonalSettings();
+            setSeasonalEnabled(seasonal.mode !== 'off');
+            setQuickBackgroundEnabled(seasonal.backgroundEnabled !== false);
+            setQuickBackgroundSound(seasonal.backgroundSound === true);
+        };
+
+        window.addEventListener('seasonal-settings-changed', syncQuickSettings);
+        window.addEventListener('storage', syncQuickSettings);
+
+        return () => {
+            window.removeEventListener('seasonal-settings-changed', syncQuickSettings);
+            window.removeEventListener('storage', syncQuickSettings);
+        };
     }, []);
 
     // Close sidebar on route change (for back/forward navigation)
@@ -74,6 +100,24 @@ export function SidebarLayout({ children }: SidebarProps) {
         saveTheme(theme);
         setCurrentTheme(theme);
         setThemeOpen(false);
+    };
+
+    const handleSeasonalToggle = () => {
+        const next = !seasonalEnabled;
+        setSeasonalEnabled(next);
+        setSeasonalMode(next ? 'auto' : 'off');
+    };
+
+    const handleBackgroundToggle = () => {
+        const next = !quickBackgroundEnabled;
+        setQuickBackgroundEnabled(next);
+        setBackgroundEnabled(next);
+    };
+
+    const handleBackgroundSoundToggle = () => {
+        const next = !quickBackgroundSound;
+        setQuickBackgroundSound(next);
+        setBackgroundSound(next);
     };
 
     // Handle navigation with smooth sidebar close animation
@@ -148,8 +192,11 @@ export function SidebarLayout({ children }: SidebarProps) {
                                         initial={{ opacity: 0, y: -10 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, y: -10 }}
-                                        className="absolute right-0 top-full mt-2 w-36 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] shadow-xl z-50"
+                                        className="absolute right-0 top-full mt-2 w-64 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] shadow-xl z-50"
                                     >
+                                        <div className="px-4 pb-2">
+                                            <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Theme</p>
+                                        </div>
                                         {THEMES.map((theme) => (
                                             <button
                                                 key={theme.id}
@@ -160,12 +207,55 @@ export function SidebarLayout({ children }: SidebarProps) {
                                                     }`}
                                             >
                                                 <theme.icon className="w-4 h-4" />
-                                                <span>{theme.label}</span>
-                                                {currentTheme === theme.id && (
-                                                    <span className="ml-auto text-xs">✓</span>
-                                                )}
+                                                    <span>{theme.label}</span>
+                                                    {currentTheme === theme.id && (
+                                                        <span className="ml-auto text-xs">✓</span>
+                                                    )}
                                             </button>
                                         ))}
+
+                                        <div className="lg:hidden mt-2 pt-2 border-t border-[var(--border-color)] px-4 pb-1">
+                                            <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2">Fast Experimental</p>
+
+                                            <button
+                                                onClick={handleSeasonalToggle}
+                                                className="w-full flex items-center justify-between px-3 py-2 rounded-lg border border-[var(--border-color)] hover:border-[var(--accent-primary)]/50 text-sm text-[var(--text-secondary)] mb-2"
+                                            >
+                                                <span className="flex items-center gap-2">
+                                                    <Sparkles className="w-4 h-4" />
+                                                    Seasonal Effects
+                                                </span>
+                                                <span className={`text-xs px-2 py-0.5 rounded ${seasonalEnabled ? 'bg-[var(--accent-primary)]/15 text-[var(--accent-primary)]' : 'bg-[var(--bg-secondary)] text-[var(--text-muted)]'}`}>
+                                                    {seasonalEnabled ? 'ON' : 'OFF'}
+                                                </span>
+                                            </button>
+
+                                            <button
+                                                onClick={handleBackgroundToggle}
+                                                className="w-full flex items-center justify-between px-3 py-2 rounded-lg border border-[var(--border-color)] hover:border-[var(--accent-primary)]/50 text-sm text-[var(--text-secondary)] mb-2"
+                                            >
+                                                <span className="flex items-center gap-2">
+                                                    <Image className="w-4 h-4" />
+                                                    Custom Background
+                                                </span>
+                                                <span className={`text-xs px-2 py-0.5 rounded ${quickBackgroundEnabled ? 'bg-[var(--accent-primary)]/15 text-[var(--accent-primary)]' : 'bg-[var(--bg-secondary)] text-[var(--text-muted)]'}`}>
+                                                    {quickBackgroundEnabled ? 'ON' : 'OFF'}
+                                                </span>
+                                            </button>
+
+                                            <button
+                                                onClick={handleBackgroundSoundToggle}
+                                                className="w-full flex items-center justify-between px-3 py-2 rounded-lg border border-[var(--border-color)] hover:border-[var(--accent-primary)]/50 text-sm text-[var(--text-secondary)]"
+                                            >
+                                                <span className="flex items-center gap-2">
+                                                    <Volume2 className="w-4 h-4" />
+                                                    Background Sound
+                                                </span>
+                                                <span className={`text-xs px-2 py-0.5 rounded ${quickBackgroundSound ? 'bg-[var(--accent-primary)]/15 text-[var(--accent-primary)]' : 'bg-[var(--bg-secondary)] text-[var(--text-muted)]'}`}>
+                                                    {quickBackgroundSound ? 'ON' : 'OFF'}
+                                                </span>
+                                            </button>
+                                        </div>
                                     </motion.div>
                                 )}
                             </AnimatePresence>

@@ -15,6 +15,7 @@ import {
   clearPlatformCookie,
   deleteBackgroundBlob,
   downloadFullBackupAsZip,
+  getAccentColor,
   getAllCookieStatus,
   getCacheStats,
   getHistoryCount,
@@ -25,11 +26,13 @@ import {
   getUnifiedSettings,
   importFullBackupFromZip,
   resetSeasonalSettings,
+  saveAccentColor,
   savePlatformCookie,
   saveTheme,
   saveUnifiedSettings,
   setLanguagePreference,
   setSkipCache,
+  type AccentColorType,
   type CacheStats,
   type CookiePlatform,
   type DownAriaSettings,
@@ -59,6 +62,7 @@ export default function SettingsPage() {
 
   const [activeTab, setActiveTab] = useState<TabId>('basic');
   const [currentTheme, setCurrentTheme] = useState<ThemeType>('dark');
+  const [currentAccentColor, setCurrentAccentColor] = useState<AccentColorType>('coral');
   const [resolvedAutoTheme, setResolvedAutoTheme] = useState('');
   const [currentLanguage, setCurrentLanguage] = useState<LanguagePreference>('auto');
 
@@ -88,6 +92,7 @@ export default function SettingsPage() {
   useEffect(() => {
     setCurrentTheme(getTheme());
     setResolvedAutoTheme(getTimeBasedTheme());
+    setCurrentAccentColor(getAccentColor());
     setCurrentLanguage(getLanguagePreference());
     setUserCookies(getAllCookieStatus());
     setSkipCacheState(getSkipCache());
@@ -135,6 +140,11 @@ export default function SettingsPage() {
   const handleThemeChange = useCallback((theme: ThemeType) => {
     saveTheme(theme);
     setCurrentTheme(theme);
+  }, []);
+
+  const handleAccentColorChange = useCallback((color: AccentColorType) => {
+    saveAccentColor(color);
+    setCurrentAccentColor(color);
   }, []);
 
   const handleLanguageChange = useCallback(
@@ -487,6 +497,48 @@ export default function SettingsPage() {
     }
   }, []);
 
+  const handleResetExperimentalValues = useCallback(async () => {
+    const result = await Swal.fire({
+      icon: 'warning',
+      title: 'Reset Experimental Values?',
+      text: 'This will reset seasonal effects, custom background, and experimental toggles to defaults.',
+      showCancelButton: true,
+      confirmButtonText: 'Reset',
+      confirmButtonColor: '#f97316',
+      background: 'var(--bg-card)',
+      color: 'var(--text-primary)',
+    });
+    if (!result.isConfirmed) return;
+
+    try {
+      await deleteBackgroundBlob();
+      resetSeasonalSettings();
+      saveUnifiedSettings({ experimentalEnabled: true });
+
+      // Refresh UI listeners in same tab
+      window.dispatchEvent(new CustomEvent('seasonal-settings-changed'));
+      window.dispatchEvent(new CustomEvent('settings-changed'));
+
+      await Swal.fire({
+        icon: 'success',
+        title: 'Experimental Values Reset',
+        timer: 1200,
+        showConfirmButton: false,
+        background: 'var(--bg-card)',
+        color: 'var(--text-primary)',
+      });
+    } catch {
+      await Swal.fire({
+        icon: 'error',
+        title: 'Reset Failed',
+        timer: 1400,
+        showConfirmButton: false,
+        background: 'var(--bg-card)',
+        color: 'var(--text-primary)',
+      });
+    }
+  }, []);
+
   const handleExportBackup = useCallback(async () => {
     setIsExporting(true);
     try {
@@ -699,15 +751,18 @@ export default function SettingsPage() {
             {activeTab === 'basic' && (
               <BasicTab
                 currentTheme={currentTheme}
+                currentAccentColor={currentAccentColor}
                 resolvedAutoTheme={resolvedAutoTheme}
                 currentLanguage={currentLanguage}
                 canInstall={canInstall}
                 isInstalled={isInstalled}
                 discordConfigured={discordConfigured}
                 onThemeChange={handleThemeChange}
+                onAccentColorChange={handleAccentColorChange}
                 onLanguageChange={handleLanguageChange}
                 onInstallApp={handleInstallApp}
                 onNavigateToIntegrations={() => setActiveTab('integrations')}
+                onResetExperimentalValues={handleResetExperimentalValues}
               >
                 <SeasonalSettings />
               </BasicTab>

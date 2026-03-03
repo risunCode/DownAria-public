@@ -32,6 +32,7 @@ export type ThemeType = 'auto' | 'light' | 'solarized' | 'dark';
 export type ResolvedTheme = 'light' | 'solarized' | 'dark';
 export type LanguagePreference = 'auto' | Locale;
 export type CookiePlatform = 'facebook' | 'instagram' | 'twitter' | 'weibo';
+export type AccentColorType = 'coral' | 'blue' | 'emerald' | 'amber';
 
 export interface DiscordSettings {
   enabled: boolean;
@@ -49,6 +50,7 @@ export interface DiscordSettings {
 export interface DownAriaSettings {
   // Theme & Display
   theme: ThemeType;
+  accentColor: AccentColorType;
   language: LanguagePreference;
   adaptText: boolean;
   highlightLevel: number;
@@ -99,8 +101,40 @@ export const DEFAULT_DISCORD: DiscordSettings = {
   batchDelay: 2000,
 };
 
+// ═══════════════════════════════════════════════════════════════
+// ACCENT COLOR PRESETS
+// ═══════════════════════════════════════════════════════════════
+
+type AccentPalette = { primary: string; secondary: string };
+type AccentPreset = { label: string; default: AccentPalette; byTheme?: Partial<Record<ResolvedTheme, AccentPalette>> };
+
+export const ACCENT_COLOR_PRESETS: Record<AccentColorType, AccentPreset> = {
+  coral: {
+    label: 'New Color (Coral)',
+    default: { primary: '#e85d4a', secondary: '#f97316' },
+  },
+  blue: {
+    label: 'Old DownAria',
+    default: { primary: '#6366f1', secondary: '#8b5cf6' },
+    byTheme: {
+      light: { primary: '#6366f1', secondary: '#8b5cf6' },
+      solarized: { primary: '#5046e5', secondary: '#7c3aed' },
+      dark: { primary: '#58a6ff', secondary: '#79c0ff' },
+    },
+  },
+  emerald: {
+    label: 'Emerald',
+    default: { primary: '#10b981', secondary: '#34d399' },
+  },
+  amber: {
+    label: 'Amber',
+    default: { primary: '#f59e0b', secondary: '#fbbf24' },
+  },
+};
+
 const DEFAULT_SETTINGS: DownAriaSettings = {
   theme: 'auto',
+  accentColor: 'coral',
   language: 'auto',
   adaptText: false,
   highlightLevel: 0,
@@ -171,6 +205,7 @@ export function applyTheme(theme: ResolvedTheme): void {
   if (typeof document === 'undefined') return;
   document.documentElement.classList.remove('theme-light', 'theme-solarized', 'theme-dark');
   document.documentElement.classList.add(`theme-${theme}`);
+  applyAccentColor(getAccentColor());
 }
 
 export function saveTheme(theme: ThemeType): void {
@@ -214,6 +249,39 @@ export function cleanupAutoTheme(): void {
     clearInterval(autoThemeInterval);
     autoThemeInterval = null;
   }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ACCENT COLOR
+// ═══════════════════════════════════════════════════════════════
+
+export function getAccentColor(): AccentColorType {
+  if (typeof window === 'undefined') return 'coral';
+  const saved = getUnifiedSettings().accentColor;
+  return saved in ACCENT_COLOR_PRESETS ? saved : 'coral';
+}
+
+export function applyAccentColor(color: AccentColorType): void {
+  if (typeof document === 'undefined') return;
+  const preset = ACCENT_COLOR_PRESETS[color] ?? ACCENT_COLOR_PRESETS.coral;
+  const resolvedTheme = getResolvedTheme();
+  const palette = preset.byTheme?.[resolvedTheme] || preset.default;
+  const root = document.documentElement;
+  root.style.setProperty('--accent-primary', palette.primary);
+  root.style.setProperty('--accent-secondary', palette.secondary);
+  root.style.setProperty('--accent-gradient', `linear-gradient(135deg, ${palette.primary} 0%, ${palette.secondary} 100%)`);
+}
+
+export function saveAccentColor(color: AccentColorType): void {
+  if (typeof window === 'undefined') return;
+  saveUnifiedSettings({ accentColor: color });
+  applyAccentColor(color);
+  window.dispatchEvent(new CustomEvent('accent-color-changed', { detail: { color } }));
+}
+
+export function initAccentColor(): void {
+  const color = getAccentColor();
+  applyAccentColor(color);
 }
 
 // ═══════════════════════════════════════════════════════════════
