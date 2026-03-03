@@ -136,6 +136,7 @@ export interface ExtractResult {
             requiresMerge?: boolean;
             requiresProxy?: boolean;
             formatId?: string;
+            filename?: string;
         }>;
     }>;
     authentication: {

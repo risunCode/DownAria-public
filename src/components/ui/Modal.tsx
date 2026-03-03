@@ -127,7 +127,7 @@ export function Modal({
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
-                        className={`modal-theme-backdrop fixed inset-0 z-50 ${backdropClassName || ''}`}
+                        className={`modal-theme-backdrop fixed inset-0 z-50 backdrop-blur-md bg-black/30 ${backdropClassName || ''}`}
                     />
 
                     {/* Modal */}

@@ -20,6 +20,7 @@ export const MediaVariantSchema = z.object({
   requiresMerge: z.boolean().optional(),
   requiresProxy: z.boolean().optional(),
   formatId: z.string().optional(),
+  filename: z.string().optional(),
 });
 
 export const MediaItemSchema = z.object({

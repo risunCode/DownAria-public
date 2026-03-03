@@ -155,6 +155,7 @@ function mapBackendResultToMediaData(result: ExtractResult, requestUrl: string):
         resolution: variant.resolution,
         hasAudio: variant.hasAudio,
         formatId: variant.formatId,
+        filename: typeof variant.filename === 'string' ? variant.filename : undefined,
       });
     });
   });
