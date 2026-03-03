@@ -208,11 +208,13 @@ export async function apiClient<T>(
         ...(fetchOptions.headers as Record<string, string>),
     };
 
+    if (!endpoint.startsWith('http') && !API_URL) {
+        throw new ApiError(500, 'NEXT_PUBLIC_API_URL is not configured');
+    }
+
     const url = endpoint.startsWith('http')
         ? endpoint
-        : endpoint.startsWith('/api/web/')
-            ? endpoint
-            : `${API_URL}${endpoint}`;
+        : `${API_URL}${endpoint}`;
 
     const response = await fetchWithRetry(
         url,
