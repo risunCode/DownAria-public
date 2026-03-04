@@ -840,7 +840,7 @@ export function DownloadPreview({ data, platform, responseJson, onDownloadComple
                 setZipProgress({ current: idx, total: itemIds.length, status: `Downloading ${idx}/${itemIds.length}...` });
 
                 try {
-                    const proxyUrl = getProxyUrl(format.url, { platform, inline: true });
+                    const proxyUrl = getProxyUrl(format.url, { platform });
                     const response = await fetch(proxyUrl);
                     
                     if (!response.ok) throw new Error(`HTTP ${response.status}`);
