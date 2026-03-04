@@ -22,7 +22,6 @@ export interface EngagementStats {
     comments?: number;    // Comment count
     shares?: number;      // Unified: retweets, reposts, shares
     bookmarks?: number;   // Save/bookmark count
-    replies?: number;     // Reply count (Twitter)
 }
 
 // Media format interface

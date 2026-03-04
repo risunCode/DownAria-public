@@ -92,7 +92,6 @@ function normalizeEngagementStats(stats: Partial<EngagementStats> | undefined): 
     comments: normalizeEngagementValue(stats.comments),
     shares: normalizeEngagementValue(stats.shares),
     bookmarks: normalizeEngagementValue(stats.bookmarks),
-    replies: normalizeEngagementValue(stats.replies),
   };
 
   const hasAnyValue = Object.values(normalized).some((value) => typeof value === 'number');

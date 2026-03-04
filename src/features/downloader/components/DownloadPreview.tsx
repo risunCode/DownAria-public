@@ -23,9 +23,9 @@ import { formatBytes } from '@/lib/utils/format';
 import { getProxiedThumbnail } from '@/lib/api/proxy';
 import { getProxyUrl } from '@/lib/api/proxy';
 import { useTranslations } from 'next-intl';
-import { MediaGallery } from '@/components/media';
-import Swal from 'sweetalert2';
-import JSZip from 'jszip';
+import { MediaGallery } from '@/features/media/components';
+import { lazySwal, getCachedSwal } from '@/lib/utils/lazy-swal';
+import { toast } from 'sonner';
 // Shared utilities
 import {
     groupFormatsByItem,
@@ -48,9 +48,9 @@ const MAX_FILESIZE_MB = 1024;
 const MAX_FILESIZE_LABEL = '1GB';
 const MAX_FILESIZE_BYTES = MAX_FILESIZE_MB * 1024 * 1024;
 
-import { EngagementDisplay } from '@/components/media/EngagementDisplay';
-import { FormatSelector } from '@/components/media/FormatSelector';
-import { DownloadProgress } from '@/components/media/DownloadProgress';
+import { EngagementDisplay } from '@/features/media/components/EngagementDisplay';
+import { FormatSelector } from '@/features/media/components/FormatSelector';
+import { DownloadProgress } from '@/features/media/components/DownloadProgress';
 import { SplitButton } from '@/components/ui/SplitButton';
 import { Modal } from '@/components/ui/Modal';
 import { TrafficLights } from '@/components/ui/TrafficLights';
@@ -217,41 +217,15 @@ export function DownloadPreview({ data, platform, responseJson, onDownloadComple
 
     const handleCopyResponse = useCallback(async () => {
         if (!navigator.clipboard?.writeText) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Clipboard Unavailable',
-                text: 'Copy is not supported in this browser.',
-                background: 'var(--bg-card)',
-                color: 'var(--text-primary)',
-                confirmButtonColor: 'var(--accent-primary)',
-            });
+            toast.error('Copy is not supported in this browser.');
             return;
         }
 
         try {
             await navigator.clipboard.writeText(responseJsonText);
-            Swal.fire({
-                icon: 'success',
-                title: 'Response Copied',
-                toast: true,
-                position: 'top-end',
-                showConfirmButton: false,
-                timer: 1800,
-                background: 'var(--bg-card)',
-                color: 'var(--text-primary)',
-            });
+            toast.success('Response Copied');
         } catch {
-            Swal.fire({
-                icon: 'error',
-                title: 'Copy Failed',
-                text: 'Failed to copy response JSON.',
-                toast: true,
-                position: 'top-end',
-                showConfirmButton: false,
-                timer: 2600,
-                background: 'var(--bg-card)',
-                color: 'var(--text-primary)',
-            });
+            toast.error('Failed to copy response JSON.');
         }
     }, [responseJsonText]);
 
@@ -423,7 +397,7 @@ export function DownloadPreview({ data, platform, responseJson, onDownloadComple
     }, []);
 
     const confirmCancelDownload = useCallback(async (itemId: string) => {
-        const result = await Swal.fire({
+        const result = await lazySwal.fire({
             icon: 'warning',
             title: 'Batalkan Download?',
             text: 'Proses download/merge di server akan dihentikan. Lanjutkan?',
@@ -459,7 +433,7 @@ export function DownloadPreview({ data, platform, responseJson, onDownloadComple
         
         let countdown = 4;
         
-        const result = await Swal.fire({
+        const result = await lazySwal.fire({
             icon: 'warning',
             title: 'Download Sedang Berjalan!',
             text: 'Jika kamu meninggalkan halaman, proses akan dibatalkan. Yakin mau keluar?',
@@ -473,7 +447,9 @@ export function DownloadPreview({ data, platform, responseJson, onDownloadComple
             allowOutsideClick: false,
             allowEscapeKey: true,
             didOpen: () => {
-                const confirmBtn = Swal.getConfirmButton();
+                // By the time didOpen fires, lazySwal.fire() has already loaded sweetalert2.
+                // getSwal() returns the cached module synchronously at this point.
+                const confirmBtn = getCachedSwal()?.getConfirmButton() ?? null;
                 if (confirmBtn) {
                     confirmBtn.disabled = true;
                     confirmBtn.style.opacity = '0.5';
@@ -519,17 +495,7 @@ export function DownloadPreview({ data, platform, responseJson, onDownloadComple
                 window.history.pushState({ downloadInProgress: true }, '');
                 
                 // Show warning
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Download Sedang Berjalan!',
-                    text: 'Tunggu proses selesai sebelum meninggalkan halaman.',
-                    toast: true,
-                    position: 'top',
-                    timer: 3000,
-                    showConfirmButton: false,
-                    background: 'var(--bg-card)',
-                    color: 'var(--text-primary)',
-                });
+                toast.warning('Tunggu proses selesai sebelum meninggalkan halaman.');
             }
         };
 
@@ -580,17 +546,7 @@ export function DownloadPreview({ data, platform, responseJson, onDownloadComple
         const handlePaste = (e: ClipboardEvent) => {
             if (isAnyDownloading) {
                 e.preventDefault();
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Download Sedang Berjalan',
-                    text: 'Tunggu download selesai sebelum paste URL baru.',
-                    toast: true,
-                    position: 'top-end',
-                    timer: 3000,
-                    showConfirmButton: false,
-                    background: 'var(--bg-card)',
-                    color: 'var(--text-primary)',
-                });
+                toast.warning('Tunggu download selesai sebelum paste URL baru.');
             }
         };
 
@@ -643,7 +599,7 @@ export function DownloadPreview({ data, platform, responseJson, onDownloadComple
     const handleSendToWebhook = async (format: MediaFormat, itemId: string) => {
         const settings = getUserDiscordSettings();
         if (!settings?.webhookUrl) {
-            Swal.fire({
+            void lazySwal.fire({
                 icon: 'warning',
                 title: 'Webhook Not Configured',
                 text: 'Please configure Discord webhook in Settings first.',
@@ -682,28 +638,9 @@ export function DownloadPreview({ data, platform, responseJson, onDownloadComple
 
         if (sendResult.sent) {
             setSentToWebhook(prev => ({ ...prev, [itemId]: true }));
-            Swal.fire({
-                icon: 'success',
-                title: 'Sent to Discord',
-                toast: true,
-                position: 'top-end',
-                showConfirmButton: false,
-                timer: 3000,
-                background: 'var(--bg-card)',
-                color: 'var(--text-primary)',
-            });
+            toast.success('Sent to Discord');
         } else if (sendResult.reason !== 'cancelled') {
-            Swal.fire({
-                icon: 'error',
-                title: 'Failed to Send',
-                text: sendResult.details,
-                toast: true,
-                position: 'top-end',
-                showConfirmButton: false,
-                timer: 5000,
-                background: 'var(--bg-card)',
-                color: 'var(--text-primary)',
-            });
+            toast.error(sendResult.details ?? 'Failed to send to Discord');
         }
     };
 
@@ -797,17 +734,7 @@ export function DownloadPreview({ data, platform, responseJson, onDownloadComple
         } catch (e) {
             const errorMessage = e instanceof Error ? e.message : 'Download failed';
             if (!/cancelled/i.test(errorMessage)) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Download Failed',
-                    text: errorMessage,
-                    toast: true,
-                    position: 'top-end',
-                    showConfirmButton: false,
-                    timer: 4500,
-                    background: 'var(--bg-card)',
-                    color: 'var(--text-primary)',
-                });
+                toast.error(errorMessage);
             }
 
             setDownloadStatus(prev => ({ ...prev, [itemId]: 'error' }));
@@ -863,7 +790,7 @@ export function DownloadPreview({ data, platform, responseJson, onDownloadComple
         }
 
         if (oversizedItems.length > 0) {
-            const result = await Swal.fire({
+            const result = await lazySwal.fire({
                 icon: 'warning',
                 title: 'Some Files Too Large',
                 html: `The following items exceed 400MB and will be skipped:<br><br><b>${oversizedItems.slice(0, 5).join(', ')}${oversizedItems.length > 5 ? ` +${oversizedItems.length - 5} more` : ''}</b><br><br>Continue with remaining files?`,
@@ -878,7 +805,8 @@ export function DownloadPreview({ data, platform, responseJson, onDownloadComple
 
         setGlobalStatus('downloading');
         setZipProgress({ current: 0, total: itemIds.length, status: 'Preparing...' });
-        
+
+        const JSZip = (await import('jszip')).default;
         const zip = new JSZip();
         const folder = zip.folder(data.title?.substring(0, 50).replace(/[<>:"/\\|?*]/g, '_') || 'download');
         if (!folder) {
@@ -933,13 +861,7 @@ export function DownloadPreview({ data, platform, responseJson, onDownloadComple
         }
 
         if (downloaded === 0) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Download Failed',
-                text: 'Could not download any files. Please try again.',
-                background: 'var(--bg-primary)',
-                color: 'var(--text-primary)',
-            });
+            toast.error('Could not download any files. Please try again.');
             setGlobalStatus('idle');
             setZipProgress(null);
             return;
@@ -972,23 +894,11 @@ export function DownloadPreview({ data, platform, responseJson, onDownloadComple
 
             // Show success
             if (failed > 0 || skipped > 0) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Partial Download',
-                    text: `Downloaded ${downloaded} files.${failed > 0 ? ` ${failed} failed.` : ''}${skipped > 0 ? ` ${skipped} skipped (>400MB).` : ''}`,
-                    background: 'var(--bg-primary)',
-                    color: 'var(--text-primary)',
-                });
+                toast.warning(`Downloaded ${downloaded} files.${failed > 0 ? ` ${failed} failed.` : ''}${skipped > 0 ? ` ${skipped} skipped (>400MB).` : ''}`);
             }
         } catch (err) {
             console.error('ZIP creation failed:', err);
-            Swal.fire({
-                icon: 'error',
-                title: 'ZIP Failed',
-                text: 'Failed to create ZIP file.',
-                background: 'var(--bg-primary)',
-                color: 'var(--text-primary)',
-            });
+            toast.error('Failed to create ZIP file.');
         }
 
         setGlobalStatus('idle');

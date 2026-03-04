@@ -1,7 +1,7 @@
 'use client';
 
 import { SidebarLayout } from '@/components/layout/Sidebar';
-import { HistoryList } from '@/components/download/HistoryList';
+import { HistoryList } from '@/features/downloader/components/HistoryList';
 import { motion } from 'framer-motion';
 import { Shield, HardDrive } from 'lucide-react';
 import { useTranslations } from 'next-intl';

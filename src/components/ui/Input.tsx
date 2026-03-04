@@ -27,7 +27,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         return (
             <div className="w-full">
                 {label && (
-                    <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+                    <label htmlFor={props.id} className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
                         {label}
                     </label>
                 )}
@@ -102,13 +102,6 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                     </motion.p>
                 )}
                 
-                    {/* CSS Animation */}
-                <style jsx global>{`
-                    @keyframes gradient-rotate {
-                        0% { background-position: 0% 50%; }
-                        100% { background-position: 300% 50%; }
-                    }
-                `}</style>
             </div>
         );
     }

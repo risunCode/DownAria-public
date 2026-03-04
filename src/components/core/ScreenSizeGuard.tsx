@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import Swal from 'sweetalert2';
+import { lazySwal, getCachedSwal } from '@/lib/utils/lazy-swal';
 import { useTranslations } from 'next-intl';
 
 const WIDTH_SHRINK_DELTA_PX = 24;
@@ -45,14 +45,14 @@ export function ScreenSizeGuard() {
     };
 
     const showWarning = () => {
-      if (isShowingRef.current || Swal.isVisible()) return;
+      if (isShowingRef.current || getCachedSwal()?.isVisible()) return;
       const now = Date.now();
       if (now - lastWarningAtRef.current < WARNING_COOLDOWN_MS) return;
 
       isShowingRef.current = true;
       lastWarningAtRef.current = now;
 
-      void Swal.fire({
+      void lazySwal.fire({
         icon: 'warning',
         title: t('title'),
         html: t('message'),

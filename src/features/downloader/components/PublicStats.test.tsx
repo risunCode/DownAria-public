@@ -2,7 +2,34 @@
 
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { NextIntlClientProvider } from 'next-intl';
 import { POLLING_INTERVAL_MS, PublicStats } from './PublicStats';
+
+const messages = {
+  publicStats: {
+    freshness: {
+      waiting: 'Waiting for data',
+      waitingRetry: 'Waiting for data (retrying)',
+      updatedJustNow: 'Updated just now',
+      updatedAgo: 'Updated {seconds}s ago',
+      updatedAgoWithFailed: '{base} (last refresh failed)',
+    },
+    pollingEvery: 'Polling every {seconds}s',
+    cards: {
+      visitors: { label: 'Visitors', today: 'Today: {value}', total: 'Total: {value}' },
+      extractions: { label: 'Extractions' },
+      downloads: { label: 'Downloads' },
+    },
+  },
+};
+
+function renderWithIntl(ui: React.ReactElement) {
+  return render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      {ui}
+    </NextIntlClientProvider>
+  );
+}
 
 type StatsPayload = {
   todayVisits: number;
@@ -49,7 +76,7 @@ describe('PublicStats', () => {
       );
 
     vi.stubGlobal('fetch', fetchMock);
-    render(<PublicStats />);
+    renderWithIntl(<PublicStats />);
 
     await waitFor(() => {
       expect(screen.getByText('Today: 12 345')).toBeTruthy();
@@ -89,7 +116,7 @@ describe('PublicStats', () => {
       );
 
     vi.stubGlobal('fetch', fetchMock);
-    render(<PublicStats />);
+    renderWithIntl(<PublicStats />);
 
     await act(async () => {
       await Promise.resolve();
@@ -113,7 +140,7 @@ describe('PublicStats', () => {
     const fetchMock = vi.fn().mockRejectedValue(new Error('network failed'));
 
     vi.stubGlobal('fetch', fetchMock);
-    render(<PublicStats />);
+    renderWithIntl(<PublicStats />);
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledTimes(1);

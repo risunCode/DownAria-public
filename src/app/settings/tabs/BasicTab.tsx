@@ -162,11 +162,11 @@ export function BasicTab({
       </div>
 
       <div className="glass-card p-6 rounded-2xl border border-[var(--border-color)]">
-        <div className="flex items-start justify-between gap-3 mb-4">
-          <div className="flex items-center gap-3">
-            <Beaker className="w-5 h-5 text-[var(--accent-primary)]" />
-            <div>
-              <h2 className="text-lg font-semibold text-[var(--text-primary)]">{t('experimental.title')}</h2>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <Beaker className="w-5 h-5 text-[var(--accent-primary)] shrink-0" />
+            <div className="min-w-0">
+              <h2 className="text-lg font-semibold text-[var(--text-primary)] truncate">{t('experimental.title')}</h2>
               <p className="text-xs text-[var(--text-muted)]">{t('experimental.description')}</p>
             </div>
           </div>
@@ -175,7 +175,7 @@ export function BasicTab({
             variant="secondary"
             size="sm"
             onClick={onResetExperimentalValues}
-            className="shrink-0"
+            className="shrink-0 w-full sm:w-auto"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span className="ml-1.5">{t('experimental.resetAllValues')}</span>

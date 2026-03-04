@@ -29,6 +29,13 @@
   --modal-overlay: rgba(15, 23, 42, 0.22);
   --modal-overlay-blur: 4px;
 
+  /* Border Radius Tokens */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+
   /* Platform Colors */
   --youtube: #ff0000;
   --facebook: #1877f2;
@@ -64,6 +71,13 @@
   --glass-border: rgba(0, 0, 0, 0.08);
   --modal-overlay: rgba(15, 23, 42, 0.22);
   --modal-overlay-blur: 4px;
+
+  /* Border Radius Tokens */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
 }
 
 /* Solarized Theme - cream/warm white with better contrast */
@@ -92,6 +106,13 @@
   --glass-border: rgba(28, 25, 23, 0.12);
   --modal-overlay: rgba(66, 52, 28, 0.24);
   --modal-overlay-blur: 3px;
+
+  /* Border Radius Tokens */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
 }
 
 /* Solarized-specific color overrides for better contrast */
@@ -103,80 +124,80 @@
 .theme-solarized .text-amber-600,
 .theme-solarized .text-yellow-300,
 .theme-solarized .text-amber-300 {
-  color: #856404 !important;
+  color: #856404;
   /* Darker yellowish brown - visible on cream */
 }
 
 /* Status color overrides for Solarized (Darker than defaults) */
 .theme-solarized .text-green-400,
 .theme-solarized .text-green-500 {
-  color: #2d6a4f !important;
+  color: #2d6a4f;
 }
 
 .theme-solarized .text-blue-400,
 .theme-solarized .text-blue-500 {
-  color: #1d4ed8 !important;
+  color: #1d4ed8;
 }
 
 .theme-solarized .text-sky-200,
 .theme-solarized .text-sky-300,
 .theme-solarized .text-sky-400,
 .theme-solarized .text-sky-500 {
-  color: #075985 !important;
+  color: #075985;
 }
 
 .theme-solarized .text-emerald-300,
 .theme-solarized .text-emerald-400,
 .theme-solarized .text-emerald-500 {
-  color: #166534 !important;
+  color: #166534;
 }
 
 .theme-solarized .text-red-300,
 .theme-solarized .text-red-400,
 .theme-solarized .text-red-500 {
-  color: #991b1b !important;
+  color: #991b1b;
 }
 
 .theme-solarized .text-red-400,
 .theme-solarized .text-red-500 {
-  color: #991b1b !important;
+  color: #991b1b;
 }
 
 .theme-solarized .text-purple-400,
 .theme-solarized .text-purple-500 {
-  color: #6b21a8 !important;
+  color: #6b21a8;
 }
 
 .theme-solarized .text-orange-400,
 .theme-solarized .text-orange-500 {
-  color: #9a3412 !important;
+  color: #9a3412;
 }
 
 .theme-solarized .text-cyan-400,
 .theme-solarized .text-cyan-500 {
-  color: #0e7490 !important;
+  color: #0e7490;
 }
 
 /* Status background overrides for Solarized */
 .theme-solarized .bg-yellow-500\/20,
 .theme-solarized .bg-amber-500\/20 {
-  background-color: rgba(133, 100, 4, 0.2) !important;
+  background-color: rgba(133, 100, 4, 0.2);
 }
 
 .theme-solarized .bg-green-500\/20 {
-  background-color: rgba(45, 106, 79, 0.15) !important;
+  background-color: rgba(45, 106, 79, 0.15);
 }
 
 .theme-solarized .bg-blue-500\/20 {
-  background-color: rgba(29, 78, 216, 0.1) !important;
+  background-color: rgba(29, 78, 216, 0.1);
 }
 
 .theme-solarized .bg-red-500\/20 {
-  background-color: rgba(153, 27, 27, 0.1) !important;
+  background-color: rgba(153, 27, 27, 0.1);
 }
 
 .theme-solarized .bg-amber-500\/10 {
-  background-color: rgba(133, 100, 4, 0.15) !important;
+  background-color: rgba(133, 100, 4, 0.15);
 }
 
 /* Fixed Solarized Backgrounds for Badges */
@@ -184,16 +205,16 @@
 .theme-solarized .bg-amber-400,
 .theme-solarized .bg-yellow-500,
 .theme-solarized .bg-amber-500 {
-  background-color: #b58900 !important;
+  background-color: #b58900;
   /* Solarized yellow base */
-  color: #fdf6e3 !important;
+  color: #fdf6e3;
 }
 
 .theme-solarized .border-yellow-500\/20,
 .theme-solarized .border-yellow-500\/30,
 .theme-solarized .border-amber-500\/20,
 .theme-solarized .border-amber-500\/30 {
-  border-color: rgba(133, 100, 4, 0.3) !important;
+  border-color: rgba(133, 100, 4, 0.3);
 }
 
 /* Dark Theme - Solid teal/cyan style */
@@ -221,6 +242,13 @@
   --glass-border: rgba(255, 255, 255, 0.08);
   --modal-overlay: rgba(2, 6, 14, 0.62);
   --modal-overlay-blur: 8px;
+
+  /* Border Radius Tokens */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
 }
 
 @theme inline {
@@ -306,7 +334,7 @@ body {
 .glass-card:hover {
   background: var(--bg-card-hover);
   border-color: var(--accent-primary);
-  box-shadow: 0 0 20px rgba(99, 102, 241, 0.08);
+  box-shadow: 0 0 20px rgba(232, 93, 74, 0.08);
 }
 
 /* Reduce box-shadow on mobile for performance */
@@ -346,26 +374,26 @@ html.theme-solarized body.has-custom-background .glass-card:not([role="dialog"])
 
 /* Docs pages: keep cards visibly different from solarized background */
 body.has-custom-background .docs-surface .glass-card:not([role="dialog"]):not([aria-modal="true"]) {
-  background: color-mix(in srgb, var(--bg-card) 94%, var(--bg-primary) 6%) !important;
-  border-color: color-mix(in srgb, var(--border-color) 88%, transparent) !important;
+  background: color-mix(in srgb, var(--bg-card) 94%, var(--bg-primary) 6%);
+  border-color: color-mix(in srgb, var(--border-color) 88%, transparent);
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
 
 body.has-custom-background .docs-surface .glass-card:not([role="dialog"]):not([aria-modal="true"]):hover {
-  background: color-mix(in srgb, var(--bg-card-hover) 96%, var(--bg-primary) 4%) !important;
+  background: color-mix(in srgb, var(--bg-card-hover) 96%, var(--bg-primary) 4%);
 }
 
 body.has-custom-background .docs-surface [class*="bg-[var(--bg-secondary)]"] {
-  background: color-mix(in srgb, var(--bg-secondary) 90%, var(--bg-primary) 10%) !important;
+  background: color-mix(in srgb, var(--bg-secondary) 90%, var(--bg-primary) 10%);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border-color) 70%, transparent);
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
 
 body.has-custom-background .docs-surface [class*="bg-[var(--bg-card)]"] {
-  background: color-mix(in srgb, var(--bg-card) 92%, var(--bg-primary) 8%) !important;
+  background: color-mix(in srgb, var(--bg-card) 92%, var(--bg-primary) 8%);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border-color) 66%, transparent);
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
@@ -373,14 +401,14 @@ body.has-custom-background .docs-surface [class*="bg-[var(--bg-card)]"] {
 
 /* Dark theme docs-surface: use Settings-like stronger surfaces */
 html.theme-dark body.has-custom-background .docs-surface .glass-card:not([role="dialog"]):not([aria-modal="true"]) {
-  background: color-mix(in srgb, var(--bg-card) 92%, #000 8%) !important;
-  border-color: color-mix(in srgb, var(--border-color) 92%, transparent) !important;
+  background: color-mix(in srgb, var(--bg-card) 92%, #000 8%);
+  border-color: color-mix(in srgb, var(--border-color) 92%, transparent);
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.02);
 }
 
 html.theme-dark body.has-custom-background .docs-surface [class*="bg-[var(--bg-secondary)]"],
 html.theme-dark body.has-custom-background .docs-surface [class*="bg-[var(--bg-card)]"] {
-  background: color-mix(in srgb, var(--bg-secondary) 90%, #000 10%) !important;
+  background: color-mix(in srgb, var(--bg-secondary) 90%, #000 10%);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border-color) 75%, transparent);
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
@@ -390,14 +418,14 @@ html.theme-dark body.has-custom-background .docs-surface .glass-card:not([role="
 html.theme-dark body.has-custom-background .docs-surface .glass-card:not([role="dialog"]):not([aria-modal="true"]) > * > div,
 html.theme-dark body.has-custom-background .docs-surface .glass-card:not([role="dialog"]):not([aria-modal="true"]) button,
 html.theme-dark body.has-custom-background .docs-surface .glass-card:not([role="dialog"]):not([aria-modal="true"]) > div > div {
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 /* Stronger outline for light/solarized custom background surfaces */
 .theme-light body.has-custom-background .docs-surface .glass-card:not([role="dialog"]):not([aria-modal="true"]),
 .theme-solarized body.has-custom-background .docs-surface .glass-card:not([role="dialog"]):not([aria-modal="true"]) {
-  border-color: color-mix(in srgb, var(--border-color) 100%, transparent) !important;
+  border-color: color-mix(in srgb, var(--border-color) 100%, transparent);
   box-shadow: 0 8px 22px rgba(15, 23, 42, 0.09), inset 0 0 0 1px color-mix(in srgb, var(--border-color) 55%, transparent);
 }
 
@@ -408,11 +436,11 @@ html.theme-dark body.has-custom-background .docs-surface .glass-card:not([role="
 
 /* Avoid over-bright changelog row background on custom wallpapers */
 body.has-custom-background .docs-surface .changelog-toggle {
-  background: transparent !important;
+  background: transparent;
 }
 
 body.has-custom-background .docs-surface .changelog-toggle:hover {
-  background: color-mix(in srgb, var(--bg-secondary) 72%, transparent) !important;
+  background: color-mix(in srgb, var(--bg-secondary) 72%, transparent);
 }
 
 /* Card-in-card hover clarity (About/Privacy/Credits quick links, etc.) */
@@ -421,7 +449,7 @@ body.has-custom-background .docs-surface .changelog-toggle:hover {
 }
 
 .nested-hover-card:hover {
-  border-color: color-mix(in srgb, var(--accent-primary) 35%, var(--border-color)) !important;
+  border-color: color-mix(in srgb, var(--accent-primary) 35%, var(--border-color));
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
   transform: translateY(-1px);
 }
@@ -469,13 +497,13 @@ html.theme-dark body.has-custom-background .feedback-surface .feedback-panel {
 }
 
 body.has-custom-background .feedback-surface .feedback-input {
-  background: color-mix(in srgb, var(--bg-card) 94%, #000 6%) !important;
-  border-color: color-mix(in srgb, var(--border-color) 76%, transparent) !important;
+  background: color-mix(in srgb, var(--bg-card) 94%, #000 6%);
+  border-color: color-mix(in srgb, var(--border-color) 76%, transparent);
 }
 
 html.theme-dark body.has-custom-background .feedback-surface .feedback-input {
-  background: color-mix(in srgb, #1c2128 95%, #000 5%) !important;
-  border-color: color-mix(in srgb, #30363d 80%, transparent) !important;
+  background: color-mix(in srgb, #1c2128 95%, #000 5%);
+  border-color: color-mix(in srgb, #30363d 80%, transparent);
 }
 
 html.theme-light .nested-hover-card:hover,
@@ -589,13 +617,13 @@ body.has-custom-background .format-selector-surface .format-option.is-selected {
 
 /* Light/Solarized custom background: keep selector buttons fully solid */
 html.theme-light body.has-custom-background .format-selector-surface .format-option:not(.is-selected) {
-  background: #f8f8f8 !important;
-  border-color: #d4d4d4 !important;
+  background: #f8f8f8;
+  border-color: #d4d4d4;
 }
 
 html.theme-solarized body.has-custom-background .format-selector-surface .format-option:not(.is-selected) {
-  background: #f3ecdb !important;
-  border-color: #cfc6af !important;
+  background: #f3ecdb;
+  border-color: #cfc6af;
 }
 
 /* Modal/Dialog/Alert elements stay SOLID - no transparency, no override */
@@ -1022,6 +1050,12 @@ body.has-custom-background [class*="backdrop"] {
   
   /* Keep essential UI transitions but make them faster */
   /* Note: Framer Motion handles its own reduced-motion, so we don't override * */
+}
+
+/* Gradient rotation for input glow effect */
+@keyframes gradient-rotate {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 300% 50%; }
 }
 
 /* High contrast mode support */

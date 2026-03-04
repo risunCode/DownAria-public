@@ -7,22 +7,22 @@ import type { PlatformId } from '@/lib/types';
 export function getProxyUrl(url: string, options?: {
     filename?: string;
     platform?: string;
-    inline?: boolean;
     head?: boolean;
-    hls?: boolean;
     download?: boolean;
 }): string {
     const params = new URLSearchParams();
     params.set('url', url);
-    
+
     if (options?.filename) params.set('filename', options.filename);
     if (options?.platform) params.set('platform', options.platform);
-    if (options?.inline) params.set('inline', '1');
     if (options?.head) params.set('head', '1');
-    if (options?.hls) params.set('hls', '1');
     if (options?.download) params.set('download', '1');
 
-    return `/api/web/proxy?${params.toString()}`;
+    // Auto-detect HLS URLs and route to hls-stream endpoint
+    const isHlsUrl = url.toLowerCase().includes('.m3u8');
+    const endpoint = isHlsUrl ? '/api/web/hls-stream' : '/api/web/proxy';
+
+    return `${endpoint}?${params.toString()}`;
 }
 
 export function getDownloadUrl(url: string, options?: {
@@ -46,5 +46,5 @@ export function getProxiedThumbnail(url: string | undefined, platform?: Platform
     if (!url) return '';
     
     // All thumbnails go through proxy for consistent loading
-    return getProxyUrl(url, { platform: platform as string, inline: true });
+    return getProxyUrl(url, { platform: platform as string });
 }

@@ -164,21 +164,81 @@ const variantShape: ShapeItem[] = [
   { field: 'formatId', type: 'string', required: 'optional', notes: 'Extractor/internal quality identifier.' },
 ];
 
+/* ── Reusable sub-components ─────────────────────────────────── */
+
 function MacPanel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/45 overflow-hidden">
-      <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-[var(--border-color)] bg-[var(--bg-card)]/55 min-w-0">
-        <div className="flex items-center gap-1.5">
+      <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-[var(--border-color)] bg-[var(--bg-card)]/55">
+        <div className="flex items-center gap-1.5 shrink-0">
           <span className="w-2.5 h-2.5 rounded-full bg-red-400/90" />
           <span className="w-2.5 h-2.5 rounded-full bg-amber-400/90" />
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-400/90" />
         </div>
-        <span className="text-[11px] text-[var(--text-muted)] min-w-0 max-w-[65%] truncate text-right">{title}</span>
+        <span className="text-[11px] text-[var(--text-muted)] truncate text-right">{title}</span>
       </div>
-      <div className="p-3 min-w-0">{children}</div>
+      <div className="p-3 overflow-x-auto">{children}</div>
     </div>
   );
 }
+
+function ShapeCard({ item, showRequired }: { item: ShapeItem; showRequired?: boolean }) {
+  return (
+    <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-card)]/55 p-2.5 overflow-hidden">
+      <div className="flex flex-wrap items-center gap-2 mb-1">
+        <code className="text-xs text-[var(--text-primary)] break-all">{item.field}</code>
+        <span className="text-[10px] px-2 py-0.5 rounded bg-[var(--bg-secondary)] text-[var(--text-secondary)] whitespace-nowrap">{item.type}</span>
+        {showRequired && (
+          <span
+            className={`text-[10px] px-2 py-0.5 rounded whitespace-nowrap ${
+              item.required === 'required'
+                ? 'bg-emerald-500/15 text-emerald-300'
+                : item.required === 'conditional'
+                  ? 'bg-amber-500/15 text-amber-300'
+                  : 'bg-zinc-500/15 text-zinc-300'
+            }`}
+          >
+            {item.required}
+          </span>
+        )}
+      </div>
+      <p className="text-xs text-[var(--text-muted)] leading-relaxed break-words">{item.notes}</p>
+    </div>
+  );
+}
+
+function InfoCard({ color, label, children }: { color: string; label: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/50 p-2.5 overflow-hidden">
+      <p className={`text-[11px] font-semibold ${color} mb-1`}>{label}</p>
+      <p className="text-xs text-[var(--text-muted)] leading-relaxed break-words">{children}</p>
+    </div>
+  );
+}
+
+function ChecklistCard({ num, title, children }: { num: string; title: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/50 p-2.5 overflow-hidden">
+      <p className="text-[11px] font-semibold text-[var(--text-primary)] mb-1 flex items-center gap-2">
+        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] border border-[var(--accent-primary)]/35 text-[10px] font-bold shrink-0">{num}</span>
+        {title}
+      </p>
+      <p className="text-xs text-[var(--text-muted)] leading-relaxed break-words">{children}</p>
+    </div>
+  );
+}
+
+/* ── Card wrapper — forces all children to stay inside ────── */
+
+function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={`glass-card border border-[var(--border-color)] rounded-2xl p-4 sm:p-5 overflow-hidden ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+/* ── Main page ───────────────────────────────────────────────── */
 
 export function ApiDocsPage() {
   const [showErrorCodes, setShowErrorCodes] = useState(false);
@@ -310,445 +370,352 @@ const json = await res.json();`,
 
   return (
     <SidebarLayout>
-      <div className="docs-surface py-5 sm:py-6 px-3 sm:px-4 lg:px-8">
-        <div className="max-w-5xl mx-auto">
+      <div className="docs-surface py-5 sm:py-6 px-3 sm:px-4 lg:px-8 overflow-hidden w-full">
+        <div className="max-w-5xl mx-auto overflow-hidden">
           <DocsNavbar />
-          <div className="space-y-6">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card border border-[var(--border-color)] rounded-2xl p-4 sm:p-6">
-              <h1 className="text-2xl sm:text-3xl font-bold mb-3 leading-tight">
-                <span className="gradient-text">API</span> Reference
-              </h1>
-              <p className="text-[var(--text-muted)] text-sm leading-relaxed max-w-3xl">
-                Complete endpoint and error-handling reference based on current backend implementation.
-                Includes routing groups, response behavior, and practical client handling rules.
-              </p>
+          <div className="space-y-6 overflow-hidden">
+
+            {/* ── Hero ── */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+              <Card className="sm:!p-6">
+                <h1 className="text-2xl sm:text-3xl font-bold mb-3 leading-tight">
+                  <span className="gradient-text">API</span> Reference
+                </h1>
+                <p className="text-[var(--text-muted)] text-sm leading-relaxed">
+                  Complete endpoint and error-handling reference based on current backend implementation.
+                  Includes routing groups, response behavior, and practical client handling rules.
+                </p>
+              </Card>
             </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.04 }}
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
-            >
-              <div className="glass-card border border-[var(--border-color)] rounded-xl p-4 sm:p-5 min-h-[128px] sm:min-h-[136px] flex flex-col justify-between bg-gradient-to-br from-yellow-500/8 to-transparent">
+            {/* ── Feature cards ── */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="glass-card border border-[var(--border-color)] rounded-xl p-4 sm:p-5 flex flex-col justify-between bg-gradient-to-br from-yellow-500/8 to-transparent overflow-hidden">
                 <div className="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-yellow-400/30 bg-yellow-500/10 mb-2.5">
                   <Zap className="w-4.5 h-4.5 text-yellow-400" />
                 </div>
                 <div>
                   <p className="text-base sm:text-lg font-semibold text-[var(--text-primary)] leading-tight">BFF Runtime Routes</p>
-                  <p className="text-xs sm:text-[13px] text-[var(--text-muted)] mt-1.5 leading-relaxed">Frontend calls signed `/api/web/*` routes by default.</p>
+                  <p className="text-xs sm:text-[13px] text-[var(--text-muted)] mt-1.5 leading-relaxed break-words">Frontend calls signed `/api/web/*` routes by default.</p>
                 </div>
               </div>
-              <div className="glass-card border border-[var(--border-color)] rounded-xl p-4 sm:p-5 min-h-[128px] sm:min-h-[136px] flex flex-col justify-between bg-gradient-to-br from-emerald-500/8 to-transparent">
+              <div className="glass-card border border-[var(--border-color)] rounded-xl p-4 sm:p-5 flex flex-col justify-between bg-gradient-to-br from-emerald-500/8 to-transparent overflow-hidden">
                 <div className="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-emerald-400/30 bg-emerald-500/10 mb-2.5">
                   <Shield className="w-4.5 h-4.5 text-emerald-400" />
                 </div>
                 <div>
                   <p className="text-base sm:text-lg font-semibold text-[var(--text-primary)] leading-tight">Rate Limited</p>
-                  <p className="text-xs sm:text-[13px] text-[var(--text-muted)] mt-1.5 leading-relaxed">429 includes `Retry-After` and `resetAt` metadata.</p>
+                  <p className="text-xs sm:text-[13px] text-[var(--text-muted)] mt-1.5 leading-relaxed break-words">429 includes `Retry-After` and `resetAt` metadata.</p>
                 </div>
               </div>
-              <div className="glass-card border border-[var(--border-color)] rounded-xl p-4 sm:p-5 min-h-[128px] sm:min-h-[136px] flex flex-col justify-between bg-gradient-to-br from-sky-500/8 to-transparent sm:col-span-2 lg:col-span-1">
+              <div className="glass-card border border-[var(--border-color)] rounded-xl p-4 sm:p-5 flex flex-col justify-between bg-gradient-to-br from-sky-500/8 to-transparent sm:col-span-2 lg:col-span-1 overflow-hidden">
                 <div className="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-sky-400/30 bg-sky-500/10 mb-2.5">
                   <Globe className="w-4.5 h-4.5 text-sky-400" />
                 </div>
                 <div>
                   <p className="text-base sm:text-lg font-semibold text-[var(--text-primary)] leading-tight">Split Proxy / Download</p>
-                  <p className="text-xs sm:text-[13px] text-[var(--text-muted)] mt-1.5 leading-relaxed">Preview/stream uses `/proxy`, file output uses `/download`.</p>
+                  <p className="text-xs sm:text-[13px] text-[var(--text-muted)] mt-1.5 leading-relaxed break-words">Preview/stream uses `/proxy`, file output uses `/download`.</p>
                 </div>
               </div>
             </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.05 }}
-              className="glass-card border border-[var(--border-color)] rounded-2xl p-4 sm:p-5"
-            >
-              <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-3">Base URL</h2>
-              <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/60 px-3 py-2.5">
-                <code className="text-sm text-[var(--accent-primary)] break-all">{baseUrl || '/'}</code>
-              </div>
-              <p className="text-[11px] text-[var(--text-muted)] mt-2">
-                Source: <code className="text-[var(--text-secondary)]">NEXT_PUBLIC_API_URL</code>
-              </p>
+            {/* ── Base URL ── */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+              <Card>
+                <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-3">Base URL</h2>
+                <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/60 px-3 py-2.5 overflow-hidden">
+                  <code className="text-sm text-[var(--accent-primary)] break-all">{baseUrl || '/'}</code>
+                </div>
+                <p className="text-[11px] text-[var(--text-muted)] mt-2">
+                  Source: <code className="text-[var(--text-secondary)]">NEXT_PUBLIC_API_URL</code>
+                </p>
+              </Card>
             </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.09 }}
-              className="glass-card border border-[var(--border-color)] rounded-2xl p-4 sm:p-5"
-            >
-              <div className="flex flex-wrap items-center gap-2 mb-2">
-                <span className="text-[10px] px-2 py-0.5 rounded font-semibold bg-green-500/20 text-green-300">POST</span>
-                <code className="text-sm text-[var(--text-primary)]">/api/web/extract</code>
-              </div>
-              <p className="text-xs text-[var(--text-muted)] mb-4">Extract media information from supported URL with optional cookie lane fallback. Frontend runtime uses signed `/api/web/*` routes.</p>
-
-              <div className="rounded-xl border border-sky-500/35 bg-sky-500/12 p-3 mb-4">
-                <p className="text-xs font-semibold text-sky-400 mb-1">Cookie Support</p>
-                <p className="text-xs text-[var(--text-secondary)]">For private content, pass cookie in `cookie` field format: `name=value; name2=value2`.</p>
-              </div>
-
-              <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-2">Request</h3>
-              <MacPanel title="request.json">
-                <div className="flex flex-wrap gap-1.5 mb-3">
-                  {(['curl', 'powershell', 'javascript'] as const).map((tab) => (
-                    <button
-                      key={tab}
-                      type="button"
-                      onClick={() => setRequestTab(tab)}
-                      className={`text-[11px] px-2.5 py-1 rounded-md border transition-colors ${requestTab === tab ? 'border-[var(--accent-primary)]/40 bg-[var(--accent-primary)]/15 text-[var(--text-primary)]' : 'border-[var(--border-color)] bg-[var(--bg-card)] text-[var(--text-muted)]'}`}
-                    >
-                      {tab === 'curl' ? 'cURL' : tab === 'powershell' ? 'PowerShell' : 'JavaScript'}
-                    </button>
-                  ))}
+            {/* ── Extract endpoint ── */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.09 }}>
+              <Card>
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <span className="text-[10px] px-2 py-0.5 rounded font-semibold bg-green-500/20 text-green-300">POST</span>
+                  <code className="text-sm text-[var(--text-primary)] break-all">/api/web/extract</code>
                 </div>
-                <pre className="w-full max-w-full min-w-0 text-[11px] sm:text-xs text-[var(--text-secondary)] overflow-x-auto leading-relaxed">
-                  <code>{requestExamples[requestTab]}</code>
-                </pre>
-              </MacPanel>
+                <p className="text-xs text-[var(--text-muted)] mb-4 break-words">Extract media information from supported URL with optional cookie lane fallback. Frontend runtime uses signed `/api/web/*` routes.</p>
 
-              <div className="mt-4">
-                <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-2">Response</h3>
-                <MacPanel title="response.json">
+                <div className="rounded-xl border border-sky-500/35 bg-sky-500/12 p-3 mb-4 overflow-hidden">
+                  <p className="text-xs font-semibold text-sky-400 mb-1">Cookie Support</p>
+                  <p className="text-xs text-[var(--text-secondary)] break-words">For private content, pass cookie in `cookie` field format: `name=value; name2=value2`.</p>
+                </div>
+
+                <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-2">Request</h3>
+                <MacPanel title="request.json">
                   <div className="flex flex-wrap gap-1.5 mb-3">
-                    <button
-                      type="button"
-                      onClick={() => setResponseTab('success')}
-                      className={`text-[11px] px-2.5 py-1 rounded-md border transition-colors ${responseTab === 'success' ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300' : 'border-[var(--border-color)] bg-[var(--bg-card)] text-[var(--text-muted)]'}`}
-                    >
-                      Success
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setResponseTab('error')}
-                      className={`text-[11px] px-2.5 py-1 rounded-md border transition-colors ${responseTab === 'error' ? 'border-red-500/40 bg-red-500/15 text-red-300' : 'border-[var(--border-color)] bg-[var(--bg-card)] text-[var(--text-muted)]'}`}
-                    >
-                      Error
-                    </button>
+                    {(['curl', 'powershell', 'javascript'] as const).map((tab) => (
+                      <button
+                        key={tab}
+                        type="button"
+                        onClick={() => setRequestTab(tab)}
+                        className={`text-[11px] px-2.5 py-1 rounded-md border transition-colors ${requestTab === tab ? 'border-[var(--accent-primary)]/40 bg-[var(--accent-primary)]/15 text-[var(--text-primary)]' : 'border-[var(--border-color)] bg-[var(--bg-card)] text-[var(--text-muted)]'}`}
+                      >
+                        {tab === 'curl' ? 'cURL' : tab === 'powershell' ? 'PowerShell' : 'JavaScript'}
+                      </button>
+                    ))}
                   </div>
-                  <pre className="w-full max-w-full min-w-0 text-[11px] sm:text-xs text-[var(--text-secondary)] overflow-x-auto leading-relaxed">
-                    <code>{responseTab === 'success' ? successResponse : errorResponse}</code>
+                  <pre className="text-[11px] sm:text-xs text-[var(--text-secondary)] overflow-x-auto leading-relaxed whitespace-pre-wrap break-all">
+                    <code>{requestExamples[requestTab]}</code>
                   </pre>
                 </MacPanel>
-              </div>
-            </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.11 }}
-              className="glass-card border border-[var(--border-color)] rounded-2xl p-4 sm:p-5"
-            >
-              <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-3">Other Endpoints</h2>
-              <div className="space-y-2.5">
-                {otherEndpoints.map((ep) => {
-                  const expanded = openEndpoint === ep.path;
-                  return (
-                    <div key={`${ep.method}-${ep.path}`} className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/45 overflow-hidden">
+                <div className="mt-4">
+                  <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-2">Response</h3>
+                  <MacPanel title="response.json">
+                    <div className="flex flex-wrap gap-1.5 mb-3">
                       <button
                         type="button"
-                        onClick={() => setOpenEndpoint((prev) => (prev === ep.path ? null : ep.path))}
-                        className="w-full p-3 sm:p-3.5 flex items-start sm:items-center justify-between gap-2 sm:gap-3 text-left border-b border-[var(--border-color)]"
+                        onClick={() => setResponseTab('success')}
+                        className={`text-[11px] px-2.5 py-1 rounded-md border transition-colors ${responseTab === 'success' ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300' : 'border-[var(--border-color)] bg-[var(--bg-card)] text-[var(--text-muted)]'}`}
                       >
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1">
-                            <span className={`text-[10px] px-2 py-0.5 rounded font-semibold ${ep.method === 'GET' ? 'bg-sky-500/20 text-sky-300' : 'bg-green-500/20 text-green-300'}`}>{ep.method}</span>
-                            <code className="text-xs text-[var(--text-primary)] break-all">{ep.path}</code>
-                            <span className="text-xs text-[var(--text-muted)] basis-full sm:basis-auto">{ep.label}</span>
-                          </div>
-                          <p className="text-xs text-[var(--text-muted)] leading-relaxed">{ep.summary}</p>
-                        </div>
-                        {expanded ? <ChevronUp className="w-4 h-4 text-[var(--text-muted)] flex-shrink-0" /> : <ChevronDown className="w-4 h-4 text-[var(--text-muted)] flex-shrink-0" />}
+                        Success
                       </button>
-
-                      {expanded ? (
-                        <div className="p-3 sm:p-4 space-y-3">
-                          {ep.notes ? <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{ep.notes}</p> : null}
-                          <MacPanel title={`${ep.path.replace('/api/web/', '').replace('/api/v1/', '')}.example`}>
-                            <pre className="w-full max-w-full min-w-0 text-[11px] sm:text-xs text-[var(--text-secondary)] overflow-x-auto leading-relaxed">
-                              <code>{ep.example.replaceAll('{BASE_URL}', baseUrl)}</code>
-                            </pre>
-                          </MacPanel>
-                          {ep.params ? (
-                            <p className="text-[11px] text-[var(--text-muted)]">
-                              Parameters: <span className="text-[var(--text-secondary)]">{ep.params}</span>
-                            </p>
-                          ) : null}
-                        </div>
-                      ) : null}
+                      <button
+                        type="button"
+                        onClick={() => setResponseTab('error')}
+                        className={`text-[11px] px-2.5 py-1 rounded-md border transition-colors ${responseTab === 'error' ? 'border-red-500/40 bg-red-500/15 text-red-300' : 'border-[var(--border-color)] bg-[var(--bg-card)] text-[var(--text-muted)]'}`}
+                      >
+                        Error
+                      </button>
                     </div>
-                  );
-                })}
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.12 }}
-              className="glass-card border border-[var(--border-color)] rounded-2xl p-4 sm:p-5"
-            >
-              <button
-                type="button"
-                onClick={() => setShowResponseShapeGuide((prev) => !prev)}
-                className="w-full flex items-start sm:items-center justify-between gap-2 text-left"
-              >
-                <h2 className="text-lg font-semibold text-[var(--text-primary)]">Response Shape Guide</h2>
-                {showResponseShapeGuide ? (
-                  <ChevronUp className="w-4 h-4 text-[var(--text-muted)] flex-shrink-0 mt-0.5 sm:mt-0" />
-                ) : (
-                  <ChevronDown className="w-4 h-4 text-[var(--text-muted)] flex-shrink-0 mt-0.5 sm:mt-0" />
-                )}
-              </button>
-
-              <p className="text-xs text-[var(--text-muted)] mt-2 leading-relaxed">
-                Response envelope is stable across all platforms. Field values vary per source, but array/object shape stays consistent.
-                This section helps clients adapt without platform-specific hardcoding.
-              </p>
-
-              {showResponseShapeGuide ? (
-                <div className="space-y-3 mt-4">
-                  <MacPanel title="Envelope (top level)">
-                    <div className="space-y-2">
-                      {responseShape.map((item) => (
-                        <div key={item.field} className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-card)]/55 p-2.5">
-                          <div className="flex flex-wrap items-center gap-2 mb-1">
-                            <code className="text-xs text-[var(--text-primary)]">{item.field}</code>
-                            <span className="text-[10px] px-2 py-0.5 rounded bg-[var(--bg-secondary)] text-[var(--text-secondary)]">{item.type}</span>
-                            <span
-                              className={`text-[10px] px-2 py-0.5 rounded ${
-                                item.required === 'required'
-                                  ? 'bg-emerald-500/15 text-emerald-300'
-                                  : item.required === 'conditional'
-                                    ? 'bg-amber-500/15 text-amber-300'
-                                    : 'bg-zinc-500/15 text-zinc-300'
-                              }`}
-                            >
-                              {item.required}
-                            </span>
-                          </div>
-                          <p className="text-xs text-[var(--text-muted)] leading-relaxed">{item.notes}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </MacPanel>
-
-                  <MacPanel title="data object">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {dataShape.map((item) => (
-                        <div key={item.field} className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-card)]/55 p-2.5">
-                          <div className="flex flex-wrap items-center gap-2 mb-1">
-                            <code className="text-xs text-[var(--text-primary)]">{item.field}</code>
-                            <span className="text-[10px] px-2 py-0.5 rounded bg-[var(--bg-secondary)] text-[var(--text-secondary)]">{item.type}</span>
-                          </div>
-                          <p className="text-xs text-[var(--text-muted)] leading-relaxed">{item.notes}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </MacPanel>
-
-                  <MacPanel title="media[] and variants[]">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                      <div className="space-y-2">
-                        <p className="text-xs font-semibold text-[var(--text-primary)]">Media item</p>
-                        {mediaShape.map((item) => (
-                          <div key={item.field} className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-card)]/55 p-2.5">
-                            <div className="flex flex-wrap items-center gap-2 mb-1">
-                              <code className="text-xs text-[var(--text-primary)]">{item.field}</code>
-                              <span className="text-[10px] px-2 py-0.5 rounded bg-[var(--bg-secondary)] text-[var(--text-secondary)]">{item.type}</span>
-                            </div>
-                            <p className="text-xs text-[var(--text-muted)] leading-relaxed">{item.notes}</p>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="space-y-2">
-                        <p className="text-xs font-semibold text-[var(--text-primary)]">Variant item</p>
-                        {variantShape.map((item) => (
-                          <div key={item.field} className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-card)]/55 p-2.5">
-                            <div className="flex flex-wrap items-center gap-2 mb-1">
-                              <code className="text-xs text-[var(--text-primary)]">{item.field}</code>
-                              <span className="text-[10px] px-2 py-0.5 rounded bg-[var(--bg-secondary)] text-[var(--text-secondary)]">{item.type}</span>
-                            </div>
-                            <p className="text-xs text-[var(--text-muted)] leading-relaxed">{item.notes}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    <pre className="text-[11px] sm:text-xs text-[var(--text-secondary)] overflow-x-auto leading-relaxed whitespace-pre-wrap break-all">
+                      <code>{responseTab === 'success' ? successResponse : errorResponse}</code>
+                    </pre>
                   </MacPanel>
                 </div>
-              ) : (
-                <p className="text-[11px] text-[var(--text-muted)] mt-3">Collapsed by default. Click to expand full response field map.</p>
-              )}
+              </Card>
             </motion.div>
 
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div className="glass-card border border-[var(--border-color)] rounded-2xl p-4 sm:p-5">
-                <h3 className="text-base font-semibold text-[var(--text-primary)] mb-3 flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-[var(--accent-primary)]" />
-                  Error Categories
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/50 p-2.5">
-                    <p className="text-[11px] font-semibold text-orange-400 mb-1">VALIDATION</p>
-                    <p className="text-xs text-[var(--text-muted)] leading-relaxed">Invalid request shape/body/URL. Fix input, then resend.</p>
-                  </div>
-                  <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/50 p-2.5">
-                    <p className="text-[11px] font-semibold text-sky-400 mb-1">NOT_FOUND</p>
-                    <p className="text-xs text-[var(--text-muted)] leading-relaxed">Platform/content/route not found in current runtime/public scope.</p>
-                  </div>
-                  <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/50 p-2.5">
-                    <p className="text-[11px] font-semibold text-yellow-400 mb-1">NETWORK</p>
-                    <p className="text-xs text-[var(--text-muted)] leading-relaxed">Gateway/upstream/proxy timeout or transient network failure.</p>
-                  </div>
-                  <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/50 p-2.5">
-                    <p className="text-[11px] font-semibold text-amber-400 mb-1">RATE_LIMIT</p>
-                    <p className="text-xs text-[var(--text-muted)] leading-relaxed">Too many requests. Respect `Retry-After` + `resetAt`.</p>
-                  </div>
-                  <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/50 p-2.5">
-                    <p className="text-[11px] font-semibold text-red-400 mb-1">AUTH</p>
-                    <p className="text-xs text-[var(--text-muted)] leading-relaxed">Cookie/session/login required or request is forbidden.</p>
-                  </div>
-                  <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/50 p-2.5">
-                    <p className="text-[11px] font-semibold text-pink-400 mb-1">EXTRACTION_FAILED</p>
-                    <p className="text-xs text-[var(--text-muted)] leading-relaxed">Generic extraction runtime failure on server side.</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="glass-card border border-[var(--border-color)] rounded-2xl p-4 sm:p-5">
-                <h3 className="text-base font-semibold text-[var(--text-primary)] mb-3 flex items-center gap-2">
-                  <Lock className="w-4 h-4 text-[var(--accent-primary)]" />
-                  Cookie/Auth Handling
-                </h3>
-                <div className="space-y-2">
-                  <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/50 p-2.5">
-                    <p className="text-[11px] font-semibold text-[var(--text-primary)] mb-1">Lane Order</p>
-                    <p className="text-xs text-[var(--text-muted)]">Guest {'->'} Server {'->'} UserProvided</p>
-                  </div>
-                  <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/50 p-2.5">
-                    <p className="text-[11px] font-semibold text-[var(--text-primary)] mb-1">Escalation Rule</p>
-                    <p className="text-xs text-[var(--text-muted)]">Move to next lane only when current lane fails with <span className="text-red-400">AUTH</span>.</p>
-                  </div>
-                  <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/50 p-2.5">
-                    <p className="text-[11px] font-semibold text-[var(--text-primary)] mb-1">Success Metadata</p>
-                    <p className="text-xs text-[var(--text-muted)]">`meta.cookieSource` = `guest | server | userProvided`.</p>
-                  </div>
-                  <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/50 p-2.5">
-                    <p className="text-[11px] font-semibold text-[var(--text-primary)] mb-1">Private Access Flag</p>
-                    <p className="text-xs text-[var(--text-muted)]">If auth lane used: `accessMode=private`, `publicContent=false`.</p>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-card border border-[var(--border-color)] rounded-2xl p-4 sm:p-5">
-              <button
-                type="button"
-                onClick={() => setShowErrorCodes((prev) => !prev)}
-                className="w-full flex items-start sm:items-center justify-between gap-3 rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/35 px-3 py-2.5 hover:bg-[var(--bg-secondary)]/55 transition-colors"
-              >
-                <div className="flex min-w-0 items-center gap-2">
-                  <Code2 className="w-4 h-4 text-[var(--accent-primary)]" />
-                  <span className="text-sm sm:text-base font-semibold text-[var(--text-primary)] break-words">Error Codes Handling</span>
-                </div>
-                <div className="flex items-center gap-2 text-[11px] sm:text-xs text-[var(--text-muted)] shrink-0">
-                  <span>{showErrorCodes ? 'Collapse' : 'Expand'}</span>
-                  {showErrorCodes ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </div>
-              </button>
-
-              {!showErrorCodes ? (
-                <p className="mt-3 text-xs text-[var(--text-muted)] leading-relaxed">
-                  Expand to view canonical error codes, HTTP status mapping, category group, and handling guidance.
-                </p>
-              ) : (
-                <div className="mt-4 space-y-4">
-                  {orderedCategories.map((category) => {
-                    const items = errorCodes.filter((item) => item.category === category);
-                    if (items.length === 0) return null;
-
+            {/* ── Other Endpoints ── */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.11 }}>
+              <Card>
+                <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-3">Other Endpoints</h2>
+                <div className="space-y-2.5">
+                  {otherEndpoints.map((ep) => {
+                    const expanded = openEndpoint === ep.path;
                     return (
-                      <div key={category} className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/25 p-3 sm:p-4">
-                        <div className="flex items-center gap-2 mb-3">
-                          <span className={`text-xs font-semibold ${categoryColor[category]}`}>{category}</span>
-                          <span className="text-[11px] text-[var(--text-muted)]">({items.length} codes)</span>
-                        </div>
-
-                        <div className="space-y-2">
-                          {items.map((item) => (
-                            <div key={item.code} className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)]/60 p-2.5 sm:p-3">
-                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-1.5">
-                                <code className="text-xs sm:text-sm text-[var(--text-primary)] break-all">{item.code}</code>
-                                <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                                  <span className="text-[10px] px-2 py-0.5 rounded bg-[var(--bg-card)] text-[var(--text-secondary)]">HTTP {item.status}</span>
-                                  <span className={`text-[10px] px-2 py-0.5 rounded bg-[var(--bg-card)] ${categoryColor[item.category]}`}>{item.category}</span>
-                                </div>
-                              </div>
-                              <p className="text-xs text-[var(--text-muted)] leading-relaxed">{item.handling}</p>
+                      <div key={`${ep.method}-${ep.path}`} className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/45 overflow-hidden">
+                        <button
+                          type="button"
+                          onClick={() => setOpenEndpoint((prev) => (prev === ep.path ? null : ep.path))}
+                          className="w-full p-3 sm:p-3.5 flex items-start sm:items-center justify-between gap-2 sm:gap-3 text-left border-b border-[var(--border-color)]"
+                        >
+                          <div className="min-w-0 overflow-hidden">
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1">
+                              <span className={`text-[10px] px-2 py-0.5 rounded font-semibold shrink-0 ${ep.method === 'GET' ? 'bg-sky-500/20 text-sky-300' : 'bg-green-500/20 text-green-300'}`}>{ep.method}</span>
+                              <code className="text-xs text-[var(--text-primary)] break-all">{ep.path}</code>
+                              <span className="text-xs text-[var(--text-muted)] basis-full sm:basis-auto break-words">{ep.label}</span>
                             </div>
-                          ))}
-                        </div>
+                            <p className="text-xs text-[var(--text-muted)] leading-relaxed break-words">{ep.summary}</p>
+                          </div>
+                          {expanded ? <ChevronUp className="w-4 h-4 text-[var(--text-muted)] shrink-0" /> : <ChevronDown className="w-4 h-4 text-[var(--text-muted)] shrink-0" />}
+                        </button>
+
+                        {expanded && (
+                          <div className="p-3 sm:p-4 space-y-3 overflow-hidden">
+                            {ep.notes && <p className="text-xs text-[var(--text-secondary)] leading-relaxed break-words">{ep.notes}</p>}
+                            <MacPanel title={`${ep.path.replace('/api/web/', '').replace('/api/v1/', '')}.example`}>
+                              <pre className="text-[11px] sm:text-xs text-[var(--text-secondary)] overflow-x-auto leading-relaxed whitespace-pre-wrap break-all">
+                                <code>{ep.example.replaceAll('{BASE_URL}', baseUrl)}</code>
+                              </pre>
+                            </MacPanel>
+                            {ep.params && (
+                              <p className="text-[11px] text-[var(--text-muted)] break-words">
+                                Parameters: <span className="text-[var(--text-secondary)]">{ep.params}</span>
+                              </p>
+                            )}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
                 </div>
-              )}
+              </Card>
             </motion.div>
 
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.26 }} className="glass-card border border-[var(--border-color)] rounded-2xl p-4 sm:p-5">
-              <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-3 flex items-center gap-2">
-                <Globe className="w-4 h-4 text-[var(--accent-primary)]" />
-                Client Handling Checklist
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/50 p-2.5">
-                  <p className="text-[11px] font-semibold text-[var(--text-primary)] mb-1 flex items-center gap-2">
-                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] border border-[var(--accent-primary)]/35 text-[10px] font-bold">01</span>
-                    Branching
-                  </p>
-                  <p className="text-xs text-[var(--text-muted)] leading-relaxed">Route UX by `error.category` first, refine with `error.code` second.</p>
-                </div>
-                <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/50 p-2.5">
-                  <p className="text-[11px] font-semibold text-[var(--text-primary)] mb-1 flex items-center gap-2">
-                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] border border-[var(--accent-primary)]/35 text-[10px] font-bold">02</span>
-                    Rate Limit
-                  </p>
-                  <p className="text-xs text-[var(--text-muted)] leading-relaxed">Use `Retry-After` header and `error.metadata.resetAt` countdown together.</p>
-                </div>
-                <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/50 p-2.5">
-                  <p className="text-[11px] font-semibold text-[var(--text-primary)] mb-1 flex items-center gap-2">
-                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] border border-[var(--accent-primary)]/35 text-[10px] font-bold">03</span>
-                    Auth Recovery
-                  </p>
-                  <p className="text-xs text-[var(--text-muted)] leading-relaxed">Show cookie settings action and retry with user-provided lane.</p>
-                </div>
-                <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/50 p-2.5">
-                  <p className="text-[11px] font-semibold text-[var(--text-primary)] mb-1 flex items-center gap-2">
-                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] border border-[var(--accent-primary)]/35 text-[10px] font-bold">04</span>
-                    Retry Policy
-                  </p>
-                  <p className="text-xs text-[var(--text-muted)] leading-relaxed">Retry only `NETWORK` and `RATE_LIMIT` with exponential backoff.</p>
-                </div>
-                <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/50 p-2.5 sm:col-span-2">
-                  <p className="text-[11px] font-semibold text-[var(--text-primary)] mb-1 flex items-center gap-2">
-                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] border border-[var(--accent-primary)]/35 text-[10px] font-bold">05</span>
-                    Canonical vs Cause Code
-                  </p>
-                  <p className="text-xs text-[var(--text-muted)] leading-relaxed">When code is normalized, inspect `error.metadata.causeCode` for upstream root cause.</p>
-                </div>
-              </div>
-              <div className="mt-3 text-[11px] text-[var(--text-muted)] flex items-start gap-1.5 leading-relaxed">
-                <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                <span className="min-w-0 break-words [overflow-wrap:anywhere]">This page is synced to current frontend runtime routes (`/api/web/*`) and active FetchMoona public routes.</span>
-              </div>
-              <div className="mt-2 text-[11px] text-[var(--text-muted)] flex items-start gap-1.5 leading-relaxed">
-                <Sparkles className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-                <span className="min-w-0 break-words [overflow-wrap:anywhere]">Example JSON is representative; payload shape follows runtime extract result and may vary per platform.</span>
-              </div>
+            {/* ── Response Shape Guide ── */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
+              <Card>
+                <button
+                  type="button"
+                  onClick={() => setShowResponseShapeGuide((prev) => !prev)}
+                  className="w-full flex items-start sm:items-center justify-between gap-2 text-left"
+                >
+                  <h2 className="text-lg font-semibold text-[var(--text-primary)]">Response Shape Guide</h2>
+                  {showResponseShapeGuide ? (
+                    <ChevronUp className="w-4 h-4 text-[var(--text-muted)] shrink-0 mt-0.5 sm:mt-0" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-[var(--text-muted)] shrink-0 mt-0.5 sm:mt-0" />
+                  )}
+                </button>
+
+                <p className="text-xs text-[var(--text-muted)] mt-2 leading-relaxed break-words">
+                  Response envelope is stable across all platforms. Field values vary per source, but array/object shape stays consistent.
+                  This section helps clients adapt without platform-specific hardcoding.
+                </p>
+
+                {showResponseShapeGuide ? (
+                  <div className="space-y-3 mt-4">
+                    <MacPanel title="Envelope (top level)">
+                      <div className="space-y-2">
+                        {responseShape.map((item) => (
+                          <ShapeCard key={item.field} item={item} showRequired />
+                        ))}
+                      </div>
+                    </MacPanel>
+
+                    <MacPanel title="data object">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {dataShape.map((item) => (
+                          <ShapeCard key={item.field} item={item} />
+                        ))}
+                      </div>
+                    </MacPanel>
+
+                    <MacPanel title="media[] and variants[]">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                        <div className="space-y-2 overflow-hidden">
+                          <p className="text-xs font-semibold text-[var(--text-primary)]">Media item</p>
+                          {mediaShape.map((item) => (
+                            <ShapeCard key={item.field} item={item} />
+                          ))}
+                        </div>
+                        <div className="space-y-2 overflow-hidden">
+                          <p className="text-xs font-semibold text-[var(--text-primary)]">Variant item</p>
+                          {variantShape.map((item) => (
+                            <ShapeCard key={item.field} item={item} />
+                          ))}
+                        </div>
+                      </div>
+                    </MacPanel>
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-[var(--text-muted)] mt-3">Collapsed by default. Click to expand full response field map.</p>
+                )}
+              </Card>
             </motion.div>
+
+            {/* ── Error Categories + Cookie/Auth ── */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <Card>
+                <h3 className="text-base font-semibold text-[var(--text-primary)] mb-3 flex items-center gap-2">
+                  <Shield className="w-4 h-4 text-[var(--accent-primary)] shrink-0" />
+                  Error Categories
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <InfoCard color="text-orange-400" label="VALIDATION">Invalid request shape/body/URL. Fix input, then resend.</InfoCard>
+                  <InfoCard color="text-sky-400" label="NOT_FOUND">Platform/content/route not found in current runtime/public scope.</InfoCard>
+                  <InfoCard color="text-yellow-400" label="NETWORK">Gateway/upstream/proxy timeout or transient network failure.</InfoCard>
+                  <InfoCard color="text-amber-400" label="RATE_LIMIT">Too many requests. Respect `Retry-After` + `resetAt`.</InfoCard>
+                  <InfoCard color="text-red-400" label="AUTH">Cookie/session/login required or request is forbidden.</InfoCard>
+                  <InfoCard color="text-pink-400" label="EXTRACTION_FAILED">Generic extraction runtime failure on server side.</InfoCard>
+                </div>
+              </Card>
+
+              <Card>
+                <h3 className="text-base font-semibold text-[var(--text-primary)] mb-3 flex items-center gap-2">
+                  <Lock className="w-4 h-4 text-[var(--accent-primary)] shrink-0" />
+                  Cookie/Auth Handling
+                </h3>
+                <div className="space-y-2">
+                  <InfoCard color="text-[var(--text-primary)]" label="Lane Order">Guest {'->'}  Server {'->'}  UserProvided</InfoCard>
+                  <InfoCard color="text-[var(--text-primary)]" label="Escalation Rule">Move to next lane only when current lane fails with <span className="text-red-400">AUTH</span>.</InfoCard>
+                  <InfoCard color="text-[var(--text-primary)]" label="Success Metadata">`meta.cookieSource` = `guest | server | userProvided`.</InfoCard>
+                  <InfoCard color="text-[var(--text-primary)]" label="Private Access Flag">If auth lane used: `accessMode=private`, `publicContent=false`.</InfoCard>
+                </div>
+              </Card>
+            </motion.div>
+
+            {/* ── Error Codes Handling ── */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+              <Card>
+                <button
+                  type="button"
+                  onClick={() => setShowErrorCodes((prev) => !prev)}
+                  className="w-full flex items-start sm:items-center justify-between gap-3 rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/35 px-3 py-2.5 hover:bg-[var(--bg-secondary)]/55 transition-colors"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Code2 className="w-4 h-4 text-[var(--accent-primary)] shrink-0" />
+                    <span className="text-sm sm:text-base font-semibold text-[var(--text-primary)] break-words">Error Codes Handling</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-[11px] sm:text-xs text-[var(--text-muted)] shrink-0">
+                    <span>{showErrorCodes ? 'Collapse' : 'Expand'}</span>
+                    {showErrorCodes ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </div>
+                </button>
+
+                {!showErrorCodes ? (
+                  <p className="mt-3 text-xs text-[var(--text-muted)] leading-relaxed break-words">
+                    Expand to view canonical error codes, HTTP status mapping, category group, and handling guidance.
+                  </p>
+                ) : (
+                  <div className="mt-4 space-y-4">
+                    {orderedCategories.map((category) => {
+                      const items = errorCodes.filter((item) => item.category === category);
+                      if (items.length === 0) return null;
+
+                      return (
+                        <div key={category} className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/25 p-3 sm:p-4 overflow-hidden">
+                          <div className="flex items-center gap-2 mb-3">
+                            <span className={`text-xs font-semibold ${categoryColor[category]}`}>{category}</span>
+                            <span className="text-[11px] text-[var(--text-muted)]">({items.length} codes)</span>
+                          </div>
+
+                          <div className="space-y-2">
+                            {items.map((item) => (
+                              <div key={item.code} className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)]/60 p-2.5 sm:p-3 overflow-hidden">
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-1.5">
+                                  <code className="text-xs sm:text-sm text-[var(--text-primary)] break-all">{item.code}</code>
+                                  <div className="flex flex-wrap items-center gap-2 sm:justify-end shrink-0">
+                                    <span className="text-[10px] px-2 py-0.5 rounded bg-[var(--bg-card)] text-[var(--text-secondary)] whitespace-nowrap">HTTP {item.status}</span>
+                                    <span className={`text-[10px] px-2 py-0.5 rounded bg-[var(--bg-card)] whitespace-nowrap ${categoryColor[item.category]}`}>{item.category}</span>
+                                  </div>
+                                </div>
+                                <p className="text-xs text-[var(--text-muted)] leading-relaxed break-words">{item.handling}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </Card>
+            </motion.div>
+
+            {/* ── Client Handling Checklist ── */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.26 }}>
+              <Card>
+                <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-3 flex items-center gap-2">
+                  <Globe className="w-4 h-4 text-[var(--accent-primary)] shrink-0" />
+                  Client Handling Checklist
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <ChecklistCard num="01" title="Branching">Route UX by `error.category` first, refine with `error.code` second.</ChecklistCard>
+                  <ChecklistCard num="02" title="Rate Limit">Use `Retry-After` header and `error.metadata.resetAt` countdown together.</ChecklistCard>
+                  <ChecklistCard num="03" title="Auth Recovery">Show cookie settings action and retry with user-provided lane.</ChecklistCard>
+                  <ChecklistCard num="04" title="Retry Policy">Retry only `NETWORK` and `RATE_LIMIT` with exponential backoff.</ChecklistCard>
+                  <div className="sm:col-span-2">
+                    <ChecklistCard num="05" title="Canonical vs Cause Code">When code is normalized, inspect `error.metadata.causeCode` for upstream root cause.</ChecklistCard>
+                  </div>
+                </div>
+                <div className="mt-3 text-[11px] text-[var(--text-muted)] flex items-start gap-1.5 leading-relaxed">
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span className="break-words">This page is synced to current frontend runtime routes (`/api/web/*`) and active DownAria-API public routes.</span>
+                </div>
+                <div className="mt-2 text-[11px] text-[var(--text-muted)] flex items-start gap-1.5 leading-relaxed">
+                  <Sparkles className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                  <span className="break-words">Example JSON is representative; payload shape follows runtime extract result and may vary per platform.</span>
+                </div>
+              </Card>
+            </motion.div>
+
           </div>
         </div>
       </div>

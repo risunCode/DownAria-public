@@ -6,9 +6,9 @@ import { AlertTriangle, RotateCcw, Settings } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { SidebarLayout } from '@/components/layout/Sidebar';
-import { DownloadForm } from '@/components/download/DownloadForm';
-import { DownloadPreview } from '@/components/download/DownloadPreview';
-import { HistoryList } from '@/components/download/HistoryList';
+import { DownloadForm } from '@/features/downloader/components/DownloadForm';
+import { DownloadPreview } from '@/features/downloader/components/DownloadPreview';
+import { HistoryList } from '@/features/downloader/components/HistoryList';
 import { RateLimitModal } from '@/components/ui/RateLimitModal';
 
 import { CardSkeleton } from '@/components/ui/Card';

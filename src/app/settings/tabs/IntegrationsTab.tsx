@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Zap } from 'lucide-react';
-import { DiscordWebhookSettings } from '@/components/settings/DiscordWebhookSettings';
+import { DiscordWebhookSettings } from '@/features/settings/components/DiscordWebhookSettings';
 import { useTranslations } from 'next-intl';
 
 export function IntegrationsTab() {

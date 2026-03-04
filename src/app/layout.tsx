@@ -13,6 +13,7 @@ import { ScreenSizeGuard } from "@/components/core/ScreenSizeGuard";
 import { AdaptText } from "@/components/core/AdaptText";
 import { ThemeColorMeta } from "@/components/core/ThemeColorMeta";
 import { CacheInitializer } from "@/components/core/CacheInitializer";
+import { Toaster } from "sonner";
 import { BASE_URL_WITH_FALLBACK, IS_PROD, IS_VERCEL } from "@/lib/config";
 
 const jetbrainsMono = JetBrains_Mono({
@@ -82,12 +83,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark" suppressHydrationWarning>
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="theme-color" content="#0d1117" />
         <meta name="screen-orientation" content="portrait" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('downaria-theme');if(t==='auto'||!t){var m=window.matchMedia('(prefers-color-scheme:dark)').matches;t=m?'dark':'light'}if(t)document.documentElement.className=t==='dark'?'theme-dark dark':t==='solarized'?'theme-solarized':'theme-light'}catch(e){}})()`,
+          }}
+        />
         <StructuredData />
       </head>
       <body
@@ -104,6 +110,16 @@ export default function RootLayout({
             <ServiceWorkerRegister />
             {children}
           </PendingDownloadProvider>
+          <Toaster
+            position="bottom-right"
+            toastOptions={{
+              style: {
+                background: 'var(--bg-card)',
+                color: 'var(--text-primary)',
+                border: '1px solid var(--border-color)',
+              },
+            }}
+          />
         </IntlProvider>
         {IS_PROD && IS_VERCEL && (
           <>

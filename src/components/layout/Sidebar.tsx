@@ -48,6 +48,7 @@ export function SidebarLayout({ children }: SidebarProps) {
     const [quickBackgroundSound, setQuickBackgroundSound] = useState(false);
     const themeRef = useRef<HTMLDivElement>(null);
     const profileRef = useRef<HTMLDivElement>(null);
+    const pendingNavRef = useRef<(() => void) | null>(null);
     const pathname = usePathname();
     const router = useRouter();
 
@@ -129,13 +130,9 @@ export function SidebarLayout({ children }: SidebarProps) {
             return;
         }
 
-        // Close sidebar first, then navigate after animation
+        // Store pending navigation, close sidebar, navigate after exit animation completes
+        pendingNavRef.current = () => router.push(href);
         setSidebarOpen(false);
-
-        // Wait for exit animation to complete before navigating
-        setTimeout(() => {
-            router.push(href);
-        }, 200); // Match the spring animation duration
     }, [pathname, router]);
 
     const CurrentThemeIcon = THEMES.find(t => t.id === currentTheme)?.icon || Clock;
@@ -319,15 +316,23 @@ export function SidebarLayout({ children }: SidebarProps) {
                             initial={{ x: -280 }}
                             animate={{ x: 0 }}
                             exit={{ x: -280 }}
-                            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                            className="lg:hidden fixed top-0 left-0 bottom-0 z-50 w-[280px] bg-[var(--bg-secondary)] border-r border-[var(--border-color)] overflow-y-auto"
+                            transition={{ type: 'tween', duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+                            className="lg:hidden fixed top-0 left-0 bottom-0 z-50 w-[280px] bg-[var(--bg-secondary)] border-r border-[var(--border-color)] will-change-transform"
+                            onAnimationComplete={(definition) => {
+                                if (definition && typeof definition === 'object' && 'x' in definition && definition.x === -280) {
+                                    pendingNavRef.current?.();
+                                    pendingNavRef.current = null;
+                                }
+                            }}
                         >
-                            <SidebarContent
-                                navLinks={navLinks}
-                                platforms={platforms}
-                                isActive={isActive}
-                                onNavigate={handleNavigation}
-                            />
+                            <div className="overflow-y-auto h-full">
+                                <SidebarContent
+                                    navLinks={navLinks}
+                                    platforms={platforms}
+                                    isActive={isActive}
+                                    onNavigate={handleNavigation}
+                                />
+                            </div>
                         </motion.aside>
                     </>
                 )}

@@ -10,7 +10,8 @@ import { getProxiedThumbnail } from '@/lib/api/proxy';
 import { getProxyUrl } from '@/lib/api/proxy';
 import { RichText } from '@/lib/utils/text-parser';
 import { sendDiscordNotification, getUserDiscordSettings } from '@/lib/utils/discord-webhook';
-import Swal from 'sweetalert2';
+import { lazySwal } from '@/lib/utils/lazy-swal';
+import { toast } from 'sonner';
 import { SplitButton } from '@/components/ui/SplitButton';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
@@ -37,9 +38,9 @@ import {
   subscribeDownloadProgress,
   getDownloadProgress,
 } from '@/lib/stores/download-store';
-import { EngagementDisplay } from '@/components/media/EngagementDisplay';
-import { FormatSelector } from '@/components/media/FormatSelector';
-import { DownloadProgress } from '@/components/media/DownloadProgress';
+import { EngagementDisplay } from './EngagementDisplay';
+import { FormatSelector } from './FormatSelector';
+import { DownloadProgress } from './DownloadProgress';
 
 // ═══════════════════════════════════════════════════════════════
 // TYPES
@@ -415,17 +416,7 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
     const handlePaste = (e: ClipboardEvent) => {
       if (downloadState.status === 'downloading') {
         e.preventDefault();
-        Swal.fire({
-          icon: 'warning',
-          title: 'Download Sedang Berjalan',
-          text: 'Tunggu download selesai sebelum paste URL baru.',
-          toast: true,
-          position: 'top-end',
-          timer: 3000,
-          showConfirmButton: false,
-          background: 'var(--bg-card)',
-          color: 'var(--text-primary)',
-        });
+        toast.warning('Tunggu download selesai sebelum paste URL baru.');
       }
     };
 
@@ -525,13 +516,13 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
     
     // Check if already sent for this item
     if (discordSent[currentItemId]) {
-      Swal.fire({ icon: 'info', title: 'Already Sent', text: 'This item was already sent to Discord.', toast: true, position: 'top-end', timer: 2000, showConfirmButton: false, background: 'var(--bg-card)', color: 'var(--text-primary)' });
+      toast.info('This item was already sent to Discord.');
       return;
     }
     
     const settings = getUserDiscordSettings();
     if (!settings?.webhookUrl) {
-      Swal.fire({
+      lazySwal.fire({
         icon: 'warning',
         title: 'Webhook Not Configured',
         text: 'Configure Discord webhook in Settings first.',
@@ -560,14 +551,14 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
 
     if (result.sent) {
       setDiscordSent(prev => ({ ...prev, [currentItemId]: true }));
-      Swal.fire({ icon: 'success', title: 'Sent!', toast: true, position: 'top-end', timer: 2000, showConfirmButton: false, background: 'var(--bg-card)', color: 'var(--text-primary)' });
+      toast.success('Sent!');
     }
   };
 
   // Copy link handler
   const handleCopyLink = () => {
     navigator.clipboard.writeText(data.url);
-    Swal.fire({ icon: 'success', title: 'Link Copied!', toast: true, position: 'top-end', timer: 1500, showConfirmButton: false, background: 'var(--bg-card)', color: 'var(--text-primary)' });
+    toast.success('Link Copied!');
   };
 
   const responseJsonText = useMemo(() => {
@@ -580,40 +571,15 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
 
   const handleCopyResponse = useCallback(async () => {
     if (!navigator.clipboard?.writeText) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Clipboard Unavailable',
-        text: 'Copy is not supported in this browser.',
-        background: 'var(--bg-card)',
-        color: 'var(--text-primary)',
-      });
+      toast.error('Copy is not supported in this browser.');
       return;
     }
 
     try {
       await navigator.clipboard.writeText(responseJsonText);
-      Swal.fire({
-        icon: 'success',
-        title: 'Response Copied',
-        toast: true,
-        position: 'top-end',
-        timer: 1800,
-        showConfirmButton: false,
-        background: 'var(--bg-card)',
-        color: 'var(--text-primary)',
-      });
+      toast.success('Response Copied');
     } catch {
-      Swal.fire({
-        icon: 'error',
-        title: 'Copy Failed',
-        text: 'Failed to copy response JSON.',
-        toast: true,
-        position: 'top-end',
-        timer: 2600,
-        showConfirmButton: false,
-        background: 'var(--bg-card)',
-        color: 'var(--text-primary)',
-      });
+      toast.error('Failed to copy response JSON.');
     }
   }, [responseJsonText]);
 
@@ -954,8 +920,8 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
               />
               {isHlsPairBuffering && (
                 <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/55 backdrop-blur-[1px]">
-                  <div className="rounded-lg border border-white/20 bg-black/65 px-4 py-2 text-center text-xs text-white/90">
-                    Merge stream buffering... merge for playback, please wait.
+                  <div className="rounded-lg border border-white/20 bg-black/65 p-4">
+                    <Loader2 className="w-8 h-8 text-white/90 animate-spin" />
                   </div>
                 </div>
               )}

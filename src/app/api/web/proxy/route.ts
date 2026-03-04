@@ -4,8 +4,6 @@ import { buildWebSignatureHeaders, resolveGatewayOrigin } from '../_internal/sig
 function buildLocalProxyURL(target: string, platform?: string): string {
   const params = new URLSearchParams();
   params.set('url', target);
-  params.set('inline', '1');
-  params.set('hls', '1');
   if (platform) params.set('platform', platform);
   return `/api/web/proxy?${params.toString()}`;
 }

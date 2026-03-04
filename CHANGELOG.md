@@ -2,13 +2,97 @@
 
 All notable changes to DownAria will be documented in this file.
 
+## [2.3.0] - 2026-03-05
+
+### 🏗️ Architecture Overhaul
+
+#### 📦 Feature-Slice Architecture
+- Migrated from flat component structure to modular feature-slice organization
+- Created `src/features/` directory with domain-specific modules:
+  - `downloader/` - URL input, extraction flow, history, and public stats
+  - `media/` - Media viewing, format selection, and download management
+  - `settings/` - User-configurable settings panels
+- All feature modules export via barrel pattern (`index.ts`) for cleaner imports
+- Components now organized by business domain rather than technical type
+
+#### 🎨 Icon System Modernization
+- **Removed FontAwesome** - Eliminated all `@fortawesome/*` packages (~4 dependencies)
+- **Migrated to Lucide React** - Modern, tree-shakeable icon library for UI icons
+- **Custom SVG Brand Icons** - Hand-crafted minimal SVG components for social platforms:
+  - Facebook, Instagram, Twitter/X, TikTok, Weibo, YouTube
+  - All icons use `fill="currentColor"` for CSS color inheritance
+- Reduced bundle size and improved icon rendering performance
+
+#### 🔔 Toast Notification System
+- **Sonner** added as primary toast notification library
+- Single `<Toaster>` instance mounted in root layout with CSS variable theming
+- SweetAlert2 scope reduced to destructive confirmations only (via `lazy-swal.ts`)
+- Cleaner, more consistent notification UX across the app
+
+### 🚀 New Features
+
+#### 📹 Video Player Integration
+- Added **Vidstack v1.12.13** player for direct video playback
+- `VideoPreview` component with poster support and proper cleanup
+- Separate handling for HLS streams (hls.js) vs direct MP4/WebM URLs
+
+#### 🎯 Lazy Loading Improvements
+- **LazyMarkdown** component with dynamic import and skeleton placeholder
+- Markdown parser (`react-markdown` + `remark-gfm`) kept out of initial bundle
+- **Lazy SweetAlert2** - Confirmation dialogs loaded on-demand only
+
+#### 🛠️ Developer Experience
+- **cn() utility** - Combines `clsx` + `tailwind-merge` for smart className composition
+- Prevents Tailwind class conflicts and simplifies conditional styling
+- Used throughout components for cleaner, more maintainable code
+
+### 🔧 Improvements
+
+#### 🎨 CSS & Styling
+- Removed ~34 unnecessary `!important` declarations from `globals.css`
+- Improved specificity and cascade management
+- Better theming consistency with CSS custom properties
+- Cleaner, more maintainable stylesheet
+
+#### 📦 Dependencies
+- Added: `@vidstack/react`, `clsx`, `sonner`, `tailwind-merge`
+- Removed: `@fortawesome/fontawesome-svg-core`, `@fortawesome/free-brands-svg-icons`, `@fortawesome/free-solid-svg-icons`, `@fortawesome/react-fontawesome`
+- Net reduction in bundle size despite new features
+
+#### 🧩 Component Updates
+- Updated all page imports to use feature-slice barrel exports
+- Improved Card, Input, and other UI primitives
+- Better separation of concerns between shared UI and feature-specific components
+- Enhanced Header and Sidebar with updated icon system
+
+#### 📚 Documentation
+- Updated CLAUDE.md with comprehensive feature-slice architecture guide
+- Added Icon System section explaining Lucide + custom SVG approach
+- Documented Toast/Notification system usage patterns
+- Added LazyMarkdown and cn() utility documentation
+- Included Vidstack player integration notes
+
+### 🐛 Fixed
+- Icon rendering consistency across all platforms
+- Bundle size optimization through better code splitting
+- Improved tree-shaking with ES module dependencies
+- Better TypeScript types for icon components
+
+### ⚡ Performance
+- Reduced initial bundle size by removing FontAwesome
+- Improved code splitting with lazy-loaded markdown renderer
+- Better tree-shaking with Lucide React (only used icons bundled)
+- Faster icon rendering with native SVG vs font-based icons
+
+---
+
 ## [2.2.1] - 2026-03-04
 
 #### 🔧 Improvements
 - Forwarded frontend proxy `Range` requests and now pass through backend `content-range` and `x-file-size` headers for partial-download correctness.
 - Synced frontend error taxonomy with backend canonical codes (`AUTH_REQUIRED`, `PLATFORM_NOT_FOUND`, `NETWORK_ERROR`, `EXTRACTION_FAILED`, `RATE_LIMITED_429`) and added fallback mapping tests.
 - Added live `PublicStats` polling behavior with resilient fallback handling when stats data is unavailable.
-- Aligned frontend docs/env guidance to signed `/api/web/*` runtime behavior and FetchMoona naming.
+- Aligned frontend docs/env guidance to signed `/api/web/*` runtime behavior and DownAria-API naming.
 - Synced local integration defaults in env/docs references to FE `3001` and BE `8081`.
 
 ## [2.2.0] - 2026-03-03

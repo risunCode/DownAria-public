@@ -46,7 +46,8 @@ import {
   getUnifiedSettings,
   saveUnifiedSettings,
 } from '@/lib/storage';
-import Swal from 'sweetalert2';
+import { lazySwal } from '@/lib/utils/lazy-swal';
+import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 
 // ═══════════════════════════════════════════════════════════════
@@ -154,7 +155,7 @@ export function SeasonalSettings() {
   const handleOpacityChange = (value: number) => {
     if (value > 20 && !hasShownWarning) {
       setHasShownWarning(true);
-      Swal.fire({
+      lazySwal.fire({
         icon: 'warning',
         title: t('alerts.highOpacity.title'),
         text: t('alerts.highOpacity.text'),
@@ -226,24 +227,10 @@ export function SeasonalSettings() {
       setHasBackground(true);
       setBackgroundInfo({ type: bg.type, size: bg.size });
 
-      Swal.fire({
-        icon: 'success',
-        title: t('alerts.backgroundSet.title'),
-        text: t('alerts.backgroundSet.text'),
-        confirmButtonText: t('actions.ok'),
-        background: 'var(--bg-card)',
-        color: 'var(--text-primary)',
-      });
+      toast.success(t('alerts.backgroundSet.title'));
     } catch (err) {
       console.error('[SeasonalSettings] Failed to upload background:', err);
-      Swal.fire({
-        icon: 'error',
-        title: t('alerts.uploadFailed.title'),
-        text: err instanceof Error ? err.message : t('alerts.uploadFailed.text'),
-        background: 'var(--bg-card)',
-        color: 'var(--text-primary)',
-        confirmButtonText: t('actions.ok'),
-      });
+      toast.error(err instanceof Error ? err.message : t('alerts.uploadFailed.text'));
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';

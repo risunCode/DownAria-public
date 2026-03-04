@@ -15,7 +15,7 @@ const faqs: { category: string; items: FAQItem[] }[] = [
     {
         category: 'General',
         items: [
-            { question: 'What is DownAria?', answer: 'DownAria is a social media downloader built with a Next.js frontend and a Go backend (FetchMoona).' },
+            { question: 'What is DownAria?', answer: 'DownAria is a social media downloader built with a Next.js frontend and a Go backend (DownAria-API).' },
             { question: 'Is DownAria free?', answer: 'Yes, core usage is free. Request limits and service behavior still follow backend policy.' },
             { question: 'Do I need an account to download?', answer: 'Most public posts do not need login. Private or restricted content may require your own cookie.' },
             { question: 'Is Indonesian language available?', answer: 'Yes. The UI supports EN/ID, including core docs pages such as Overview, FAQ, and Changelog.' },

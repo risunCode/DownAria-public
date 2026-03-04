@@ -167,7 +167,7 @@ export function DownloadForm({
         onSubmitRef.current(cleanUrl);
     };
 
-    const scheduleAutoSubmit = (rawUrl: string, delay = 180) => {
+    const scheduleAutoSubmit = (rawUrl: string, delay = 100) => {
         if (!enableAutoSubmit) return;
         clearAutoSubmitTimer();
         autoSubmitTimeoutRef.current = setTimeout(() => {

@@ -21,6 +21,7 @@ Both directories are separate git repositories.
 - Facebook (native Go extractor)
 - Pixiv (native Go extractor)
 - Threads (native Go extractor)
+- Weibo (native Go extractor)
 
 **Key Features:**
 - Multi-platform media extraction with unified response format
@@ -52,7 +53,7 @@ npm run dev
 ### Frontend (DownAria/)
 
 ```bash
-# Development server on port 3001
+# Development server on port 3001 (uses Turbopack)
 npm run dev
 
 # Production build (runs prebuild scripts: update-sw-version, copy-changelog)
@@ -76,7 +77,7 @@ go run ./cmd/server                                    # Run server directly
 go run github.com/air-verse/air@latest -c .air.toml   # Run with live reload
 
 # Building
-go build -o fetchmoona ./cmd/server    # Build binary
+go build -o downaria-api ./cmd/server    # Build binary
 
 # Testing
 go test ./...                          # Run all tests
@@ -93,7 +94,7 @@ The backend follows a layered architecture with clear separation of concerns:
 **Layer Structure:**
 - `internal/core/` - Domain contracts, interfaces, configuration, error codes
 - `internal/extractors/` - Platform-specific extraction logic (registry pattern)
-  - `native/` - Native Go extractors (Facebook, Instagram, Threads, Twitter, TikTok, Pixiv)
+  - `native/` - Native Go extractors (Facebook, Instagram, Threads, Twitter, TikTok, Pixiv, Weibo)
   - `aria-extended/` - yt-dlp wrapper for YouTube
   - `registry/` - Registry pattern for URL-to-extractor matching
 - `internal/app/services/` - Application services and use case orchestration
@@ -114,12 +115,17 @@ The backend follows a layered architecture with clear separation of concerns:
 
 ### Frontend (Next.js) - BFF Pattern
 
-The frontend uses Next.js 16 App Router with a Backend-for-Frontend pattern:
+The frontend uses Next.js 16 App Router with React 19 and a Backend-for-Frontend pattern. The development server uses Turbopack.
 
 **Key Directories:**
 - `src/app/` - Next.js App Router pages and API routes
 - `src/app/api/web/` - BFF gateway routes (extract, proxy, download, merge)
-- `src/components/` - React components organized by domain (core, docs, download, layout, media, settings, ui)
+- `src/features/` - Feature-slice modules (see Feature-Slice Architecture below)
+- `src/components/` - Shared React components organized by domain:
+  - `core/` - App-level infrastructure components (ServiceWorkerRegister, IntlProvider, SeasonalEffects, etc.)
+  - `docs/` - Documentation page components
+  - `layout/` - Page layout components
+  - `ui/` - Generic, reusable UI primitives (Button, Card, Input, Modal, Icons, LazyMarkdown, etc.)
 - `src/lib/` - Core libraries:
   - `api/` - API client with Zod schemas
   - `storage/` - IndexedDB wrapper, client cache, settings, crypto utilities
@@ -127,6 +133,7 @@ The frontend uses Next.js 16 App Router with a Backend-for-Frontend pattern:
   - `contexts/` - React contexts
   - `stores/` - State management
   - `swr/` - SWR configuration
+  - `utils/` - Shared utilities (see `cn()` below)
 - `src/hooks/` - Custom React hooks (useMediaExtraction, useScraperCache, useDownloadSync, useRateLimitState)
 - `src/i18n/` - Internationalization with next-intl
 
@@ -137,6 +144,118 @@ The frontend uses Next.js 16 App Router with a Backend-for-Frontend pattern:
 - Signature includes: method, path, timestamp, nonce, body hash
 
 **Path Alias:** `@/*` maps to `./src/*` (configured in tsconfig.json and vitest.config.ts)
+
+### Feature-Slice Architecture
+
+Domain-specific components have been migrated from a flat `src/components/` structure into a modular `src/features/` directory. Each feature slice contains a `components/` directory and an `index.ts` barrel export.
+
+**`src/features/downloader/`** - URL input, extraction flow, history, and public stats
+- `DownloadForm` - URL input form and extraction trigger
+- `DownloadPreview` - Result display after extraction
+- `HistoryList` - Local download history
+- `PublicStats` - Public platform stats display
+
+**`src/features/media/`** - Media viewing and download management
+- `MediaGallery` - Grid display of extracted media items
+- `FormatSelector` - Quality/format picker
+- `EngagementDisplay` - Like/view/share count display
+- `DownloadProgress` - Per-item download progress indicator
+- `VideoPreview` - Vidstack-based video player (see Vidstack Player below)
+
+**`src/features/settings/`** - User-configurable settings panels
+- `DiscordWebhookSettings` - Discord webhook configuration
+- `SeasonalSettings` - Seasonal effect toggle
+
+Import from the barrel exports, not from component paths directly:
+
+```ts
+import { DownloadForm, HistoryList } from '@/features/downloader';
+import { VideoPreview, MediaGallery } from '@/features/media';
+import { DiscordWebhookSettings } from '@/features/settings';
+```
+
+### Icon System
+
+Icons are defined in `src/components/ui/Icons.tsx`. The project uses two tiers:
+
+**lucide-react** for generic UI icons (Video, Image, Music, Film, Download, Globe, Clock, Zap, Layers, Lock, ShieldHalf, CheckCircle2, Lightbulb, Wand2, etc.). These are re-exported as named wrappers (e.g., `VideoIcon`, `DownloadIcon`, `BoltIcon`).
+
+**Custom inline SVG brand icons** for social platforms, because lucide-react does not include brand logos. These are minimal hand-crafted SVG components that match the official brand shapes:
+- `FacebookIcon`
+- `InstagramIcon`
+- `XTwitterIcon`
+- `TiktokIcon`
+- `WeiboIcon`
+- `YoutubeIcon`
+
+All icons accept an optional `className` prop and use `fill="currentColor"` so they respect CSS color. The `@fortawesome/*` packages have been removed entirely.
+
+### Toast / Notification System
+
+**Sonner** (`sonner` package) is the primary toast library. A single `<Toaster>` instance is mounted in `src/app/layout.tsx` at `position="bottom-right"` with CSS variable-driven theming:
+
+```tsx
+<Toaster
+  position="bottom-right"
+  toastOptions={{
+    style: {
+      background: 'var(--bg-card)',
+      color: 'var(--text-primary)',
+      border: '1px solid var(--border-color)',
+    },
+  }}
+/>
+```
+
+Use `toast()`, `toast.success()`, `toast.error()`, etc. from `sonner` for all informational, success, and error notifications.
+
+**SweetAlert2** (`sweetalert2`) is kept as a lazy-loaded dependency (`lazySwal`) for destructive confirmation dialogs only (e.g., "Clear all history?", "Delete item?"). Do not use SweetAlert2 for general notifications — use Sonner instead.
+
+### LazyMarkdown Component
+
+Markdown rendering is split into two files to keep the markdown parser out of the initial bundle:
+
+- `src/components/ui/MarkdownRenderer.tsx` - The actual renderer. Uses `react-markdown` with the `remark-gfm` plugin for GitHub Flavored Markdown (tables, strikethrough, task lists, etc.).
+- `src/components/ui/LazyMarkdown.tsx` - A `next/dynamic` wrapper that lazy-loads `MarkdownRenderer` with a pulse skeleton placeholder.
+
+Import `LazyMarkdown` (not `MarkdownRenderer`) in page/feature components:
+
+```tsx
+import { LazyMarkdown } from '@/components/ui/LazyMarkdown';
+
+<LazyMarkdown>{markdownString}</LazyMarkdown>
+```
+
+### Vidstack Video Player
+
+`src/features/media/components/VideoPreview.tsx` wraps the Vidstack v1.12.13 player (`@vidstack/react`) for direct (non-HLS) video playback.
+
+**Props:** `src`, `posterUrl?`, `autoPlay?`, `className?`, `onEnded?`
+
+Key details:
+- Imports base styles from `@vidstack/react/player/styles/base.css`
+- Uses `MediaPlayer` + `MediaProvider` + optional `Poster`
+- Proper cleanup on unmount via ref nullification
+- HLS streams are handled separately by `hls.js` in the existing media components; `VideoPreview` is for direct MP4/WebM URLs
+
+### `cn()` Utility
+
+`src/lib/utils/cn.ts` provides a `cn()` helper that combines `clsx` (conditional class logic) with `tailwind-merge` (deduplication of conflicting Tailwind classes):
+
+```ts
+import { cn } from '@/lib/utils/cn';
+
+<div className={cn('base-class', isActive && 'active-class', className)} />
+```
+
+Use `cn()` for all dynamic className composition in components instead of string concatenation or manual merging.
+
+### CSS and Styling
+
+- **Tailwind v4** is used (`tailwindcss@^4`, `@tailwindcss/postcss@^4`). Configuration follows the Tailwind v4 conventions (no `tailwind.config.js` file; config lives in CSS).
+- `src/app/globals.css` defines CSS custom properties for theming (`--bg-primary`, `--bg-card`, `--text-primary`, `--border-color`, etc.) used throughout components.
+- Approximately 34 unnecessary `!important` declarations were removed from `globals.css` during the modernization. Avoid adding `!important` unless there is a specific, documented reason.
+- The default font is **JetBrains Mono** (loaded via `next/font/google`).
 
 ### Security Architecture
 
@@ -186,12 +305,12 @@ Both services require `.env.local` or `.env` files. See `.env.example` in each d
 
 **Frontend:**
 - Uses Vitest with jsdom environment
-- Test files: `*.test.ts`, `*.test.tsx` (169 test files)
+- Test files: `*.test.ts`, `*.test.tsx`
 - Run: `npm run test` in DownAria directory
 
 **Backend:**
 - Uses Go's built-in testing framework
-- Test files: `*_test.go` (28 test files)
+- Test files: `*_test.go`
 - Run: `go test ./...` in DownAria-API directory
 - Integration tests in `internal/extractors/extractor_integration_test.go`
 
@@ -213,11 +332,6 @@ Both services require `.env.local` or `.env` files. See `.env.example` in each d
 - Buffered writes with configurable flush interval and threshold
 - File path: `./data/public_stats.json` (default)
 
-**Stats Persistence:**
-- Backend can persist public stats to file (`STATS_PERSIST_ENABLED=true`)
-- Buffered writes with configurable flush interval and threshold
-- File path: `./data/public_stats.json` (default)
-
 **Prebuild Scripts:**
 - `scripts/update-sw-version.js` - Updates service worker build timestamp
 - `scripts/copy-changelog.js` - Copies root `CHANGELOG.md` to `public/Changelog.md`
@@ -233,6 +347,49 @@ When adding or modifying platform extractors:
 5. Handle authentication if required (cookies, tokens)
 6. Add tests in `<platform>/extractor_test.go`
 
+## Frontend Dependencies
+
+**Runtime packages (key ones):**
+| Package | Version | Purpose |
+|---|---|---|
+| `next` | ^16.1.6 | Framework + App Router |
+| `react` / `react-dom` | 19.2.1 | React 19 |
+| `lucide-react` | ^0.561.0 | UI icons |
+| `sonner` | ^2.0.7 | Toast notifications |
+| `sweetalert2` | ^11.26.10 | Destructive confirmations only |
+| `@vidstack/react` | ^1.12.13 | Video player |
+| `hls.js` | ^1.6.15 | HLS stream playback |
+| `clsx` | ^2.1.1 | Conditional class names |
+| `tailwind-merge` | ^3.5.0 | Tailwind class deduplication |
+| `react-markdown` | ^10.1.0 | Markdown rendering |
+| `remark-gfm` | ^4.0.1 | GFM plugin for react-markdown |
+| `next-intl` | ^4.6.1 | i18n / locale routing |
+| `swr` | ^2.3.8 | Data fetching / caching |
+| `zod` | ^3.25.76 | Schema validation |
+| `framer-motion` | ^12.23.26 | Animations |
+| `jszip` | ^3.10.1 | ZIP archive creation |
+| `@vercel/analytics` | ^1.6.1 | Vercel Analytics (prod only) |
+| `@vercel/speed-insights` | ^1.3.1 | Vercel Speed Insights (prod only) |
+
+**Removed packages (do not re-add):**
+- `@fortawesome/fontawesome-svg-core`
+- `@fortawesome/free-brands-svg-icons`
+- `@fortawesome/free-solid-svg-icons`
+- `@fortawesome/react-fontawesome`
+
+All FontAwesome usage has been replaced by `lucide-react` and custom SVG brand icons in `src/components/ui/Icons.tsx`.
+
+**Dev packages (key ones):**
+- `tailwindcss@^4` + `@tailwindcss/postcss@^4` - Tailwind v4
+- `vitest@^2.1.9` + `@testing-library/react@^16` + `jsdom@^28` - Testing
+- `typescript@^5` - TypeScript
+- `babel-plugin-react-compiler@1.0.0` - React compiler Babel plugin
+
+**Backend (DownAria-API):**
+- Go 1.24+
+- **FFmpeg** (required for `/api/web/merge` and `/api/v1/merge` routes)
+- yt-dlp (for YouTube extraction)
+
 ## Important Notes
 
 ### Frontend
@@ -241,6 +398,11 @@ When adding or modifying platform extractors:
 - Uses IndexedDB for history/cache, localStorage for settings
 - i18n with next-intl (locale routing)
 - PWA-enabled with manifest and service worker
+- React 19 with React Compiler (Babel plugin configured)
+- Turbopack is used in development (`next dev` automatically uses it in Next.js 16)
+- Sonner `<Toaster>` is the single notification provider — do not add another
+- Use `cn()` from `@/lib/utils/cn` for all dynamic className composition
+- Import feature components from barrel exports (`@/features/downloader`, `@/features/media`, `@/features/settings`)
 
 ### Backend
 - **Requires `WEB_INTERNAL_SHARED_SECRET` to start** - will exit if missing
@@ -264,10 +426,10 @@ When adding or modifying platform extractors:
 cd DownAria-API
 
 # Build image
-docker build -t fetchmoona:latest .
+docker build -t downaria-api:latest .
 
 # Run container
-docker run --rm -p 8080:8080 --env-file .env fetchmoona:latest
+docker run --rm -p 8080:8080 --env-file .env downaria-api:latest
 ```
 
 **Requirements:**
@@ -288,17 +450,7 @@ See `DownAria-API/Documentation/DEPLOYMENT.md` for production environment recomm
 
 - Vercel deployment configured via `vercel.json`
 - PWA support with service worker in `public/sw.js`
-
-## Dependencies
-
-**Backend (DownAria-API):**
-- Go 1.24+
-- **FFmpeg** (required for `/api/web/merge` and `/api/v1/merge` routes)
-- yt-dlp (for YouTube extraction)
-
-**Frontend (DownAria):**
-- Node.js (compatible with Next.js 16)
-- npm
+- Vercel Analytics and Speed Insights are enabled only in production Vercel environments (`IS_PROD && IS_VERCEL`)
 
 ## Documentation
 
@@ -314,3 +466,7 @@ Additional documentation in each project:
 - **Path Aliases**: Use `@/` prefix for imports in frontend (not relative paths)
 - **Rate Limiting**: Merge routes have stricter limits (1/3 of global limit)
 - **Signature Timing**: Frontend signatures include timestamp - ensure system clocks are synchronized
+- **FontAwesome**: The `@fortawesome/*` packages are removed. Use `lucide-react` for UI icons and the custom SVG components in `src/components/ui/Icons.tsx` for brand icons
+- **SweetAlert2 scope**: Only use `lazySwal` for destructive confirmations. All other notifications must use `sonner`
+- **Tailwind !important**: Do not add `!important` to Tailwind/CSS rules without a documented reason; ~34 were removed during modernization
+- **Feature imports**: Import from the feature barrel (`@/features/downloader`) not from the component file path directly

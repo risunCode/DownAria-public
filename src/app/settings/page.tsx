@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Cookie, Database, Settings, Zap } from 'lucide-react';
-import Swal from 'sweetalert2';
+import { lazySwal } from '@/lib/utils/lazy-swal';
+import { toast } from 'sonner';
 import { SidebarLayout } from '@/components/layout/Sidebar';
 import { useTranslations } from 'next-intl';
 import { useLocaleRefresh } from '@/components/core/IntlProvider';
@@ -39,7 +40,7 @@ import {
   type LanguagePreference,
   type ThemeType,
 } from '@/lib/storage';
-import { SeasonalSettings } from '@/components/settings/SeasonalSettings';
+import { SeasonalSettings } from '@/features/settings/components/SeasonalSettings';
 import { BasicTab, CookiesTab, IntegrationsTab, StorageTab } from './tabs';
 import { parseCookieInputToFlat } from '@/lib/utils/cookie-parser';
 
@@ -183,15 +184,7 @@ export default function SettingsPage() {
     if (outcome === 'accepted') {
       setCanInstall(false);
       setIsInstalled(true);
-      Swal.fire({
-        icon: 'success',
-        title: tPage('alerts.installSuccess.title'),
-        text: tPage('alerts.installSuccess.text'),
-        timer: 2000,
-        showConfirmButton: false,
-        background: 'var(--bg-card)',
-        color: 'var(--text-primary)',
-      });
+      toast.success(`${tPage('alerts.installSuccess.title')} – ${tPage('alerts.installSuccess.text')}`);
     }
     setDeferredPrompt(null);
   }, [deferredPrompt, tPage]);
@@ -210,30 +203,17 @@ export default function SettingsPage() {
       setEditPlatform(null);
       setEditValue('');
 
-      Swal.fire({
-        icon: 'success',
-        title: t('cookies.saved'),
-        timer: 1200,
-        showConfirmButton: false,
-        background: 'var(--bg-card)',
-        color: 'var(--text-primary)',
-      });
+      toast.success(t('cookies.saved'));
     } catch (error) {
-      Swal.fire({
-        icon: 'error',
-        title: t('cookies.invalidFormat'),
-        text: error instanceof Error
+      toast.error(
+        error instanceof Error
           ? (error.message === 'No valid cookies found'
             ? tPage('alerts.cookies.noValidCookies')
             : error.message === 'Invalid cookie format'
               ? tPage('alerts.cookies.invalidCookieFormat')
               : error.message)
-          : tPage('alerts.unknownError'),
-        timer: 2000,
-        showConfirmButton: false,
-        background: 'var(--bg-card)',
-        color: 'var(--text-primary)',
-      });
+          : tPage('alerts.unknownError')
+      );
     }
   }, [editValue, t, tPage]);
 
@@ -243,7 +223,7 @@ export default function SettingsPage() {
   }, []);
 
   const clearAllCookiesHandler = useCallback(async () => {
-    const result = await Swal.fire({
+    const result = await lazySwal.fire({
       icon: 'warning',
       title: t('storage.clear.cookies'),
       text: t('storage.clear.cookiesDesc'),
@@ -260,18 +240,11 @@ export default function SettingsPage() {
     setUserCookies(getAllCookieStatus());
     setIsClearing(null);
 
-    Swal.fire({
-      icon: 'success',
-      title: t('cookies.cleared'),
-      timer: 1400,
-      showConfirmButton: false,
-      background: 'var(--bg-card)',
-      color: 'var(--text-primary)',
-    });
+    toast.success(t('cookies.cleared'));
   }, [t, tCommon]);
 
   const clearLocalStorage = useCallback(async () => {
-    const result = await Swal.fire({
+    const result = await lazySwal.fire({
       icon: 'warning',
       title: t('storage.clear.localStorage'),
       text: t('storage.clear.localStorageDesc'),
@@ -285,19 +258,12 @@ export default function SettingsPage() {
 
     setIsClearing('localstorage');
     localStorage.clear();
-    await Swal.fire({
-      icon: 'success',
-      title: tPage('alerts.cleared'),
-      timer: 1000,
-      showConfirmButton: false,
-      background: 'var(--bg-card)',
-      color: 'var(--text-primary)',
-    });
+    toast.success(tPage('alerts.cleared'));
     window.location.reload();
   }, [t, tCommon, tPage]);
 
   const clearHistoryAndCache = useCallback(async () => {
-    const result = await Swal.fire({
+    const result = await lazySwal.fire({
       icon: 'warning',
       title: t('storage.clear.historyCache'),
       text: t('storage.clear.historyCacheDesc'),
@@ -315,21 +281,14 @@ export default function SettingsPage() {
       await clearAllClientCache();
       setHistoryCount(0);
       setCacheStats(await getCacheStats());
-      await Swal.fire({
-        icon: 'success',
-        title: tPage('alerts.cleared'),
-        timer: 1400,
-        showConfirmButton: false,
-        background: 'var(--bg-card)',
-        color: 'var(--text-primary)',
-      });
+      toast.success(tPage('alerts.cleared'));
     } finally {
       setIsClearing(null);
     }
   }, [t, tCommon, tPage]);
 
   const clearScraperCache = useCallback(async () => {
-    const result = await Swal.fire({
+    const result = await lazySwal.fire({
       icon: 'warning',
       title: tPage('alerts.scraperCacheClear.title'),
       text: tPage('alerts.scraperCacheClear.text'),
@@ -345,21 +304,14 @@ export default function SettingsPage() {
     try {
       await clearAllClientCache();
       setCacheStats(await getCacheStats());
-      await Swal.fire({
-        icon: 'success',
-        title: tPage('alerts.scraperCacheClear.success'),
-        timer: 1400,
-        showConfirmButton: false,
-        background: 'var(--bg-card)',
-        color: 'var(--text-primary)',
-      });
+      toast.success(tPage('alerts.scraperCacheClear.success'));
     } finally {
       setIsClearing(null);
     }
   }, [tCommon, tPage]);
 
   const clearIndexedDB = useCallback(async () => {
-    const result = await Swal.fire({
+    const result = await lazySwal.fire({
       icon: 'warning',
       title: tPage('alerts.indexedDbClear.title'),
       html: `<p>${escapeHtml(tPage('alerts.indexedDbClear.text'))}</p><p class="text-sm mt-2 text-red-400">${escapeHtml(tPage('alerts.indexedDbClear.warning'))}</p>`,
@@ -393,21 +345,14 @@ export default function SettingsPage() {
         );
       }
       setHistoryCount(0);
-      await Swal.fire({
-        icon: 'success',
-        title: tPage('alerts.indexedDbClear.success'),
-        timer: 1400,
-        showConfirmButton: false,
-        background: 'var(--bg-card)',
-        color: 'var(--text-primary)',
-      });
+      toast.success(tPage('alerts.indexedDbClear.success'));
     } finally {
       setIsClearing(null);
     }
   }, [tPage]);
 
   const clearSeasonalData = useCallback(async () => {
-    const result = await Swal.fire({
+    const result = await lazySwal.fire({
       icon: 'warning',
       title: tPage('alerts.seasonalClear.title'),
       text: tPage('alerts.seasonalClear.text'),
@@ -423,21 +368,14 @@ export default function SettingsPage() {
     try {
       await deleteBackgroundBlob();
       resetSeasonalSettings();
-      await Swal.fire({
-        icon: 'success',
-        title: tPage('alerts.seasonalClear.success'),
-        timer: 1400,
-        showConfirmButton: false,
-        background: 'var(--bg-card)',
-        color: 'var(--text-primary)',
-      });
+      toast.success(tPage('alerts.seasonalClear.success'));
     } finally {
       setIsClearing(null);
     }
   }, [tCommon, tPage]);
 
   const handleResetExperimentalValues = useCallback(async () => {
-    const result = await Swal.fire({
+    const result = await lazySwal.fire({
       icon: 'warning',
       title: tPage('alerts.experimentalReset.title'),
       text: tPage('alerts.experimentalReset.text'),
@@ -458,23 +396,9 @@ export default function SettingsPage() {
       window.dispatchEvent(new CustomEvent('seasonal-settings-changed'));
       window.dispatchEvent(new CustomEvent('settings-changed'));
 
-      await Swal.fire({
-        icon: 'success',
-        title: tPage('alerts.experimentalReset.success'),
-        timer: 1200,
-        showConfirmButton: false,
-        background: 'var(--bg-card)',
-        color: 'var(--text-primary)',
-      });
+      toast.success(tPage('alerts.experimentalReset.success'));
     } catch {
-      await Swal.fire({
-        icon: 'error',
-        title: tPage('alerts.experimentalReset.failed'),
-        timer: 1400,
-        showConfirmButton: false,
-        background: 'var(--bg-card)',
-        color: 'var(--text-primary)',
-      });
+      toast.error(tPage('alerts.experimentalReset.failed'));
     }
   }, [tPage]);
 
@@ -482,24 +406,9 @@ export default function SettingsPage() {
     setIsExporting(true);
     try {
       await downloadFullBackupAsZip();
-      Swal.fire({
-        icon: 'success',
-        title: t('storage.backup.exportSuccess'),
-        text: t('storage.backup.exportSuccessDesc'),
-        timer: 2000,
-        showConfirmButton: false,
-        background: 'var(--bg-card)',
-        color: 'var(--text-primary)',
-      });
+      toast.success(`${t('storage.backup.exportSuccess')} – ${t('storage.backup.exportSuccessDesc')}`);
     } catch {
-      Swal.fire({
-        icon: 'error',
-        title: t('storage.backup.exportFailed'),
-        timer: 1500,
-        showConfirmButton: false,
-        background: 'var(--bg-card)',
-        color: 'var(--text-primary)',
-      });
+      toast.error(t('storage.backup.exportFailed'));
     } finally {
       setIsExporting(false);
     }
@@ -510,18 +419,12 @@ export default function SettingsPage() {
     if (!file) return;
 
     if (!file.name.endsWith('.zip')) {
-      Swal.fire({
-        icon: 'error',
-        title: tPage('backup.invalidFileTitle'),
-        text: t('storage.backup.invalidFile'),
-        background: 'var(--bg-card)',
-        color: 'var(--text-primary)',
-      });
+      toast.error(`${tPage('backup.invalidFileTitle')}: ${t('storage.backup.invalidFile')}`);
       if (backupFileInputRef.current) backupFileInputRef.current.value = '';
       return;
     }
 
-    const result = await Swal.fire({
+    const result = await lazySwal.fire({
       icon: 'question',
       title: t('storage.backup.restoreConfirm'),
       html: `<p>${escapeHtml(tPage('backup.fileLabel'))}: <strong>${escapeHtml(file.name)}</strong></p><p class="text-sm mt-2">${escapeHtml(t('storage.backup.restoreConfirmDesc'))}</p>`,
@@ -554,7 +457,8 @@ export default function SettingsPage() {
         parts.push(`<p class="text-sm text-gray-400">${escapeHtml(String(imported.historySkipped))} ${escapeHtml(tPage('backup.duplicatesSkippedLabel'))}</p>`);
       }
 
-      Swal.fire({
+      // The restored toast intentionally keeps lazySwal for rich HTML summary display
+      lazySwal.fire({
         icon: 'success',
         title: t('storage.backup.restored'),
         html: parts.join(''),
@@ -565,13 +469,7 @@ export default function SettingsPage() {
       });
       setTimeout(() => window.location.reload(), 3000);
     } catch (error) {
-      Swal.fire({
-        icon: 'error',
-        title: t('storage.backup.restoreFailed'),
-        text: error instanceof Error ? error.message : tPage('backup.invalidBackupFile'),
-        background: 'var(--bg-card)',
-        color: 'var(--text-primary)',
-      });
+      toast.error(error instanceof Error ? error.message : tPage('backup.invalidBackupFile'));
     } finally {
       setIsImporting(false);
       if (backupFileInputRef.current) backupFileInputRef.current.value = '';
@@ -579,7 +477,7 @@ export default function SettingsPage() {
   }, [t, tPage]);
 
   const clearAllData = useCallback(async () => {
-    const result = await Swal.fire({
+    const result = await lazySwal.fire({
       icon: 'warning',
       title: t('storage.clear.all'),
       html: t('storage.clear.allDesc'),
@@ -629,14 +527,7 @@ export default function SettingsPage() {
       }
     }
 
-    await Swal.fire({
-      icon: 'success',
-      title: tPage('alerts.allDataCleared'),
-      timer: 1000,
-      showConfirmButton: false,
-      background: 'var(--bg-card)',
-      color: 'var(--text-primary)',
-    });
+    toast.success(tPage('alerts.allDataCleared'));
     window.location.reload();
   }, [t, tPage]);
 

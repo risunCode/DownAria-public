@@ -32,8 +32,8 @@ import {
 } from '@/lib/storage';
 import { PlatformIcon, VideoIcon, ImageIcon, MusicIcon } from '@/components/ui/Icons';
 import { getProxiedThumbnail } from '@/lib/api/proxy';
-import { PublicStats } from '@/components/download/PublicStats';
-import Swal from 'sweetalert2';
+import { PublicStats } from './PublicStats';
+import { lazySwal } from '@/lib/utils/lazy-swal';
 import { useTranslations } from 'next-intl';
 
 function idbToHistoryItem(entry: HistoryEntry, unknownQuality: string): HistoryItem {
@@ -218,7 +218,7 @@ export function HistoryList({ refreshTrigger, compact = false, maxItems = 2 }: H
   }, [compact, currentLimit, currentPage, totalPages, updatePaginationParams]);
 
   const handleDelete = async (id: string, title: string) => {
-    const result = await Swal.fire({
+    const result = await lazySwal.fire({
       title: t('alerts.deleteItemTitle'),
       text: title.length > 50 ? `${title.substring(0, 50)}...` : title,
       icon: 'warning',
@@ -238,7 +238,7 @@ export function HistoryList({ refreshTrigger, compact = false, maxItems = 2 }: H
   };
 
   const handleClearAll = async () => {
-    const result = await Swal.fire({
+    const result = await lazySwal.fire({
       title: t('alerts.clearAllTitle'),
       text: t('alerts.clearAllText'),
       icon: 'warning',

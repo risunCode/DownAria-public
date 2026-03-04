@@ -7,8 +7,13 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faXTwitter, faInstagram, faFacebook, faTiktok, faYoutube } from '@fortawesome/free-brands-svg-icons';
+import {
+  XTwitterIcon,
+  InstagramIcon,
+  FacebookIcon,
+  TiktokIcon,
+  YoutubeIcon,
+} from '@/components/ui/Icons';
 
 interface ParsedSegment {
   type: 'text' | 'url' | 'mention' | 'hashtag';
@@ -16,22 +21,22 @@ interface ParsedSegment {
   url?: string;
 }
 
-// Platform configs for mentions with FontAwesome icons
+// Platform configs for mentions with Lucide/SVG icons
 const MENTION_PLATFORMS = [
-  { key: 'twitter', name: 'X (Twitter)', icon: faXTwitter, color: '#000000', getUrl: (u: string) => `https://x.com/${u}` },
-  { key: 'instagram', name: 'Instagram', icon: faInstagram, color: '#E4405F', getUrl: (u: string) => `https://instagram.com/${u}` },
-  { key: 'facebook', name: 'Facebook', icon: faFacebook, color: '#1877F2', getUrl: (u: string) => `https://facebook.com/${u}` },
-  { key: 'tiktok', name: 'TikTok', icon: faTiktok, color: '#000000', getUrl: (u: string) => `https://tiktok.com/@${u}` },
-  { key: 'youtube', name: 'YouTube', icon: faYoutube, color: '#FF0000', getUrl: (u: string) => `https://youtube.com/@${u}` },
+  { key: 'twitter', name: 'X (Twitter)', Icon: XTwitterIcon, color: '#000000', getUrl: (u: string) => `https://x.com/${u}` },
+  { key: 'instagram', name: 'Instagram', Icon: InstagramIcon, color: '#E4405F', getUrl: (u: string) => `https://instagram.com/${u}` },
+  { key: 'facebook', name: 'Facebook', Icon: FacebookIcon, color: '#1877F2', getUrl: (u: string) => `https://facebook.com/${u}` },
+  { key: 'tiktok', name: 'TikTok', Icon: TiktokIcon, color: '#000000', getUrl: (u: string) => `https://tiktok.com/@${u}` },
+  { key: 'youtube', name: 'YouTube', Icon: YoutubeIcon, color: '#FF0000', getUrl: (u: string) => `https://youtube.com/@${u}` },
 ];
 
 // Platform configs for hashtag search
 const HASHTAG_PLATFORMS = [
-  { key: 'twitter', name: 'X (Twitter)', icon: faXTwitter, color: '#000000', getUrl: (tag: string) => `https://x.com/search?q=%23${tag}` },
-  { key: 'instagram', name: 'Instagram', icon: faInstagram, color: '#E4405F', getUrl: (tag: string) => `https://instagram.com/explore/tags/${tag}` },
-  { key: 'facebook', name: 'Facebook', icon: faFacebook, color: '#1877F2', getUrl: (tag: string) => `https://facebook.com/hashtag/${tag}` },
-  { key: 'tiktok', name: 'TikTok', icon: faTiktok, color: '#000000', getUrl: (tag: string) => `https://tiktok.com/tag/${tag}` },
-  { key: 'youtube', name: 'YouTube', icon: faYoutube, color: '#FF0000', getUrl: (tag: string) => `https://youtube.com/results?search_query=%23${tag}` },
+  { key: 'twitter', name: 'X (Twitter)', Icon: XTwitterIcon, color: '#000000', getUrl: (tag: string) => `https://x.com/search?q=%23${tag}` },
+  { key: 'instagram', name: 'Instagram', Icon: InstagramIcon, color: '#E4405F', getUrl: (tag: string) => `https://instagram.com/explore/tags/${tag}` },
+  { key: 'facebook', name: 'Facebook', Icon: FacebookIcon, color: '#1877F2', getUrl: (tag: string) => `https://facebook.com/hashtag/${tag}` },
+  { key: 'tiktok', name: 'TikTok', Icon: TiktokIcon, color: '#000000', getUrl: (tag: string) => `https://tiktok.com/tag/${tag}` },
+  { key: 'youtube', name: 'YouTube', Icon: YoutubeIcon, color: '#FF0000', getUrl: (tag: string) => `https://youtube.com/results?search_query=%23${tag}` },
 ];
 
 /**
@@ -173,7 +178,7 @@ function MentionDropdown({
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-secondary)'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           >
-            <FontAwesomeIcon icon={p.icon} style={{ width: '18px', height: '18px', color: p.color }} />
+            <span className="shrink-0 inline-flex" style={{ width: '18px', height: '18px', color: p.color }}><p.Icon className="w-full h-full" /></span>
             <span>{p.name}</span>
           </button>
         ))}
@@ -333,7 +338,7 @@ function HashtagDropdown({
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-secondary)'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           >
-            <FontAwesomeIcon icon={p.icon} style={{ width: '18px', height: '18px', color: p.color }} />
+            <span className="shrink-0 inline-flex" style={{ width: '18px', height: '18px', color: p.color }}><p.Icon className="w-full h-full" /></span>
             <span>{p.name}</span>
           </button>
         ))}

@@ -5,7 +5,7 @@
 
 'use client';
 
-import { Eye, Heart, MessageCircle, Share2, Bookmark, Repeat2 } from 'lucide-react';
+import { Eye, Heart, MessageCircle, Share2, Bookmark } from 'lucide-react';
 import { EngagementStats } from '@/lib/types';
 import { formatNumber } from '@/lib/utils/format';
 
@@ -62,13 +62,6 @@ export function EngagementDisplay({
             icon: Bookmark, 
             color: 'text-yellow-400',
             label: 'bookmarks'
-        },
-        { 
-            key: 'replies', 
-            value: engagement.replies, 
-            icon: Repeat2, 
-            color: 'text-orange-400',
-            label: 'replies'
         },
     ];
 

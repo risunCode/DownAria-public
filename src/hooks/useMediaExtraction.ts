@@ -4,7 +4,7 @@ import { useCallback, useReducer, useRef } from 'react';
 import type { MediaData, PlatformId } from '../lib/types';
 import { createErrorDisplayModel, type ErrorDisplayModel } from '../lib/errors';
 import { ErrorCodes } from '../lib/errors/codes';
-import { getPlatformCookie, clearPlatformCookie, getSkipCache } from '../lib/storage';
+import { getPlatformCookie, getSkipCache } from '../lib/storage';
 import { platformDetect, sanitizeUrl } from '../lib/utils/format';
 import { fetchMediaWithCache } from './useScraperCache';
 
@@ -153,7 +153,6 @@ export interface UseMediaExtractionOptions {
   sanitizeInputUrl?: (url: string) => string;
   getSkipCacheValue?: () => boolean;
   getCookieForPlatform?: (platform: PlatformId) => string | undefined;
-  onWeiboCookieExpired?: () => void;
 }
 
 export interface UseMediaExtractionResult extends MediaExtractionState {
@@ -171,7 +170,6 @@ export function useMediaExtraction(options: UseMediaExtractionOptions = {}): Use
     sanitizeInputUrl = sanitizeUrl,
     getSkipCacheValue = getSkipCache,
     getCookieForPlatform = defaultCookieResolver,
-    onWeiboCookieExpired = () => clearPlatformCookie('weibo'),
   } = options;
 
   const [state, dispatch] = useReducer(
@@ -220,10 +218,6 @@ export function useMediaExtraction(options: UseMediaExtractionOptions = {}): Use
         return;
       }
 
-      if (platform === 'weibo' && result.errorCode === 'COOKIE_EXPIRED') {
-        onWeiboCookieExpired();
-      }
-
       dispatch({
         type: 'EXTRACT_ERROR',
         payload: toMediaExtractionError({
@@ -251,7 +245,6 @@ export function useMediaExtraction(options: UseMediaExtractionOptions = {}): Use
     fetcher,
     getCookieForPlatform,
     getSkipCacheValue,
-    onWeiboCookieExpired,
     sanitizeInputUrl,
     state.platform,
   ]);

@@ -8,7 +8,7 @@ All notable changes to DownAria will be documented in this file.
 - Forwarded frontend proxy `Range` requests and now pass through backend `content-range` and `x-file-size` headers for partial-download correctness.
 - Synced frontend error taxonomy with backend canonical codes (`AUTH_REQUIRED`, `PLATFORM_NOT_FOUND`, `NETWORK_ERROR`, `EXTRACTION_FAILED`, `RATE_LIMITED_429`) and added fallback mapping tests.
 - Added live `PublicStats` polling behavior with resilient fallback handling when stats data is unavailable.
-- Aligned frontend docs/env guidance to signed `/api/web/*` runtime behavior and FetchMoona naming.
+- Aligned frontend docs/env guidance to signed `/api/web/*` runtime behavior and DownAria-API naming.
 - Synced local integration defaults in env/docs references to FE `3001` and BE `8081`.
 
 ## [2.2.0] - 2026-03-03

@@ -61,6 +61,8 @@ export function Header() {
                         {/* Mobile Menu Button - LEFT on mobile */}
                         <button
                             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                            aria-label="Toggle navigation menu"
+                            aria-expanded={mobileMenuOpen}
                             className="md:hidden p-2 rounded-lg hover:bg-[var(--bg-card)] text-[var(--text-secondary)] order-first"
                         >
                             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -110,6 +112,7 @@ export function Header() {
                             <div ref={themeRef} className="relative">
                                 <button
                                     onClick={() => setThemeOpen(!themeOpen)}
+                                    aria-label="Switch theme"
                                     className="flex items-center gap-2 px-3 py-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] transition-all"
                                 >
                                     <CurrentThemeIcon className="w-4 h-4" />

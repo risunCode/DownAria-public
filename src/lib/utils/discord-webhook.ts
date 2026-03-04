@@ -11,7 +11,7 @@
  * - ~8-10MB for auto-embed videos in messages
  */
 
-import Swal from 'sweetalert2';
+import { lazySwal } from '@/lib/utils/lazy-swal';
 import { formatBytes, formatNumber } from './format';
 import { BASE_URL, IS_DEV } from '@/lib/config';
 import { getProxyUrl as buildProxyUrl } from '@/lib/api/proxy';
@@ -272,7 +272,7 @@ export async function sendDiscordNotification(data: {
                 : 'Double message (link + embed)';
             const fileSizeLabel = data.fileSize && data.fileSize > 0 ? formatBytes(data.fileSize) : 'Unknown';
 
-            const confirm = await Swal.fire({
+            const confirm = await lazySwal.fire({
                 icon: 'question',
                 title: 'Send to Discord?',
                 html: `<div style="text-align:left">` +

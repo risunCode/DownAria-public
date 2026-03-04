@@ -1,6 +1,6 @@
 /**
  * Error Codes - Synced with Backend
- * @see Reborn/FetchMoona/internal/core/errors/codes.go
+ * @see DownAria-API/internal/core/errors/codes.go
  * 
  * This file should be kept in sync with the backend error codes.
  * When adding new error codes, add them to both backend and frontend.

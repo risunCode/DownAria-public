@@ -55,7 +55,6 @@ export const ContentSchema = z.object({
 export const AuthenticationSchema = z.object({
   used: z.boolean().optional(),
   source: z.string().optional(),
-  requiresCookie: z.boolean().optional(),
 });
 
 export const ExtractSuccessDataSchema = z.object({
