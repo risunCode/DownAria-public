@@ -83,7 +83,7 @@ const DEFAULT_SETTINGS: SeasonalSettings = {
   customBackground: null,
   particlesWithBackground: true,
   intensity: 50,
-  particleOpacity: 50,
+  particleOpacity: 25,
   particleSpeed: 100,
   backgroundOpacity: 20,
   cardOpacity: 85,
