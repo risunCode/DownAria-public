@@ -741,7 +741,7 @@ export type ProgressCallback = (progress: HLSDownloadProgress) => void;
  */
 async function parseM3U8(m3u8Url: string): Promise<string[]> {
     // Fetch via proxy to bypass CORS
-    const proxyUrl = getProxyUrl(m3u8Url, { inline: true });
+    const proxyUrl = getProxyUrl(m3u8Url);
     const res = await fetch(proxyUrl);
 
     if (!res.ok) {

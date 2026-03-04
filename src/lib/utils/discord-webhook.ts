@@ -96,7 +96,7 @@ function markSent(key: string): void {
 }
 
 function getInlineProxyUrl(mediaUrl: string, platform: string): string {
-    return buildProxyUrl(mediaUrl, { platform: platform.toLowerCase(), inline: true });
+    return buildProxyUrl(mediaUrl, { platform: platform.toLowerCase() });
 }
 
 function normalizeMentionContent(raw: string | undefined): string {

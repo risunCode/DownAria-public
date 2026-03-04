@@ -630,7 +630,7 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
       return;
     }
 
-    const sourceUrl = getProxyUrl(selectedFormat.url, { platform, inline: true });
+    const sourceUrl = getProxyUrl(selectedFormat.url, { platform });
     const canPlayNatively =
       videoElement.canPlayType('application/vnd.apple.mpegurl') !== '' ||
       videoElement.canPlayType('application/x-mpegURL') !== '';
@@ -748,7 +748,7 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
       return;
     }
 
-    const audioSrc = getProxyUrl(pairedHlsAudioUrl, { platform, inline: true });
+    const audioSrc = getProxyUrl(pairedHlsAudioUrl, { platform });
     companionAudio.src = audioSrc;
     companionAudio.preload = 'auto';
     companionAudio.loop = false;
@@ -910,7 +910,7 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
             <>
               <video
                 ref={videoRef}
-                src={isHlsVideo ? undefined : getProxyUrl(selectedFormat.url, { platform, inline: true })}
+                src={isHlsVideo ? undefined : getProxyUrl(selectedFormat.url, { platform })}
                 poster={currentThumbnail ? getProxiedThumbnail(currentThumbnail, platform) : undefined}
                 className="w-full h-full object-contain"
                 controls
@@ -960,7 +960,7 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
               </div>
               {/* Audio Element - All platforms proxied */}
               <audio
-                src={getProxyUrl(selectedFormat.url, { platform, inline: true })}
+                src={getProxyUrl(selectedFormat.url, { platform })}
                 className="w-full"
                 controls
                 autoPlay={platform !== 'youtube'}
@@ -971,7 +971,7 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
         ) : selectedFormat?.type === 'image' ? (
           // Image - use full resolution from format URL, fallback to thumbnail
           <Image
-            src={getProxyUrl(selectedFormat.url, { platform, inline: true })}
+            src={getProxyUrl(selectedFormat.url, { platform })}
             alt={data.title || 'Image'}
             fill
             className="object-contain"
