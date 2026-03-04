@@ -498,19 +498,9 @@ export interface FullBackupData {
     settings: Record<string, string>;
     // Decrypted cookies for cross-browser portability
     cookies?: CookieStorage;
-    // Legacy decrypted data (for backward compatibility with old backups)
-    decryptedData?: Record<string, string>;
     // Seasonal background as base64
     seasonalBackground?: string;
 }
-
-// Legacy keys for backward compatibility when importing old backups
-const LEGACY_ENCRYPTED_KEYS = [
-    'downaria_cookie_facebook',
-    'downaria_cookie_instagram', 
-    'downaria_cookie_weibo',
-    'downaria_cookie_twitter',
-];
 
 export async function createFullBackup(): Promise<FullBackupData> {
     const historyData = await exportHistory();
@@ -555,9 +545,9 @@ export async function createFullBackup(): Promise<FullBackupData> {
     }
     
     return {
-        version: 4, // Bumped version for unified storage
+        version: 1, // Bumped version for unified storage
         exportedAt: Date.now(),
-        appVersion: '1.3.0',
+        appVersion: '2.1.0',
         history: historyData,
         settings,
         cookies: Object.keys(cookies).length > 0 ? cookies : undefined,
@@ -636,7 +626,7 @@ export async function importFullBackupFromZip(file: File, options?: { mergeHisto
         });
     }
     
-    // Import cookies (new format - v4+)
+    // Import cookies
     const cookiesFile = zip.file('cookies.json');
     if (cookiesFile) {
         try {
@@ -646,31 +636,6 @@ export async function importFullBackupFromZip(file: File, options?: { mergeHisto
             const merged = { ...existingCookies, ...cookies };
             setEncryptedCookies(merged);
             cookiesImported = Object.keys(cookies).length;
-        } catch {
-            // Skip if can't parse
-        }
-    }
-    
-    // Import legacy sensitive data (old format - v3 and below)
-    const sensitiveFile = zip.file('sensitive.json');
-    if (sensitiveFile && !cookiesFile) {
-        try {
-            const sensitive = JSON.parse(await sensitiveFile.async('string')) as Record<string, string>;
-            const cookies: CookieStorage = {};
-            
-            // Convert legacy format to new unified format
-            Object.entries(sensitive).forEach(([key, value]) => {
-                if (typeof value === 'string' && LEGACY_ENCRYPTED_KEYS.includes(key)) {
-                    const platform = key.replace('downaria_cookie_', '') as keyof CookieStorage;
-                    cookies[platform] = value;
-                    cookiesImported++;
-                }
-            });
-            
-            if (Object.keys(cookies).length > 0) {
-                const existingCookies = getEncryptedCookies();
-                setEncryptedCookies({ ...existingCookies, ...cookies });
-            }
         } catch {
             // Skip if can't parse
         }

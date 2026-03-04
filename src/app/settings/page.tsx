@@ -41,6 +41,7 @@ import {
 } from '@/lib/storage';
 import { SeasonalSettings } from '@/components/settings/SeasonalSettings';
 import { BasicTab, CookiesTab, IntegrationsTab, StorageTab } from './tabs';
+import { parseCookieInputToFlat } from '@/lib/utils/cookie-parser';
 
 type TabId = 'basic' | 'cookies' | 'storage' | 'integrations';
 
@@ -50,10 +51,10 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 const TABS = [
-  { id: 'basic' as TabId, label: 'Basic', icon: Settings, title: 'General Settings' },
-  { id: 'cookies' as TabId, label: 'Cookies', icon: Cookie, title: 'Cookie Management' },
-  { id: 'storage' as TabId, label: 'Storage', icon: Database, title: 'Storage & Data' },
-  { id: 'integrations' as TabId, label: 'Integrations', icon: Zap, title: 'Integrations' },
+  { id: 'basic' as TabId, icon: Settings },
+  { id: 'cookies' as TabId, icon: Cookie },
+  { id: 'storage' as TabId, icon: Database },
+  { id: 'integrations' as TabId, icon: Zap },
 ];
 
 function escapeHtml(value: string): string {
@@ -67,6 +68,8 @@ function escapeHtml(value: string): string {
 
 export default function SettingsPage() {
   const t = useTranslations('settings');
+  const tCommon = useTranslations('common');
+  const tPage = useTranslations('settingsPage');
   const refreshLocale = useLocaleRefresh();
 
   const [activeTab, setActiveTab] = useState<TabId>('basic');
@@ -79,6 +82,7 @@ export default function SettingsPage() {
     facebook: false,
     instagram: false,
     twitter: false,
+    youtube: false,
     weibo: false,
   });
   const [editPlatform, setEditPlatform] = useState<CookiePlatform | null>(null);
@@ -97,6 +101,13 @@ export default function SettingsPage() {
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const backupFileInputRef = useRef<HTMLInputElement>(null);
+
+  const tabTitles: Record<TabId, string> = {
+    basic: tPage('tabs.basic.title'),
+    cookies: tPage('tabs.cookies.title'),
+    storage: tPage('tabs.storage.title'),
+    integrations: tPage('tabs.integrations.title'),
+  };
 
   useEffect(() => {
     setCurrentTheme(getTheme());
@@ -174,8 +185,8 @@ export default function SettingsPage() {
       setIsInstalled(true);
       Swal.fire({
         icon: 'success',
-        title: 'Installed!',
-        text: 'App added to home screen',
+        title: tPage('alerts.installSuccess.title'),
+        text: tPage('alerts.installSuccess.text'),
         timer: 2000,
         showConfirmButton: false,
         background: 'var(--bg-card)',
@@ -183,80 +194,7 @@ export default function SettingsPage() {
       });
     }
     setDeferredPrompt(null);
-  }, [deferredPrompt]);
-
-  // Cookie parsing utilities
-  interface ParsedCookie {
-    name: string;
-    value: string;
-  }
-
-  const detectCookieFormat = (text: string): 'json' | 'netscape' | 'flat' => {
-    const trimmed = text.trim();
-
-    if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
-      try {
-        JSON.parse(trimmed);
-        return 'json';
-      } catch {
-        return 'flat';
-      }
-    }
-
-    if (trimmed.includes('\t') && /^[^#\s]/.test(trimmed)) {
-      return 'netscape';
-    }
-
-    return 'flat';
-  };
-
-  const parseJsonCookies = (text: string): ParsedCookie[] => {
-    const parsed = JSON.parse(text);
-    const cookies: ParsedCookie[] = [];
-
-    if (Array.isArray(parsed)) {
-      for (const cookie of parsed) {
-        if (cookie.name && cookie.value) {
-          cookies.push({ name: cookie.name, value: cookie.value });
-        }
-      }
-    } else if (typeof parsed === 'object') {
-      if (parsed.name && parsed.value) {
-        cookies.push({ name: parsed.name, value: parsed.value });
-      } else {
-        for (const [name, value] of Object.entries(parsed)) {
-          cookies.push({ name, value: String(value) });
-        }
-      }
-    }
-
-    return cookies;
-  };
-
-  const parseNetscapeCookies = (text: string): ParsedCookie[] => {
-    const cookies: ParsedCookie[] = [];
-    const lines = text.split('\n');
-
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith('#')) continue;
-
-      const parts = trimmed.split('\t');
-      if (parts.length >= 7) {
-        const name = parts[5];
-        const value = parts[6];
-        if (name && value) {
-          cookies.push({ name, value });
-        }
-      }
-    }
-
-    return cookies;
-  };
-
-  const convertToFlatFormat = (cookies: ParsedCookie[]): string => {
-    return cookies.map(c => `${c.name}=${c.value}`).join('; ');
-  };
+  }, [deferredPrompt, tPage]);
 
   const handleSaveCookie = useCallback((platform: CookiePlatform) => {
     if (!editValue.trim()) return;
@@ -265,21 +203,7 @@ export default function SettingsPage() {
     let flatCookie = '';
 
     try {
-      const format = detectCookieFormat(trimmed);
-
-      if (format === 'json') {
-        const cookies = parseJsonCookies(trimmed);
-        if (cookies.length === 0) throw new Error('No valid cookies found');
-        flatCookie = convertToFlatFormat(cookies);
-      } else if (format === 'netscape') {
-        const cookies = parseNetscapeCookies(trimmed);
-        if (cookies.length === 0) throw new Error('No valid cookies found');
-        flatCookie = convertToFlatFormat(cookies);
-      } else {
-        // Already flat format
-        if (!trimmed.includes('=')) throw new Error('Invalid cookie format');
-        flatCookie = trimmed;
-      }
+      flatCookie = parseCookieInputToFlat(trimmed, platform);
 
       savePlatformCookie(platform, flatCookie);
       setUserCookies(getAllCookieStatus());
@@ -298,14 +222,20 @@ export default function SettingsPage() {
       Swal.fire({
         icon: 'error',
         title: t('cookies.invalidFormat'),
-        text: error instanceof Error ? error.message : 'Unknown error',
+        text: error instanceof Error
+          ? (error.message === 'No valid cookies found'
+            ? tPage('alerts.cookies.noValidCookies')
+            : error.message === 'Invalid cookie format'
+              ? tPage('alerts.cookies.invalidCookieFormat')
+              : error.message)
+          : tPage('alerts.unknownError'),
         timer: 2000,
         showConfirmButton: false,
         background: 'var(--bg-card)',
         color: 'var(--text-primary)',
       });
     }
-  }, [editValue, t]);
+  }, [editValue, t, tPage]);
 
   const handleClearCookie = useCallback((platform: CookiePlatform) => {
     clearPlatformCookie(platform);
@@ -318,7 +248,7 @@ export default function SettingsPage() {
       title: t('storage.clear.cookies'),
       text: t('storage.clear.cookiesDesc'),
       showCancelButton: true,
-      confirmButtonText: 'Clear',
+      confirmButtonText: tCommon('clear'),
       confirmButtonColor: '#ef4444',
       background: 'var(--bg-card)',
       color: 'var(--text-primary)',
@@ -338,7 +268,7 @@ export default function SettingsPage() {
       background: 'var(--bg-card)',
       color: 'var(--text-primary)',
     });
-  }, [t]);
+  }, [t, tCommon]);
 
   const clearLocalStorage = useCallback(async () => {
     const result = await Swal.fire({
@@ -346,7 +276,7 @@ export default function SettingsPage() {
       title: t('storage.clear.localStorage'),
       text: t('storage.clear.localStorageDesc'),
       showCancelButton: true,
-      confirmButtonText: 'Clear',
+      confirmButtonText: tCommon('clear'),
       confirmButtonColor: '#ef4444',
       background: 'var(--bg-card)',
       color: 'var(--text-primary)',
@@ -357,14 +287,14 @@ export default function SettingsPage() {
     localStorage.clear();
     await Swal.fire({
       icon: 'success',
-      title: 'Cleared',
+      title: tPage('alerts.cleared'),
       timer: 1000,
       showConfirmButton: false,
       background: 'var(--bg-card)',
       color: 'var(--text-primary)',
     });
     window.location.reload();
-  }, [t]);
+  }, [t, tCommon, tPage]);
 
   const clearHistoryAndCache = useCallback(async () => {
     const result = await Swal.fire({
@@ -372,7 +302,7 @@ export default function SettingsPage() {
       title: t('storage.clear.historyCache'),
       text: t('storage.clear.historyCacheDesc'),
       showCancelButton: true,
-      confirmButtonText: 'Clear',
+      confirmButtonText: tCommon('clear'),
       confirmButtonColor: '#ef4444',
       background: 'var(--bg-card)',
       color: 'var(--text-primary)',
@@ -387,7 +317,7 @@ export default function SettingsPage() {
       setCacheStats(await getCacheStats());
       await Swal.fire({
         icon: 'success',
-        title: 'Cleared',
+        title: tPage('alerts.cleared'),
         timer: 1400,
         showConfirmButton: false,
         background: 'var(--bg-card)',
@@ -396,15 +326,15 @@ export default function SettingsPage() {
     } finally {
       setIsClearing(null);
     }
-  }, [t]);
+  }, [t, tCommon, tPage]);
 
   const clearScraperCache = useCallback(async () => {
     const result = await Swal.fire({
       icon: 'warning',
-      title: 'Clear Scraper Cache?',
-      text: 'This will remove cached scraper results. Next requests will fetch fresh data.',
+      title: tPage('alerts.scraperCacheClear.title'),
+      text: tPage('alerts.scraperCacheClear.text'),
       showCancelButton: true,
-      confirmButtonText: 'Clear',
+      confirmButtonText: tCommon('clear'),
       confirmButtonColor: '#ef4444',
       background: 'var(--bg-card)',
       color: 'var(--text-primary)',
@@ -417,7 +347,7 @@ export default function SettingsPage() {
       setCacheStats(await getCacheStats());
       await Swal.fire({
         icon: 'success',
-        title: 'Scraper Cache Cleared',
+        title: tPage('alerts.scraperCacheClear.success'),
         timer: 1400,
         showConfirmButton: false,
         background: 'var(--bg-card)',
@@ -426,15 +356,15 @@ export default function SettingsPage() {
     } finally {
       setIsClearing(null);
     }
-  }, []);
+  }, [tCommon, tPage]);
 
   const clearIndexedDB = useCallback(async () => {
     const result = await Swal.fire({
       icon: 'warning',
-      title: 'Clear IndexedDB?',
-      html: '<p>This will delete <strong>all</strong> IndexedDB data including history and cache.</p><p class="text-sm mt-2 text-red-400">This action cannot be undone!</p>',
+      title: tPage('alerts.indexedDbClear.title'),
+      html: `<p>${escapeHtml(tPage('alerts.indexedDbClear.text'))}</p><p class="text-sm mt-2 text-red-400">${escapeHtml(tPage('alerts.indexedDbClear.warning'))}</p>`,
       showCancelButton: true,
-      confirmButtonText: 'Delete All',
+      confirmButtonText: tPage('alerts.indexedDbClear.confirm'),
       confirmButtonColor: '#ef4444',
       background: 'var(--bg-card)',
       color: 'var(--text-primary)',
@@ -465,7 +395,7 @@ export default function SettingsPage() {
       setHistoryCount(0);
       await Swal.fire({
         icon: 'success',
-        title: 'IndexedDB Cleared',
+        title: tPage('alerts.indexedDbClear.success'),
         timer: 1400,
         showConfirmButton: false,
         background: 'var(--bg-card)',
@@ -474,15 +404,15 @@ export default function SettingsPage() {
     } finally {
       setIsClearing(null);
     }
-  }, []);
+  }, [tPage]);
 
   const clearSeasonalData = useCallback(async () => {
     const result = await Swal.fire({
       icon: 'warning',
-      title: 'Clear Seasonal Effects?',
-      text: 'This will remove custom background and reset seasonal settings.',
+      title: tPage('alerts.seasonalClear.title'),
+      text: tPage('alerts.seasonalClear.text'),
       showCancelButton: true,
-      confirmButtonText: 'Clear',
+      confirmButtonText: tCommon('clear'),
       confirmButtonColor: '#ef4444',
       background: 'var(--bg-card)',
       color: 'var(--text-primary)',
@@ -495,7 +425,7 @@ export default function SettingsPage() {
       resetSeasonalSettings();
       await Swal.fire({
         icon: 'success',
-        title: 'Seasonal Effects Cleared',
+        title: tPage('alerts.seasonalClear.success'),
         timer: 1400,
         showConfirmButton: false,
         background: 'var(--bg-card)',
@@ -504,15 +434,15 @@ export default function SettingsPage() {
     } finally {
       setIsClearing(null);
     }
-  }, []);
+  }, [tCommon, tPage]);
 
   const handleResetExperimentalValues = useCallback(async () => {
     const result = await Swal.fire({
       icon: 'warning',
-      title: 'Reset Experimental Values?',
-      text: 'This will reset seasonal effects, custom background, and experimental toggles to defaults.',
+      title: tPage('alerts.experimentalReset.title'),
+      text: tPage('alerts.experimentalReset.text'),
       showCancelButton: true,
-      confirmButtonText: 'Reset',
+      confirmButtonText: tPage('alerts.experimentalReset.confirm'),
       confirmButtonColor: '#f97316',
       background: 'var(--bg-card)',
       color: 'var(--text-primary)',
@@ -530,7 +460,7 @@ export default function SettingsPage() {
 
       await Swal.fire({
         icon: 'success',
-        title: 'Experimental Values Reset',
+        title: tPage('alerts.experimentalReset.success'),
         timer: 1200,
         showConfirmButton: false,
         background: 'var(--bg-card)',
@@ -539,14 +469,14 @@ export default function SettingsPage() {
     } catch {
       await Swal.fire({
         icon: 'error',
-        title: 'Reset Failed',
+        title: tPage('alerts.experimentalReset.failed'),
         timer: 1400,
         showConfirmButton: false,
         background: 'var(--bg-card)',
         color: 'var(--text-primary)',
       });
     }
-  }, []);
+  }, [tPage]);
 
   const handleExportBackup = useCallback(async () => {
     setIsExporting(true);
@@ -582,7 +512,7 @@ export default function SettingsPage() {
     if (!file.name.endsWith('.zip')) {
       Swal.fire({
         icon: 'error',
-        title: 'Invalid File',
+        title: tPage('backup.invalidFileTitle'),
         text: t('storage.backup.invalidFile'),
         background: 'var(--bg-card)',
         color: 'var(--text-primary)',
@@ -594,7 +524,7 @@ export default function SettingsPage() {
     const result = await Swal.fire({
       icon: 'question',
       title: t('storage.backup.restoreConfirm'),
-      html: `<p>File: <strong>${escapeHtml(file.name)}</strong></p><p class="text-sm mt-2">${escapeHtml(t('storage.backup.restoreConfirmDesc'))}</p>`,
+      html: `<p>${escapeHtml(tPage('backup.fileLabel'))}: <strong>${escapeHtml(file.name)}</strong></p><p class="text-sm mt-2">${escapeHtml(t('storage.backup.restoreConfirmDesc'))}</p>`,
       showCancelButton: true,
       confirmButtonText: t('storage.backup.restore'),
       background: 'var(--bg-card)',
@@ -614,14 +544,14 @@ export default function SettingsPage() {
       setUserCookies(getAllCookieStatus());
 
       const parts = [
-        `<p><strong>${escapeHtml(String(imported.historyImported))}</strong> history items</p>`,
-        `<p><strong>${escapeHtml(String(imported.settingsImported))}</strong> settings</p>`,
+        `<p><strong>${escapeHtml(String(imported.historyImported))}</strong> ${escapeHtml(tPage('backup.historyItemsLabel'))}</p>`,
+        `<p><strong>${escapeHtml(String(imported.settingsImported))}</strong> ${escapeHtml(tPage('backup.settingsLabel'))}</p>`,
       ];
       if (imported.cookiesImported > 0) {
-        parts.push(`<p><strong>${escapeHtml(String(imported.cookiesImported))}</strong> cookies restored</p>`);
+        parts.push(`<p><strong>${escapeHtml(String(imported.cookiesImported))}</strong> ${escapeHtml(tPage('backup.cookiesRestoredLabel'))}</p>`);
       }
       if (imported.historySkipped > 0) {
-        parts.push(`<p class="text-sm text-gray-400">${escapeHtml(String(imported.historySkipped))} duplicates skipped</p>`);
+        parts.push(`<p class="text-sm text-gray-400">${escapeHtml(String(imported.historySkipped))} ${escapeHtml(tPage('backup.duplicatesSkippedLabel'))}</p>`);
       }
 
       Swal.fire({
@@ -638,7 +568,7 @@ export default function SettingsPage() {
       Swal.fire({
         icon: 'error',
         title: t('storage.backup.restoreFailed'),
-        text: error instanceof Error ? error.message : 'Invalid backup file',
+        text: error instanceof Error ? error.message : tPage('backup.invalidBackupFile'),
         background: 'var(--bg-card)',
         color: 'var(--text-primary)',
       });
@@ -646,7 +576,7 @@ export default function SettingsPage() {
       setIsImporting(false);
       if (backupFileInputRef.current) backupFileInputRef.current.value = '';
     }
-  }, [t]);
+  }, [t, tPage]);
 
   const clearAllData = useCallback(async () => {
     const result = await Swal.fire({
@@ -701,14 +631,14 @@ export default function SettingsPage() {
 
     await Swal.fire({
       icon: 'success',
-      title: 'All Data Cleared',
+      title: tPage('alerts.allDataCleared'),
       timer: 1000,
       showConfirmButton: false,
       background: 'var(--bg-card)',
       color: 'var(--text-primary)',
     });
     window.location.reload();
-  }, [t]);
+  }, [t, tPage]);
 
   return (
     <SidebarLayout>
@@ -717,7 +647,7 @@ export default function SettingsPage() {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] text-xs font-medium mb-4">
               <Settings className="w-3.5 h-3.5" />
-              Preferences
+              {tPage('badge')}
             </div>
             <AnimatePresence mode="wait">
               <motion.h1
@@ -728,7 +658,7 @@ export default function SettingsPage() {
                 transition={{ duration: 0.2 }}
                 className="text-2xl sm:text-3xl font-bold mb-3"
               >
-                <span className="gradient-text">{TABS.find(tab => tab.id === activeTab)?.title ?? t('title')}</span>
+                <span className="gradient-text">{tabTitles[activeTab] ?? t('title')}</span>
               </motion.h1>
             </AnimatePresence>
             <p className="text-[var(--text-muted)] max-w-xl mx-auto text-sm sm:text-base">{t('subtitle')}</p>

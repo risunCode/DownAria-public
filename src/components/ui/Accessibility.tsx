@@ -1,15 +1,18 @@
 'use client';
 
 import { useEffect, useRef, KeyboardEvent } from 'react';
+import { useTranslations } from 'next-intl';
 
 // Skip to main content link (for keyboard users)
 export function SkipToContent() {
+    const t = useTranslations('accessibility');
+
     return (
         <a
             href="#main-content"
             className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-[var(--accent-primary)] focus:text-white focus:rounded-lg focus:outline-none"
         >
-            Skip to main content
+            {t('skipToMainContent')}
         </a>
     );
 }
@@ -128,10 +131,13 @@ interface AccessibleButtonProps extends React.ButtonHTMLAttributes<HTMLButtonEle
 export function AccessibleButton({ 
     children, 
     loading, 
-    loadingText = 'Loading...', 
+    loadingText,
     disabled,
     ...props 
 }: AccessibleButtonProps) {
+    const t = useTranslations('accessibility');
+    const resolvedLoadingText = loadingText || t('loading');
+
     return (
         <button
             disabled={disabled || loading}
@@ -141,7 +147,7 @@ export function AccessibleButton({
         >
             {loading ? (
                 <>
-                    <span className="sr-only">{loadingText}</span>
+                    <span className="sr-only">{resolvedLoadingText}</span>
                     <span aria-hidden="true">{children}</span>
                 </>
             ) : (

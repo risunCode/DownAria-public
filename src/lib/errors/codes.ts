@@ -1,12 +1,19 @@
 /**
  * Error Codes - Synced with Backend
- * @see BringAlive/DownAria-API/internal/core/errors/codes.go
+ * @see Reborn/FetchMoona/internal/core/errors/codes.go
  * 
  * This file should be kept in sync with the backend error codes.
  * When adding new error codes, add them to both backend and frontend.
  */
 
 export const ErrorCodes = {
+    // Backend Generic Errors
+    AUTH_REQUIRED: 'AUTH_REQUIRED',
+    PLATFORM_NOT_FOUND: 'PLATFORM_NOT_FOUND',
+    NETWORK_ERROR: 'NETWORK_ERROR',
+    EXTRACTION_FAILED: 'EXTRACTION_FAILED',
+    RATE_LIMITED_429: 'RATE_LIMITED_429',
+
     // Validation Errors
     INVALID_JSON: 'INVALID_JSON',
     INVALID_URL: 'INVALID_URL',
@@ -55,6 +62,8 @@ export const ErrorCategories = {
 export type ErrorCategory = typeof ErrorCategories[keyof typeof ErrorCategories];
 
 export const ERROR_CODE_CATEGORY_MAP: Partial<Record<ErrorCode, ErrorCategory>> = {
+    [ErrorCodes.PLATFORM_NOT_FOUND]: ErrorCategories.NOT_FOUND,
+
     [ErrorCodes.INVALID_JSON]: ErrorCategories.VALIDATION,
     [ErrorCodes.INVALID_URL]: ErrorCategories.VALIDATION,
     [ErrorCodes.UNSUPPORTED_PLATFORM]: ErrorCategories.VALIDATION,
@@ -67,15 +76,18 @@ export const ERROR_CODE_CATEGORY_MAP: Partial<Record<ErrorCode, ErrorCategory>> 
     [ErrorCodes.MERGE_FAILED]: ErrorCategories.EXTRACTION_FAILED,
     [ErrorCodes.FFMPEG_UNAVAILABLE]: ErrorCategories.EXTRACTION_FAILED,
 
+    [ErrorCodes.NETWORK_ERROR]: ErrorCategories.NETWORK,
     [ErrorCodes.UPSTREAM_TIMEOUT]: ErrorCategories.NETWORK,
     [ErrorCodes.UPSTREAM_ERROR]: ErrorCategories.NETWORK,
     [ErrorCodes.PROXY_FAILED]: ErrorCategories.NETWORK,
     [ErrorCodes.OFFLINE]: ErrorCategories.NETWORK,
     [ErrorCodes.TIMEOUT]: ErrorCategories.NETWORK,
 
+    [ErrorCodes.RATE_LIMITED_429]: ErrorCategories.RATE_LIMIT,
     [ErrorCodes.UPSTREAM_RATE_LIMITED]: ErrorCategories.RATE_LIMIT,
     [ErrorCodes.RATE_LIMITED]: ErrorCategories.RATE_LIMIT,
 
+    [ErrorCodes.AUTH_REQUIRED]: ErrorCategories.AUTH,
     [ErrorCodes.LOGIN_REQUIRED]: ErrorCategories.AUTH,
     [ErrorCodes.UPSTREAM_FORBIDDEN]: ErrorCategories.AUTH,
     [ErrorCodes.ORIGIN_NOT_ALLOWED]: ErrorCategories.AUTH,
@@ -83,6 +95,7 @@ export const ERROR_CODE_CATEGORY_MAP: Partial<Record<ErrorCode, ErrorCategory>> 
 
     [ErrorCodes.NOT_FOUND]: ErrorCategories.NOT_FOUND,
 
+    [ErrorCodes.EXTRACTION_FAILED]: ErrorCategories.EXTRACTION_FAILED,
     [ErrorCodes.UNKNOWN]: ErrorCategories.EXTRACTION_FAILED,
 };
 
@@ -90,6 +103,12 @@ export const ERROR_CODE_CATEGORY_MAP: Partial<Record<ErrorCode, ErrorCategory>> 
  * User-friendly error messages mapped to error codes
  */
 export const ERROR_MESSAGES: Record<ErrorCode, string> = {
+    [ErrorCodes.AUTH_REQUIRED]: 'Authentication required. Please provide credentials and try again.',
+    [ErrorCodes.PLATFORM_NOT_FOUND]: 'Platform not found or not supported for this URL.',
+    [ErrorCodes.NETWORK_ERROR]: 'Network error occurred. Please check your connection and try again.',
+    [ErrorCodes.EXTRACTION_FAILED]: 'Failed to extract media from this URL. Please try again.',
+    [ErrorCodes.RATE_LIMITED_429]: 'Too many requests. Please wait a moment and try again.',
+
     [ErrorCodes.INVALID_JSON]: 'Invalid request format. Please try again.',
     [ErrorCodes.INVALID_URL]: 'Invalid URL. Please provide a valid URL.',
     [ErrorCodes.UNSUPPORTED_PLATFORM]: 'This platform is not supported.',
@@ -136,7 +155,9 @@ export function isRetryableError(code: string | undefined): boolean {
     const retryableCodes: string[] = [
         ErrorCodes.UPSTREAM_TIMEOUT,
         ErrorCodes.UPSTREAM_RATE_LIMITED,
+        ErrorCodes.RATE_LIMITED_429,
         ErrorCodes.UPSTREAM_ERROR,
+        ErrorCodes.NETWORK_ERROR,
         ErrorCodes.RATE_LIMITED,
         ErrorCodes.PROXY_FAILED,
         ErrorCodes.OFFLINE,
@@ -150,7 +171,11 @@ export function isRetryableError(code: string | undefined): boolean {
  */
 export function isAuthError(code: string | undefined): boolean {
     if (!code) return false;
-    return code === ErrorCodes.LOGIN_REQUIRED || code === ErrorCodes.ACCESS_DENIED;
+    return (
+        code === ErrorCodes.AUTH_REQUIRED ||
+        code === ErrorCodes.LOGIN_REQUIRED ||
+        code === ErrorCodes.ACCESS_DENIED
+    );
 }
 
 /**

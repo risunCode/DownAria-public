@@ -8,8 +8,10 @@ import {
     getUserDiscordSettings,
     saveUserDiscordSettings,
 } from '@/lib/utils/discord-webhook';
+import { useTranslations } from 'next-intl';
 
 export function DiscordWebhookSettings() {
+    const t = useTranslations('settingsDiscord');
     const [settings, setSettings] = useState<UserDiscordSettings>(DEFAULT_USER_DISCORD);
     const [webhookUrlInput, setWebhookUrlInput] = useState('');
     const [isSending, setIsSending] = useState(false);
@@ -47,11 +49,11 @@ export function DiscordWebhookSettings() {
 
     const normalizeWebhookError = (raw: string, status: number) => {
         const text = raw?.trim();
-        if (!text) return `Webhook error ${status}`;
+        if (!text) return t('errors.webhookStatus', { status });
 
         const isHtml = /^<!doctype html/i.test(text) || /<html[\s>]/i.test(text);
         if (isHtml) {
-            return `Webhook error ${status}. Endpoint returned HTML instead of Discord API response.`;
+            return t('errors.webhookHtml', { status });
         }
 
         return text.length > 220 ? `${text.slice(0, 220)}...` : text;
@@ -59,12 +61,12 @@ export function DiscordWebhookSettings() {
 
     const sendTestMessage = async () => {
         if (!settings.enabled) {
-            setResult({ success: false, message: 'Enable notifications first.' });
+            setResult({ success: false, message: t('errors.enableFirst') });
             return;
         }
 
         if (!settings.webhookUrl) {
-            setResult({ success: false, message: 'Set webhook URL first.' });
+            setResult({ success: false, message: t('errors.setWebhookFirst') });
             return;
         }
 
@@ -79,14 +81,14 @@ export function DiscordWebhookSettings() {
 
             if (settings.embedEnabled) {
                 payload.embeds = [{
-                    title: 'Download Notification Test',
-                    description: 'Webhook test message from DownAria.',
+                    title: t('test.embedTitle'),
+                    description: t('test.embedDescription'),
                     color: parseInt(settings.embedColor.replace('#', ''), 16),
-                    footer: { text: settings.footerText || 'via DownAria' },
+                    footer: { text: settings.footerText || t('defaults.footer') },
                     timestamp: new Date().toISOString(),
                 }];
             } else {
-                payload.content = 'Download notification test from DownAria.';
+                payload.content = t('test.content');
             }
 
             const res = await fetch(settings.webhookUrl, {
@@ -96,13 +98,13 @@ export function DiscordWebhookSettings() {
             });
 
             if (res.ok || res.status === 204) {
-                setResult({ success: true, message: 'Webhook test sent.' });
+                setResult({ success: true, message: t('test.sent') });
             } else {
                 const errorText = await res.text();
                 setResult({ success: false, message: normalizeWebhookError(errorText, res.status) });
             }
         } catch (err) {
-            setResult({ success: false, message: err instanceof Error ? err.message : 'Failed to send test message.' });
+            setResult({ success: false, message: err instanceof Error ? err.message : t('errors.testFailed') });
         } finally {
             setIsSending(false);
         }
@@ -122,9 +124,9 @@ export function DiscordWebhookSettings() {
                             </svg>
                         </div>
                         <div className="min-w-0">
-                            <p className="text-lg font-semibold text-[var(--text-primary)] leading-tight">Discord Webhook</p>
+                            <p className="text-lg font-semibold text-[var(--text-primary)] leading-tight">{t('header.title')}</p>
                             <p className="text-xs text-[var(--text-muted)] mt-1 leading-relaxed">
-                                Video notifications use 2 messages: link first, then metadata embed. Your webhook URL is stored locally.
+                                {t('header.description')}
                             </p>
                         </div>
                     </div>
@@ -132,7 +134,7 @@ export function DiscordWebhookSettings() {
                         type="button"
                         onClick={() => setShowTips((v) => !v)}
                         className="w-10 h-10 rounded-xl border border-[var(--accent-primary)]/50 text-[var(--text-muted)] hover:text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10 transition-colors"
-                        aria-label="Toggle webhook tips"
+                        aria-label={t('header.toggleTipsAria')}
                     >
                         <Info className="w-4 h-4 mx-auto" />
                     </button>
@@ -141,7 +143,7 @@ export function DiscordWebhookSettings() {
 
             {showTips && (
                 <div className="p-3 rounded-xl border border-[var(--accent-primary)]/30 bg-[var(--accent-primary)]/10 text-xs text-[var(--text-muted)] leading-relaxed">
-                    Create a channel webhook in Discord Integrations, then paste the URL here.
+                    {t('tips.content')}
                 </div>
             )}
 
@@ -150,8 +152,8 @@ export function DiscordWebhookSettings() {
                     <div className="flex items-center gap-2">
                         {settings.enabled ? <Bell className="w-4 h-4 text-[var(--accent-primary)]" /> : <BellOff className="w-4 h-4 text-[var(--text-muted)]" />}
                         <div>
-                            <p className="text-sm font-medium text-[var(--text-primary)]">Enable Discord Notifications</p>
-                            <p className="text-xs text-[var(--text-muted)]">Master switch for webhook notifications</p>
+                            <p className="text-sm font-medium text-[var(--text-primary)]">{t('notifications.title')}</p>
+                            <p className="text-xs text-[var(--text-muted)]">{t('notifications.description')}</p>
                         </div>
                     </div>
                     <button
@@ -169,7 +171,7 @@ export function DiscordWebhookSettings() {
                     <div className="grid grid-cols-1 xl:grid-cols-5 gap-3">
                         <div className="xl:col-span-3 p-3 rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)]/30 space-y-3">
                             <div className="space-y-1.5">
-                                <label className="text-xs text-[var(--text-muted)]">Webhook URL</label>
+                                <label className="text-xs text-[var(--text-muted)]">{t('fields.webhookUrl.label')}</label>
                                 <input
                                     type="url"
                                     value={webhookUrlInput}
@@ -181,18 +183,18 @@ export function DiscordWebhookSettings() {
                                             updateSetting('webhookUrl', val);
                                         }, 400);
                                     }}
-                                    placeholder="https://discord.com/api/webhooks/..."
+                                    placeholder={t('fields.webhookUrl.placeholder')}
                                     className="w-full px-3 py-2.5 rounded-xl bg-[var(--bg-primary)]/65 border border-[var(--border-color)] text-sm font-mono text-[var(--text-primary)]"
                                 />
                             </div>
 
                             <div className="space-y-1.5">
-                                <label className="text-xs text-[var(--text-muted)]">Mention (optional)</label>
+                                <label className="text-xs text-[var(--text-muted)]">{t('fields.mention.label')}</label>
                                 <input
                                     type="text"
                                     value={settings.mention || ''}
                                     onChange={(e) => updateSetting('mention', e.target.value)}
-                                    placeholder="@everyone or <@&role_id>"
+                                    placeholder={t('fields.mention.placeholder')}
                                     className="w-full px-3 py-2.5 rounded-xl bg-[var(--bg-primary)]/65 border border-[var(--border-color)] text-sm font-mono"
                                 />
                             </div>
@@ -204,15 +206,15 @@ export function DiscordWebhookSettings() {
                                 className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[var(--accent-primary)] text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
                             >
                                 {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                                {isSending ? 'Testing...' : 'Test Webhook'}
+                                {isSending ? t('test.testing') : t('test.button')}
                             </button>
                         </div>
 
                         <div className="xl:col-span-2 p-3 rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)]/30 space-y-3">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm font-medium text-[var(--text-primary)]">Auto-send on download</p>
-                                    <p className="text-xs text-[var(--text-muted)]">Runs only when notification is enabled and webhook URL is valid</p>
+                                    <p className="text-sm font-medium text-[var(--text-primary)]">{t('autoSend.title')}</p>
+                                    <p className="text-xs text-[var(--text-muted)]">{t('autoSend.description')}</p>
                                 </div>
                                 <button
                                     type="button"
@@ -226,11 +228,11 @@ export function DiscordWebhookSettings() {
                             </div>
 
                             <p className="text-[11px] text-[var(--text-muted)]">
-                                Canonical mode is fixed: 2 messages for video (link first, then metadata embed).
+                                {t('autoSend.canonicalNote')}
                             </p>
 
                             <div className="space-y-1.5">
-                                <label className="block text-xs text-[var(--text-muted)]">Embed Color</label>
+                                <label className="block text-xs text-[var(--text-muted)]">{t('fields.embedColor.label')}</label>
                                 <div className="flex gap-2">
                                     <input
                                         type="color"
@@ -248,12 +250,12 @@ export function DiscordWebhookSettings() {
                             </div>
 
                             <div className="space-y-1.5">
-                                <label className="block text-xs text-[var(--text-muted)]">Footer</label>
+                                <label className="block text-xs text-[var(--text-muted)]">{t('fields.footer.label')}</label>
                                 <input
                                     type="text"
                                     value={settings.footerText}
                                     onChange={(e) => updateSetting('footerText', e.target.value)}
-                                    placeholder="via DownAria"
+                                    placeholder={t('fields.footer.placeholder')}
                                     className="w-full px-3 py-2.5 rounded-lg bg-[var(--bg-primary)]/65 border border-[var(--border-color)] text-sm"
                                 />
                             </div>
@@ -262,43 +264,43 @@ export function DiscordWebhookSettings() {
 
                     <div className="mt-3 rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)]/30 p-3">
                         <div className="flex items-center justify-between mb-2">
-                            <p className="text-xs font-medium text-[var(--text-secondary)]">Discord embed preview</p>
-                            <p className="text-[10px] text-[var(--text-muted)]">Live</p>
+                            <p className="text-xs font-medium text-[var(--text-secondary)]">{t('preview.title')}</p>
+                            <p className="text-[10px] text-[var(--text-muted)]">{t('preview.live')}</p>
                         </div>
 
                         <div className="rounded-lg border border-[#3f4248] bg-[#2b2d31] p-3 text-[#dbdee1]" style={{ borderLeft: `4px solid ${settings.embedColor}` }}>
                             <div className="flex items-start justify-between gap-3">
                                 <div className="min-w-0">
-                                    <p className="text-sm font-semibold text-[#f2f3f5]">Facebook Downloader</p>
-                                    <p className="text-sm text-[#6ea8fe] mt-1">Open Media Source</p>
+                                    <p className="text-sm font-semibold text-[#f2f3f5]">{t('preview.sampleTitle')}</p>
+                                    <p className="text-sm text-[#6ea8fe] mt-1">{t('preview.sampleDescription')}</p>
                                     <div className="mt-2 grid grid-cols-3 gap-2 text-[11px]">
                                         <div>
-                                            <p className="text-[#f2f3f5] font-semibold">Platform</p>
-                                            <p>Facebook</p>
+                                            <p className="text-[#f2f3f5] font-semibold">{t('preview.fields.platform')}</p>
+                                            <p>{t('preview.values.platform')}</p>
                                         </div>
                                         <div>
-                                            <p className="text-[#f2f3f5] font-semibold">Type</p>
-                                            <p>video</p>
+                                            <p className="text-[#f2f3f5] font-semibold">{t('preview.fields.type')}</p>
+                                            <p>{t('preview.values.type')}</p>
                                         </div>
                                         <div>
-                                            <p className="text-[#f2f3f5] font-semibold">Author</p>
-                                            <p>Nikki.</p>
+                                            <p className="text-[#f2f3f5] font-semibold">{t('preview.fields.author')}</p>
+                                            <p>{t('preview.values.author')}</p>
                                         </div>
                                     </div>
                                 </div>
                                 <div className="w-14 h-14 rounded-md overflow-hidden bg-[#1f2125] shrink-0">
-                                    <img src="/icon.png" alt="Preview thumbnail" className="w-full h-full object-cover" />
+                                    <img src="/icon.png" alt={t('preview.thumbnailAlt')} className="w-full h-full object-cover" />
                                 </div>
                             </div>
 
                             <div className="mt-3 pt-2 border-t border-[#3f4248] text-xs text-[#b5bac1] flex items-center gap-1.5">
                                 <Clock3 className="w-3.5 h-3.5" />
-                                <span>{settings.footerText || 'via DownAria'} • Today at {previewTime}</span>
+                                <span>{settings.footerText || t('defaults.footer')} - {t('preview.todayAt', { time: previewTime })}</span>
                             </div>
                         </div>
 
                         <p className="text-[10px] text-[var(--text-muted)] mt-2">
-                            Note: Preview updates from Embed Color and Footer fields. Real messages also include dynamic platform/title/author data.
+                            {t('preview.note')}
                         </p>
                     </div>
                 </div>

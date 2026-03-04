@@ -2,34 +2,129 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Download, Eye, Radio, TrendingUp } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
 
-const POLLING_INTERVAL_MS = 20_000;
+export const POLLING_INTERVAL_MS = 20_000;
 const FRESHNESS_TICK_MS = 5_000;
 
-const PLACEHOLDER_STATS = {
-  todayVisits: 999_999,
-  totalVisits: 999_999,
-  totalExtractions: 999_999,
-  totalDownloads: 999_999,
+type PublicStatsPayload = {
+  todayVisits: number;
+  totalVisits: number;
+  totalExtractions: number;
+  totalDownloads: number;
 };
 
-function formatNumber(value: number): string {
-  return value.toLocaleString('en-US').replace(/,/g, ' ');
+type StatsEnvelope = {
+  success?: boolean;
+  data?: unknown;
+};
+
+const FALLBACK_STATS: PublicStatsPayload = {
+  todayVisits: 0,
+  totalVisits: 0,
+  totalExtractions: 0,
+  totalDownloads: 0,
+};
+
+function isPublicStatsPayload(value: unknown): value is PublicStatsPayload {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as Record<string, unknown>;
+  return [
+    candidate.todayVisits,
+    candidate.totalVisits,
+    candidate.totalExtractions,
+    candidate.totalDownloads,
+  ].every((entry) => typeof entry === 'number' && Number.isFinite(entry) && entry >= 0);
 }
 
-function getFreshnessText(lastUpdatedAt: number | null, now: number): string {
-  if (!lastUpdatedAt) return 'Waiting for data';
-  const ageSeconds = Math.max(0, Math.floor((now - lastUpdatedAt) / 1000));
-  if (ageSeconds < 5) return 'Updated just now';
-  return `Updated ${ageSeconds}s ago`;
+function parsePublicStatsPayload(payload: unknown): PublicStatsPayload | null {
+  if (isPublicStatsPayload(payload)) return payload;
+
+  if (!payload || typeof payload !== 'object') return null;
+  const envelope = payload as StatsEnvelope;
+  if (envelope.success === true && isPublicStatsPayload(envelope.data)) {
+    return envelope.data;
+  }
+
+  return null;
+}
+
+async function fetchPublicStats(): Promise<PublicStatsPayload> {
+  const response = await fetch('/api/stats/public', {
+    method: 'GET',
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    throw new Error(`stats request failed with ${response.status}`);
+  }
+
+  const payload = await response.json();
+  const parsed = parsePublicStatsPayload(payload);
+  if (!parsed) {
+    throw new Error('invalid stats payload');
+  }
+
+  return parsed;
+}
+
+function formatNumber(value: number, locale: string): string {
+  return value.toLocaleString(locale).replace(/,/g, ' ');
+}
+
+function getFreshnessText(
+  lastSuccessAt: number | null,
+  now: number,
+  lastRefreshFailed: boolean,
+  t: (key: string, values?: Record<string, string | number>) => string,
+): string {
+  if (!lastSuccessAt) {
+    return lastRefreshFailed ? t('freshness.waitingRetry') : t('freshness.waiting');
+  }
+
+  const ageSeconds = Math.max(0, Math.floor((now - lastSuccessAt) / 1000));
+  const base = ageSeconds < 5 ? t('freshness.updatedJustNow') : t('freshness.updatedAgo', { seconds: ageSeconds });
+
+  if (lastRefreshFailed) {
+    return t('freshness.updatedAgoWithFailed', { base });
+  }
+
+  return base;
 }
 
 export function PublicStats() {
-  const [lastUpdatedAt, setLastUpdatedAt] = useState<number | null>(null);
+  const t = useTranslations('publicStats');
+  const locale = useLocale();
+  const [stats, setStats] = useState<PublicStatsPayload>(FALLBACK_STATS);
+  const [lastSuccessAt, setLastSuccessAt] = useState<number | null>(null);
+  const [lastRefreshFailed, setLastRefreshFailed] = useState(false);
   const [clockTick, setClockTick] = useState<number>(0);
 
   useEffect(() => {
-    setLastUpdatedAt(Date.now());
+    let isMounted = true;
+
+    const loadStats = async () => {
+      try {
+        const nextStats = await fetchPublicStats();
+        if (!isMounted) return;
+        setStats(nextStats);
+        setLastSuccessAt(Date.now());
+        setLastRefreshFailed(false);
+      } catch {
+        if (!isMounted) return;
+        setLastRefreshFailed(true);
+      }
+    };
+
+    void loadStats();
+    const interval = setInterval(() => {
+      void loadStats();
+    }, POLLING_INTERVAL_MS);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, []);
 
   useEffect(() => {
@@ -66,7 +161,10 @@ export function PublicStats() {
     };
   }, []);
 
-  const freshnessText = useMemo(() => getFreshnessText(lastUpdatedAt, clockTick), [lastUpdatedAt, clockTick]);
+  const freshnessText = useMemo(
+    () => getFreshnessText(lastSuccessAt, clockTick, lastRefreshFailed, t),
+    [lastSuccessAt, clockTick, lastRefreshFailed, t],
+  );
   const statCards = useMemo<Array<{
     icon: typeof Eye;
     label: string;
@@ -76,26 +174,26 @@ export function PublicStats() {
   }>>(() => [
     {
       icon: Eye,
-      label: 'Visitors',
+      label: t('cards.visitors.label'),
       detailLines: [
-        `Today: ${formatNumber(PLACEHOLDER_STATS.todayVisits)}`,
-        `Total: ${formatNumber(PLACEHOLDER_STATS.totalVisits)}`,
+        t('cards.visitors.today', { value: formatNumber(stats.todayVisits, locale) }),
+        t('cards.visitors.total', { value: formatNumber(stats.totalVisits, locale) }),
       ],
       color: 'text-sky-500',
     },
     {
       icon: TrendingUp,
-      label: 'Extractions',
-      value: PLACEHOLDER_STATS.totalExtractions,
+      label: t('cards.extractions.label'),
+      value: stats.totalExtractions,
       color: 'text-emerald-500',
     },
     {
       icon: Download,
-      label: 'Downloads',
-      value: PLACEHOLDER_STATS.totalDownloads,
+      label: t('cards.downloads.label'),
+      value: stats.totalDownloads,
       color: 'text-indigo-500',
     },
-  ], []);
+  ], [stats, t, locale]);
 
   return (
     <div className="space-y-2">
@@ -103,7 +201,7 @@ export function PublicStats() {
         <p className="text-[11px] text-[var(--text-muted)] break-words [overflow-wrap:anywhere]">{freshnessText}</p>
         <div className="flex items-center gap-1.5 text-[11px] text-[var(--text-muted)] min-w-0">
           <Radio className="w-3 h-3 shrink-0" />
-          <span>Polling every {POLLING_INTERVAL_MS / 1000}s</span>
+          <span>{t('pollingEvery', { seconds: POLLING_INTERVAL_MS / 1000 })}</span>
         </div>
       </div>
 
@@ -121,9 +219,9 @@ export function PublicStats() {
                   </>
                 ) : (
                   <>
-                    <p className={`text-base sm:text-2xl font-bold ${card.color}`}>
-                      {typeof card.value === 'number' ? formatNumber(card.value) : card.value}
-                    </p>
+                      <p className={`text-base sm:text-2xl font-bold ${card.color}`}>
+                        {typeof card.value === 'number' ? formatNumber(card.value, locale) : card.value}
+                      </p>
                     <p className="text-[9px] sm:text-xs text-[var(--text-muted)] leading-tight break-words">{card.label}</p>
                   </>
                 )}

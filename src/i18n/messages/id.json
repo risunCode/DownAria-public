@@ -46,7 +46,9 @@
       "instagram": "Instagram",
       "tiktok": "TikTok",
       "twitter": "Twitter",
-      "weibo": "Weibo"
+      "weibo": "Weibo",
+      "pixiv": "Pixiv",
+      "youtube": "YouTube"
     },
     "subtitle": "Downloader media sosial gratis untuk hampir semua link publik. Didukung risunCode Native Extractor dan plugin yt-dlp.",
     "badges": {
@@ -246,6 +248,660 @@
     }
   },
 
+  "settingsPage": {
+    "badge": "Preferensi",
+    "tabs": {
+      "basic": {
+        "title": "Pengaturan Umum"
+      },
+      "cookies": {
+        "title": "Manajemen Cookie"
+      },
+      "storage": {
+        "title": "Penyimpanan & Data"
+      },
+      "integrations": {
+        "title": "Integrasi"
+      }
+    },
+    "alerts": {
+      "installSuccess": {
+        "title": "Terpasang!",
+        "text": "Aplikasi ditambahkan ke layar utama"
+      },
+      "cookies": {
+        "noValidCookies": "Tidak ada cookie valid ditemukan",
+        "invalidCookieFormat": "Format cookie tidak valid"
+      },
+      "unknownError": "Error tidak dikenal",
+      "cleared": "Berhasil dihapus",
+      "scraperCacheClear": {
+        "title": "Hapus Cache Scraper?",
+        "text": "Ini akan menghapus hasil scraper yang tersimpan. Permintaan berikutnya akan mengambil data baru.",
+        "success": "Cache Scraper Dihapus"
+      },
+      "indexedDbClear": {
+        "title": "Hapus IndexedDB?",
+        "text": "Ini akan menghapus semua data IndexedDB termasuk riwayat dan cache.",
+        "warning": "Tindakan ini tidak dapat dibatalkan!",
+        "confirm": "Hapus Semua",
+        "success": "IndexedDB Dihapus"
+      },
+      "seasonalClear": {
+        "title": "Hapus Efek Musiman?",
+        "text": "Ini akan menghapus background kustom dan mereset pengaturan musiman.",
+        "success": "Efek Musiman Dihapus"
+      },
+      "experimentalReset": {
+        "title": "Reset Nilai Eksperimental?",
+        "text": "Ini akan mereset efek musiman, background kustom, dan toggle eksperimental ke default.",
+        "confirm": "Reset",
+        "success": "Nilai Eksperimental Direset",
+        "failed": "Reset Gagal"
+      },
+      "allDataCleared": "Semua Data Dihapus"
+    },
+    "backup": {
+      "invalidFileTitle": "File Tidak Valid",
+      "fileLabel": "File",
+      "historyItemsLabel": "item riwayat",
+      "settingsLabel": "pengaturan",
+      "cookiesRestoredLabel": "cookie dipulihkan",
+      "duplicatesSkippedLabel": "duplikat dilewati",
+      "invalidBackupFile": "File backup tidak valid"
+    }
+  },
+
+  "settingsTabs": {
+    "basic": {
+      "language": {
+        "title": "Bahasa",
+        "auto": "Otomatis"
+      },
+      "theme": {
+        "title": "Tema",
+        "auto": "Otomatis",
+        "autoTip": "Berganti berdasarkan waktu",
+        "dark": "Gelap",
+        "darkTip": "Nyaman di mata",
+        "light": "Terang",
+        "lightTip": "Klasik cerah",
+        "solarized": "Solarized",
+        "solarizedTip": "Nada hangat"
+      },
+      "accentColor": {
+        "title": "Warna Aksen",
+        "description": "Pilih warna aksen untuk tombol dan highlight"
+      },
+      "accentColors": {
+        "coral": "Warna Baru (Coral)",
+        "blue": "DownAria Lama",
+        "emerald": "Emerald",
+        "amber": "Amber"
+      },
+      "active": "Aktif",
+      "experimental": {
+        "title": "Eksperimental",
+        "description": "Fitur beta - bisa berubah atau dihapus",
+        "resetAllValues": "Reset Semua Nilai"
+      }
+    },
+    "cookies": {
+      "security": {
+        "title": "Pemberitahuan Keamanan & Privasi",
+        "description": "Cookie disimpan secara lokal di perangkat Anda dan dikirim dengan aman (terenkripsi) ke server hanya untuk pemrosesan media. Cookie pribadi Anda selalu diprioritaskan dibanding cookie server bersama. Penggunaan cookie untuk mengakses konten privat dapat melanggar Ketentuan Layanan platform. Gunakan dengan risiko Anda sendiri."
+      },
+      "platformCookies": {
+        "title": "Cookie Platform",
+        "configured": "<active></active> dari {total} terkonfigurasi",
+        "none": "Belum ada cookie yang dikonfigurasi"
+      },
+      "actions": {
+        "clearAll": "Hapus Semua",
+        "clearCookie": "Hapus cookie",
+        "close": "Tutup",
+        "edit": "Edit",
+        "addCookie": "Tambah Cookie",
+        "cancel": "Batal",
+        "save": "Simpan"
+      },
+      "status": {
+        "active": "Aktif",
+        "inactive": "Tidak Aktif"
+      },
+      "platformDescriptions": {
+        "facebook": "Stories & grup privat",
+        "instagram": "Post & story privat",
+        "twitter": "Konten dengan batas usia",
+        "youtube": "Video dengan batas login/usia"
+      },
+      "editor": {
+        "placeholder": "Tempel string cookie (format JSON, Netscape, atau Header)...",
+        "encryptedHint": "Disimpan terenkripsi di perangkat Anda"
+      },
+      "guide": {
+        "title": "Cara mendapatkan cookie",
+        "subtitle": "Panduan langkah demi langkah",
+        "step1": "Login ke platform di browser Anda",
+        "step2": "Buka DevTools (F12) -> Application -> Cookies",
+        "step3": "Salin semua nilai cookie, atau gunakan ekstensi ekspor cookie",
+        "supportsPrefix": "Mendukung format",
+        "and": "dan",
+        "supportsSuffix": ""
+      }
+    },
+    "storage": {
+      "title": "Data & Penyimpanan",
+      "skipCache": {
+        "title": "Lewati Cache",
+        "description": "Selalu ambil hasil terbaru (lewati cache lokal)"
+      },
+      "backup": {
+        "title": "Backup Lengkap",
+        "historyAndSettings": "{count} riwayat + pengaturan",
+        "export": "Ekspor",
+        "import": "Impor",
+        "description": "Backup berisi riwayat + pengaturan dan akan digabung saat impor."
+      },
+      "cards": {
+        "downloadHistory": {
+          "title": "Riwayat Download",
+          "subtitle": "Riwayat IndexedDB"
+        },
+        "scraperCache": {
+          "title": "Cache Scraper",
+          "subtitle": "Cache lokal",
+          "withStats": "{count} item • {hitRate} rasio hit"
+        },
+        "localStorage": {
+          "title": "LocalStorage",
+          "subtitle": "Tema & preferensi aplikasi"
+        },
+        "seasonal": {
+          "title": "Efek Musiman",
+          "subtitle": "Background dan partikel"
+        },
+        "cookies": {
+          "title": "Cookies",
+          "subtitle": "Autentikasi platform"
+        },
+        "serviceWorker": {
+          "title": "Service Worker",
+          "subtitle": "Cache offline + riwayat/cache"
+        }
+      },
+      "resetAll": {
+        "title": "Reset Semua Data",
+        "subtitle": "Reset pabrik dan hapus semuanya",
+        "button": "Reset Semua"
+      },
+      "storageKeyLabels": {
+        "indexedDb": "IndexedDB",
+        "cacheStorage": "CacheStorage",
+        "localStorage": "LocalStorage"
+      },
+      "storageAliases": {
+        "appSettings": "Pengaturan aplikasi",
+        "downloadQueue": "Antrian download",
+        "experimentalAudio": "Audio eksperimental",
+        "discordWebhook": "Webhook Discord (terenkripsi)",
+        "scraperCacheStats": "Statistik cache scraper",
+        "platformCookies": "Cookie platform (terenkripsi)"
+      },
+      "clear": "Hapus"
+    },
+    "integrations": {
+      "title": "Integrasi",
+      "description": "Hubungkan alur webhook dan pratinjau output notifikasi di satu tempat.",
+      "comingSoon": "Integrasi lainnya segera hadir..."
+    }
+  },
+
+  "settingsDiscord": {
+    "header": {
+      "title": "Discord Webhook",
+      "description": "Notifikasi video memakai 2 pesan: link dulu, lalu embed metadata. URL webhook Anda disimpan lokal.",
+      "toggleTipsAria": "Tampilkan/sembunyikan tips webhook"
+    },
+    "tips": {
+      "content": "Buat webhook channel di Integrations Discord, lalu tempel URL-nya di sini."
+    },
+    "notifications": {
+      "title": "Aktifkan Notifikasi Discord",
+      "description": "Sakelar utama untuk notifikasi webhook"
+    },
+    "fields": {
+      "webhookUrl": {
+        "label": "URL Webhook",
+        "placeholder": "https://discord.com/api/webhooks/..."
+      },
+      "mention": {
+        "label": "Mention (opsional)",
+        "placeholder": "@everyone atau <@&role_id>"
+      },
+      "embedColor": {
+        "label": "Warna Embed"
+      },
+      "footer": {
+        "label": "Footer",
+        "placeholder": "via DownAria"
+      }
+    },
+    "autoSend": {
+      "title": "Kirim otomatis saat download",
+      "description": "Berjalan hanya saat notifikasi aktif dan URL webhook valid",
+      "canonicalNote": "Mode kanonik tetap: 2 pesan untuk video (link dulu, lalu embed metadata)."
+    },
+    "preview": {
+      "title": "Pratinjau embed Discord",
+      "live": "Live",
+      "sampleTitle": "Downloader Facebook",
+      "sampleDescription": "Buka Sumber Media",
+      "fields": {
+        "platform": "Platform",
+        "type": "Tipe",
+        "author": "Author"
+      },
+      "values": {
+        "platform": "Facebook",
+        "type": "video",
+        "author": "Nikki."
+      },
+      "thumbnailAlt": "Pratinjau thumbnail",
+      "todayAt": "Hari ini pukul {time}",
+      "note": "Catatan: Pratinjau berubah dari field Embed Color dan Footer. Pesan asli juga berisi data platform/judul/author dinamis."
+    },
+    "defaults": {
+      "footer": "via DownAria"
+    },
+    "test": {
+      "embedTitle": "Tes Notifikasi Download",
+      "embedDescription": "Pesan tes webhook dari DownAria.",
+      "content": "Tes notifikasi download dari DownAria.",
+      "sent": "Tes webhook terkirim.",
+      "testing": "Menguji...",
+      "button": "Tes Webhook"
+    },
+    "errors": {
+      "webhookStatus": "Error webhook {status}",
+      "webhookHtml": "Error webhook {status}. Endpoint mengembalikan HTML, bukan respons API Discord.",
+      "enableFirst": "Aktifkan notifikasi terlebih dahulu.",
+      "setWebhookFirst": "Set URL webhook terlebih dahulu.",
+      "testFailed": "Gagal mengirim pesan tes."
+    }
+  },
+
+  "settingsSeasonal": {
+    "seasonOptions": {
+      "auto": "Otomatis",
+      "random": "Acak",
+      "winter": "Musim Dingin",
+      "spring": "Musim Semi",
+      "autumn": "Musim Gugur",
+      "off": "Nonaktif"
+    },
+    "actions": {
+      "ok": "OK",
+      "change": "Ganti",
+      "upload": "Upload"
+    },
+    "alerts": {
+      "highOpacity": {
+        "title": "Peringatan Opasitas Tinggi",
+        "text": "Opasitas tinggi bisa mengganggu keterbacaan. Anda sudah diperingatkan!"
+      },
+      "backgroundSet": {
+        "title": "Background Diset!",
+        "text": "Background kustom berhasil diterapkan!"
+      },
+      "uploadFailed": {
+        "title": "Upload Gagal",
+        "text": "File tidak dapat diproses"
+      }
+    },
+    "toggleExperimental": {
+      "title": "Aktifkan Fitur Eksperimental",
+      "description": "Akses fitur beta dan pratinjau awal"
+    },
+    "warning": {
+      "title": "Peringatan Fitur Eksperimental",
+      "description": "Fitur ini masih beta dan dapat menyebabkan perilaku tak terduga. Jika background berkedip, coba refresh halaman."
+    },
+    "seasonalEffects": {
+      "title": "Efek Musiman",
+      "description": "Animasi partikel (salju, bunga sakura, daun)",
+      "particleIntensity": "Intensitas Partikel",
+      "particleIntensityHint": "Naikkan atau turunkan jumlah partikel mengambang (hingga 200%)",
+      "fallSpeed": "Kecepatan Jatuh",
+      "fallSpeedHint": "Lebih rendah = lebih pelan, lebih tinggi = lebih cepat",
+      "particleOpacity": "Opasitas Partikel",
+      "particleOpacityHint": "Buat partikel lebih samar atau lebih terlihat"
+    },
+    "customBackground": {
+      "title": "Background Kustom",
+      "video": "Video",
+      "image": "Gambar",
+      "emptyState": "Gambar/Video/GIF (maks 800MB)"
+    },
+    "backgroundControls": {
+      "visibility": "Visibilitas",
+      "visibilityHint": "Terbaik di tema gelap dengan transparansi 8%",
+      "blur": "Blur Background",
+      "zoom": "Zoom Background",
+      "zoomHint": "65% - 150%",
+      "moveVertical": "Geser Background (Atas/Bawah)",
+      "moveVerticalHint": "0% = Atas, 100% = Bawah",
+      "sound": "Suara Background",
+      "volume": "Volume",
+      "enabled": "Background Aktif",
+      "enabledHint": "Nonaktifkan tanpa menghapus"
+    }
+  },
+
+  "privacyPage": {
+    "titlePrefix": "Kebijakan",
+    "titleHighlight": "Privasi",
+    "subtitle": "Kami menjaga DownAria tetap sederhana: tanpa akun, data tersimpan minimal, dan penanganan permintaan ekstraksi yang transparan.",
+    "lastUpdated": "Terakhir diperbarui",
+    "atAGlance": {
+      "title": "Privasi Sekilas",
+      "point1": "Tidak perlu registrasi untuk menggunakan DownAria.",
+      "point2": "Kami tidak menyimpan permanen file media yang diunduh.",
+      "point3": "Anda mengontrol penggunaan cookie opsional di Pengaturan untuk platform yang membutuhkan autentikasi."
+    },
+    "dataWeProcess": {
+      "title": "Data yang Diproses",
+      "urls": "URL yang dikirim dan metadata ekstraksi yang dibutuhkan untuk mengembalikan format media serta info pratinjau.",
+      "cookies": "Cookie opsional yang Anda set di Pengaturan untuk konten privat/perlu autentikasi, diproses dengan aturan server terpisah.",
+      "operational": "Statistik operasional untuk keandalan dan perlindungan penyalahgunaan (rate limit, retry, dan kesehatan layanan)."
+    },
+    "handlingData": {
+      "title": "Cara Kami Menangani Data",
+      "point1": "Tema, preferensi, dan riwayat lokal disimpan di perangkat Anda menggunakan penyimpanan browser.",
+      "point2": "Download diambil dari sumber/CDN penyedia dan diproksi hanya untuk kompatibilitas pengiriman.",
+      "point3": "Jalur autentikasi diterapkan berurutan: Guest -> Server -> UserProvided. Cookie dari Pengaturan bersifat privat per pengguna, tidak pernah dibagikan ke pengguna lain, dan diproses melalui jalur privat terpisah dalam pooling server sementara.",
+      "point4": "Kami tidak menjual data pribadi. Gunakan alat ini hanya untuk konten yang berhak Anda akses."
+    },
+    "retention": {
+      "title": "Retensi & Penghapusan",
+      "point1": "Riwayat lokal dan preferensi tetap di browser Anda sampai Anda menghapusnya dari Pengaturan atau penyimpanan browser.",
+      "point2": "Log ekstraksi sementara dan log operasional diputar dan disimpan hanya untuk keandalan serta pencegahan penyalahgunaan.",
+      "point3": "Jika Anda memberikan cookie autentikasi, Anda dapat menghapusnya kapan saja di Pengaturan; cookie tidak wajib untuk konten publik."
+    },
+    "security": {
+      "title": "Keamanan & Tanggung Jawab",
+      "point1": "Kami menggunakan validasi request, rate limit, dan kontrol retry untuk menjaga layanan tetap stabil dan aman.",
+      "point2": "DownAria ditujukan hanya untuk penggunaan pribadi dan yang berizin. Anda bertanggung jawab untuk mematuhi ketentuan platform serta hukum hak cipta.",
+      "point3": "Untuk laporan keamanan, buka disclosure privat melalui maintainer repository proyek."
+    },
+    "faq": {
+      "title": "FAQ Privasi",
+      "q1": "Apakah saya perlu akun?",
+      "a1": "Tidak. Alur inti download dan ekstraksi berjalan tanpa registrasi.",
+      "q2": "Apakah file hasil unduh disimpan?",
+      "a2": "Tidak ada hosting permanen. Media diambil dari sumber/CDN dan dikirim untuk request Anda.",
+      "q3": "Bagaimana dengan cookie?",
+      "a3": "Cookie bersifat opsional dan hanya untuk request Anda sendiri. Cookie tidak dibagikan ke pengguna lain dan hanya disimpan sementara melalui jalur pemrosesan privat.",
+      "q4": "Bagaimana cara meminta perubahan?",
+      "a4": "Buka issue di repository dan sertakan halaman + bagian kebijakan yang ingin diperbarui."
+    },
+    "quickLinks": {
+      "title": "Tautan Cepat",
+      "documentation": {
+        "title": "Dokumentasi",
+        "description": "Cara ekstraksi dan download bekerja"
+      },
+      "changelog": {
+        "title": "Changelog",
+        "description": "Pembaruan produk dan kebijakan"
+      },
+      "about": {
+        "title": "Tentang DownAria",
+        "description": "Gambaran proyek dan ekosistem"
+      }
+    },
+    "footer": {
+      "prefix": "Pertanyaan atau kekhawatiran privasi? Buka issue di"
+    }
+  },
+
+  "creditsPage": {
+    "titleHighlight": "Credits",
+    "titleSuffix": "& Ucapan Terima Kasih",
+    "subtitleLine1": "DownAria dibangun di atas alat open-source dan teknologi yang dirawat komunitas.",
+    "subtitleLine2": "Halaman ini memberi kredit untuk stack dan kontributor di balik proyek.",
+    "builtBy": {
+      "title": "Dibangun oleh risunCode",
+      "description": "Dirancang dan dikelola sebagai platform downloader open-source dengan kepemilikan runtime frontend dan backend.",
+      "repositoryLabel": "Repository"
+    },
+    "sections": {
+      "frontend": "Stack Frontend",
+      "backend": "Stack Backend",
+      "tools": "Tools & Workflow",
+      "license": "Catatan Lisensi & Kredit"
+    },
+    "stacks": {
+      "frontend": {
+        "next": "Next.js",
+        "react": "React",
+        "typescript": "TypeScript",
+        "tailwind": "Tailwind CSS",
+        "framer": "Framer Motion",
+        "lucide": "Lucide"
+      },
+      "backend": {
+        "go": "Go",
+        "chi": "chi router",
+        "ffmpeg": "FFmpeg",
+        "ytdlp": "yt-dlp",
+        "extractors": "Custom extractors",
+        "proxy": "HTTP proxy"
+      },
+      "tools": {
+        "vitest": "Vitest",
+        "eslint": "ESLint",
+        "gotest": "Go test",
+        "github": "GitHub",
+        "vscode": "VS Code"
+      }
+    },
+    "licenseNotes": {
+      "point1": "DownAria didistribusikan di bawah GPL-3 dan mencakup integrasi dengan alat serta layanan pihak ketiga.",
+      "point2": "Semua nama produk, logo, dan merek dagang platform adalah milik pemilik masing-masing.",
+      "point3": "Penggunaan harus mematuhi hukum lokal, aturan hak cipta, dan ketentuan layanan platform."
+    },
+    "quickLinks": {
+      "title": "Tautan Cepat",
+      "about": {
+        "title": "Tentang",
+        "description": "Latar belakang proyek dan ekosistem"
+      },
+      "documentation": {
+        "title": "Dokumentasi",
+        "description": "Panduan, alur API, dan troubleshooting"
+      },
+      "privacy": {
+        "title": "Privasi",
+        "description": "Kebijakan jalur cookie dan penanganan data"
+      }
+    }
+  },
+
+  "aboutPage": {
+    "sections": {
+      "features": "Fitur",
+      "quickLinks": "Tautan Cepat",
+      "moreProjects": "Proyek Lainnya"
+    },
+    "features": {
+      "video": { "title": "Video", "description": "Kualitas hingga 4K" },
+      "audio": { "title": "Audio", "description": "MP3, M4A, FLAC" },
+      "stories": { "title": "Stories & Reels", "description": "Semua platform" },
+      "noWatermark": { "title": "Tanpa Watermark", "description": "Download bersih" },
+      "fastServers": { "title": "Server Cepat", "description": "CDN teroptimasi" },
+      "api": { "title": "REST API", "description": "Untuk developer" }
+    },
+    "quickLinks": {
+      "documentation": { "title": "Dokumentasi", "description": "Panduan, referensi API, dan alur integrasi" },
+      "changelog": { "title": "Changelog", "description": "Lacak pembaruan dan peningkatan" },
+      "privacy": { "title": "Privasi", "description": "Baca kebijakan data dan keamanan" },
+      "credits": { "title": "Credits", "description": "Ucapan terima kasih open-source dan stack" }
+    },
+    "projects": {
+      "downaria": {
+        "title": "Downaria",
+        "description": "Alat gratis, cepat, dan mudah untuk download video dari media sosial. Tanpa registrasi, tanpa batas, tanpa ribet."
+      },
+      "surfManager": {
+        "title": "SurfManager",
+        "description": "Reset data IDE, buat backup dan restore, kelola multi-akun dengan mudah. Berfungsi untuk aplikasi berbasis VS-Code/fork."
+      },
+      "seswi": {
+        "title": "SesWi-Session-Manager",
+        "description": "Ekstensi Chrome untuk mengelola cookie & session dengan aman, mendukung ekspor Netscape, JSON raw, dan simpan terenkripsi."
+      }
+    },
+    "feedback": {
+      "title": "Feedback",
+      "fields": {
+        "name": "Nama",
+        "datetime": "Waktu",
+        "comment": "Komentar"
+      },
+      "placeholders": {
+        "name": "Nama Anda",
+        "comment": "Teks + emoji saja"
+      },
+      "hint": "Tulis pendapat Anda di sini. Kami membaca setiap catatan dan emoji.",
+      "submit": "Kirim Feedback",
+      "sending": "Mengirim...",
+      "success": "Terima kasih! Feedback Anda telah terkirim.",
+      "errors": {
+        "nameTooShort": "Nama minimal 2 karakter.",
+        "commentTooShort": "Komentar minimal 3 karakter.",
+        "sendFailed": "Gagal mengirim feedback.",
+        "network": "Terjadi error jaringan saat mengirim feedback."
+      }
+    },
+    "footer": {
+      "prefix": "DownAria oleh",
+      "middle": "- Berlisensi GPL-3 - ©"
+    }
+  },
+
+  "historyList": {
+    "title": "Riwayat",
+    "unknownPlatform": "Tidak diketahui",
+    "unknownQuality": "Tidak diketahui",
+    "searchPlaceholder": "Cari...",
+    "emptyTitle": "Belum ada riwayat",
+    "emptyDescription": "Riwayat media yang diekstrak akan muncul di sini",
+    "perPage": "Per halaman",
+    "pageOf": "Halaman {page} dari {total}",
+    "prev": "Sebelumnya",
+    "next": "Berikutnya",
+    "viewAllHistory": "Lihat semua ({count}) riwayat",
+    "filters": {
+      "all": "Semua",
+      "video": "Video",
+      "image": "Gambar",
+      "audio": "Audio"
+    },
+    "actions": {
+      "refetch": "Ambil ulang",
+      "copyUrl": "Salin URL",
+      "open": "Buka",
+      "invalidUrl": "URL tidak valid"
+    },
+    "alerts": {
+      "deleteItemTitle": "Hapus item?",
+      "clearAllTitle": "Hapus semua riwayat?",
+      "clearAllText": "Tindakan ini tidak dapat dibatalkan."
+    }
+  },
+
+  "publicStats": {
+    "freshness": {
+      "waiting": "Menunggu data",
+      "waitingRetry": "Menunggu data (mencoba ulang)",
+      "updatedJustNow": "Baru saja diperbarui",
+      "updatedAgo": "Diperbarui {seconds}d lalu",
+      "updatedAgoWithFailed": "{base} (refresh terakhir gagal)"
+    },
+    "pollingEvery": "Polling setiap {seconds}d",
+    "cards": {
+      "visitors": {
+        "label": "Pengunjung",
+        "today": "Hari ini: {value}",
+        "total": "Total: {value}"
+      },
+      "extractions": {
+        "label": "Ekstraksi"
+      },
+      "downloads": {
+        "label": "Download"
+      }
+    }
+  },
+
+  "sidebar": {
+    "tagline": "Downloader Media Sosial",
+    "theme": "Tema",
+    "themes": {
+      "auto": "Otomatis",
+      "dark": "Gelap",
+      "light": "Terang",
+      "solarized": "Solarized"
+    },
+    "fastExperimental": "Eksperimental Cepat",
+    "toggles": {
+      "seasonalEffects": "Efek Musiman",
+      "customBackground": "Background Kustom",
+      "backgroundSound": "Suara Background"
+    },
+    "on": "ON",
+    "off": "OFF",
+    "profileMenuAria": "Menu profil",
+    "guest": "Tamu",
+    "notLoggedIn": "Belum login",
+    "settings": "Pengaturan",
+    "account": "Akun",
+    "aboutDownAria": "Tentang DownAria",
+    "ytDlp": {
+      "title": "+1000 platform via yt-dlp"
+    }
+  },
+
+  "rateLimit": {
+    "title": "Batas Permintaan",
+    "reachedTitle": "Batas Permintaan Tercapai",
+    "limitMessage": "Batas: {limit} permintaan per {window}",
+    "tooManyRequests": "Terlalu banyak permintaan. Tunggu sampai timer direset.",
+    "currentLimit": "Batas saat ini:",
+    "guestLimit": "Batas tamu",
+    "guestLimitValue": "{limit} req/{window}",
+    "configuredByServer": "dikonfigurasi server",
+    "retryNow": "Coba lagi sekarang",
+    "wait": "Tunggu",
+    "countdown": {
+      "retryStatus": "Status coba lagi",
+      "readyToRetry": "Siap untuk coba lagi sekarang",
+      "resetsIn": "Reset dalam"
+    }
+  },
+
+  "accessibility": {
+    "skipToMainContent": "Lewati ke konten utama",
+    "loading": "Memuat..."
+  },
+
+  "screenSizeGuard": {
+    "title": "Perubahan ukuran layar terdeteksi",
+    "message": "Viewport Anda menyempit. Beberapa elemen mungkin kurang nyaman dilihat. Coba putar perangkat atau lebarkan jendela.",
+    "confirm": "OK"
+  },
+
   "about": {
     "title": "Tentang",
     "subtitle": "Downloader media sosial tanpa batas, tanpa ribet.",
@@ -358,7 +1014,14 @@
     "noUrl": "Tidak ada URL terdeteksi dari share",
     "backToHome": "← Kembali ke Beranda",
     "failed": "Gagal",
-    "error": "Terjadi kesalahan"
+    "error": "Terjadi kesalahan",
+    "errors": {
+      "extractionTitle": "Error Ekstraksi",
+      "cookieTip": "Set cookie di Pengaturan untuk mengakses konten yang dilindungi.",
+      "codeLabel": "Kode",
+      "tipLabel": "Tips:",
+      "openCookieSettings": "Buka Pengaturan Cookie"
+    }
   },
 
   "errors": {
@@ -412,6 +1075,7 @@
     "instagram": "Instagram",
     "twitter": "Twitter/X",
     "tiktok": "TikTok",
+    "pixiv": "Pixiv",
     "weibo": "Weibo",
     "youtube": "YouTube",
     "status": {

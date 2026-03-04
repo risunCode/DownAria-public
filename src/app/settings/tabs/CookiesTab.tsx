@@ -2,11 +2,12 @@
 
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, ChevronDown, Cookie, ExternalLink, Info, KeyRound, Loader2, ShieldCheck, Trash2, X } from 'lucide-react';
-import { FacebookIcon, InstagramIcon, WeiboIcon, XTwitterIcon } from '@/components/ui/Icons';
+import { FacebookIcon, InstagramIcon, XTwitterIcon, YoutubeIcon } from '@/components/ui/Icons';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils/helpers';
 import { type CookiePlatform } from '@/lib/storage';
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 // ═══════════════════════════════════════════════════════════════
 // CONSTANTS
@@ -14,17 +15,15 @@ import { useState } from 'react';
 
 const PLATFORMS: Array<{
   id: CookiePlatform;
-  name: string;
-  desc: string;
   color: string;
   bgColor: string;
   borderColor: string;
   icon: React.ComponentType<{ className?: string }>;
 }> = [
-  { id: 'facebook', name: 'Facebook', desc: 'Stories & private groups', color: 'text-blue-500', bgColor: 'bg-blue-500/10', borderColor: 'border-blue-500/30', icon: FacebookIcon },
-  { id: 'instagram', name: 'Instagram', desc: 'Private posts & stories', color: 'text-pink-500', bgColor: 'bg-pink-500/10', borderColor: 'border-pink-500/30', icon: InstagramIcon },
-  { id: 'twitter', name: 'Twitter/X', desc: 'Age-restricted content', color: 'text-sky-400', bgColor: 'bg-sky-400/10', borderColor: 'border-sky-400/30', icon: XTwitterIcon },
-  { id: 'weibo', name: 'Weibo', desc: 'Required for access', color: 'text-red-500', bgColor: 'bg-red-500/10', borderColor: 'border-red-500/30', icon: WeiboIcon },
+  { id: 'facebook', color: 'text-blue-500', bgColor: 'bg-blue-500/10', borderColor: 'border-blue-500/30', icon: FacebookIcon },
+  { id: 'instagram', color: 'text-pink-500', bgColor: 'bg-pink-500/10', borderColor: 'border-pink-500/30', icon: InstagramIcon },
+  { id: 'twitter', color: 'text-sky-400', bgColor: 'bg-sky-400/10', borderColor: 'border-sky-400/30', icon: XTwitterIcon },
+  { id: 'youtube', color: 'text-red-500', bgColor: 'bg-red-500/10', borderColor: 'border-red-500/30', icon: YoutubeIcon },
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -58,8 +57,10 @@ export function CookiesTab({
   onClearCookie,
   onClearAllCookies,
 }: CookiesTabProps) {
+  const t = useTranslations('settingsTabs.cookies');
+  const tPlatforms = useTranslations('platforms');
   const [guideOpen, setGuideOpen] = useState(false);
-  const activeCookieCount = Object.values(userCookies).filter(Boolean).length;
+  const activeCookieCount = PLATFORMS.filter(platform => userCookies[platform.id]).length;
 
   return (
     <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-5">
@@ -72,11 +73,9 @@ export function CookiesTab({
               <ShieldCheck className="w-4 h-4 text-[var(--accent-primary)]" />
             </div>
             <div className="flex-1 min-w-0 pt-0.5">
-              <p className="text-sm font-medium text-[var(--text-primary)]">Security & Privacy Notice</p>
+              <p className="text-sm font-medium text-[var(--text-primary)]">{t('security.title')}</p>
               <p className="text-xs text-[var(--text-muted)] mt-1.5 leading-relaxed">
-                Cookies are stored locally on your device and transmitted securely (encrypted) to the server only for media processing.
-                Your private cookies are always prioritized over shared server cookies.
-                Using cookies to access private content may violate platform Terms of Service. Use at your own risk.
+                {t('security.description')}
               </p>
             </div>
           </div>
@@ -92,11 +91,14 @@ export function CookiesTab({
               <Cookie className="w-5 h-5 text-[var(--accent-primary)]" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-[var(--text-primary)]">Platform Cookies</h2>
+              <h2 className="text-base font-semibold text-[var(--text-primary)]">{t('platformCookies.title')}</h2>
               <p className="text-xs text-[var(--text-muted)]">
                 {activeCookieCount > 0
-                  ? <><span className="text-green-500 font-medium">{activeCookieCount}</span> of {PLATFORMS.length} configured</>
-                  : 'No cookies configured yet'
+                  ? <>{t.rich('platformCookies.configured', {
+                    active: () => <span className="text-green-500 font-medium">{activeCookieCount}</span>,
+                    total: PLATFORMS.length,
+                  })}</>
+                  : t('platformCookies.none')
                 }
               </p>
             </div>
@@ -104,7 +106,7 @@ export function CookiesTab({
           {activeCookieCount > 0 && (
             <Button variant="ghost" size="sm" onClick={onClearAllCookies} disabled={isClearing !== null} className="text-red-500/70 hover:text-red-500 hover:bg-red-500/10">
               {isClearing === 'cookies' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-              <span className="ml-1.5 hidden sm:inline">Clear All</span>
+              <span className="ml-1.5 hidden sm:inline">{t('actions.clearAll')}</span>
             </Button>
           )}
         </div>
@@ -131,7 +133,7 @@ export function CookiesTab({
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium text-[var(--text-primary)]">{platform.name}</p>
+                        <p className="text-sm font-medium text-[var(--text-primary)]">{tPlatforms(platform.id)}</p>
                         {/* Status Indicator */}
                         <div className={cn(
                           'flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide',
@@ -140,10 +142,10 @@ export function CookiesTab({
                             : 'bg-[var(--bg-secondary)] text-[var(--text-muted)]'
                         )}>
                           <div className={cn('w-1.5 h-1.5 rounded-full', hasCookie ? 'bg-emerald-500' : 'bg-[var(--text-muted)]/40')} />
-                          {hasCookie ? 'Active' : 'Inactive'}
+                          {hasCookie ? t('status.active') : t('status.inactive')}
                         </div>
                       </div>
-                      <p className="text-xs text-[var(--text-muted)] mt-0.5">{platform.desc}</p>
+                      <p className="text-xs text-[var(--text-muted)] mt-0.5">{t(`platformDescriptions.${platform.id}`)}</p>
                     </div>
                   </div>
 
@@ -152,7 +154,7 @@ export function CookiesTab({
                       <button
                         onClick={() => onClearCookie(platform.id)}
                         className="p-2 rounded-lg text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/10 transition-colors"
-                        title="Clear cookie"
+                        title={t('actions.clearCookie')}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -166,11 +168,11 @@ export function CookiesTab({
                       }}
                     >
                       {isEditing ? (
-                        <><X className="w-4 h-4" /><span className="ml-1">Close</span></>
+                        <><X className="w-4 h-4" /><span className="ml-1">{t('actions.close')}</span></>
                       ) : hasCookie ? (
-                        <><KeyRound className="w-3.5 h-3.5" /><span className="ml-1">Edit</span></>
+                        <><KeyRound className="w-3.5 h-3.5" /><span className="ml-1">{t('actions.edit')}</span></>
                       ) : (
-                        'Add Cookie'
+                        t('actions.addCookie')
                       )}
                     </Button>
                   </div>
@@ -185,22 +187,22 @@ export function CookiesTab({
                           <textarea
                             value={editValue}
                             onChange={event => onEditValueChange(event.target.value)}
-                            placeholder="Paste cookie string (JSON, Netscape, or Header format)..."
+                            placeholder={t('editor.placeholder')}
                             className="w-full h-24 p-3 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-color)] text-[var(--text-primary)] text-xs font-mono resize-none focus:outline-none focus:border-[var(--accent-primary)] placeholder:text-[var(--text-muted)]/60"
                             autoFocus
                           />
                           <div className="flex items-center justify-between mt-2.5">
                             <p className="text-[10px] text-[var(--text-muted)]">
                               <ShieldCheck className="w-3 h-3 inline mr-1 text-emerald-500" />
-                              Stored encrypted on your device
+                              {t('editor.encryptedHint')}
                             </p>
                             <div className="flex gap-2">
                               <Button variant="ghost" size="sm" onClick={() => onEditPlatform(null)}>
-                                Cancel
+                                {t('actions.cancel')}
                               </Button>
                               <Button variant="primary" size="sm" onClick={() => onSaveCookie(platform.id)} disabled={!editValue.trim()}>
                                 <Check className="w-4 h-4" />
-                                Save
+                                {t('actions.save')}
                               </Button>
                             </div>
                           </div>
@@ -226,8 +228,8 @@ export function CookiesTab({
               <Info className="w-4 h-4 text-[var(--accent-primary)]" />
             </div>
             <div>
-              <p className="text-sm font-medium text-[var(--accent-primary)]">How to get cookies</p>
-              <p className="text-xs text-[var(--text-muted)]">Step-by-step guide</p>
+              <p className="text-sm font-medium text-[var(--accent-primary)]">{t('guide.title')}</p>
+              <p className="text-xs text-[var(--text-muted)]">{t('guide.subtitle')}</p>
             </div>
           </div>
           <ChevronDown className={cn('w-4 h-4 text-[var(--text-muted)] transition-transform', guideOpen && 'rotate-180')} />
@@ -243,9 +245,9 @@ export function CookiesTab({
             >
               <div className="px-4 pb-4 space-y-2.5">
                 {[
-                  { step: '1', text: 'Log in to the platform in your browser' },
-                  { step: '2', text: 'Open DevTools (F12) → Application → Cookies' },
-                  { step: '3', text: 'Copy all cookie values, or use a cookie export extension' },
+                  { step: '1', text: t('guide.step1') },
+                  { step: '2', text: t('guide.step2') },
+                  { step: '3', text: t('guide.step3') },
                 ].map((item) => (
                   <div key={item.step} className="flex items-start gap-3 p-2.5 rounded-lg bg-[var(--bg-card)]">
                     <span className="w-6 h-6 rounded-md bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] text-xs font-bold flex items-center justify-center flex-shrink-0">
@@ -257,7 +259,7 @@ export function CookiesTab({
                 <div className="flex items-center gap-2 pt-1 pl-1">
                   <ExternalLink className="w-3 h-3 text-[var(--accent-primary)]" />
                   <p className="text-[10px] text-[var(--text-muted)]">
-                    Supports <span className="text-[var(--accent-primary)] font-medium">JSON</span>, <span className="text-[var(--accent-primary)] font-medium">Netscape</span>, and <span className="text-[var(--accent-primary)] font-medium">Header</span> formats
+                    {t('guide.supportsPrefix')} <span className="text-[var(--accent-primary)] font-medium">JSON</span>, <span className="text-[var(--accent-primary)] font-medium">Netscape</span>, {t('guide.and')} <span className="text-[var(--accent-primary)] font-medium">Header</span> {t('guide.supportsSuffix')}
                   </p>
                 </div>
               </div>

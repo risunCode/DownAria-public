@@ -47,18 +47,19 @@ import {
   saveUnifiedSettings,
 } from '@/lib/storage';
 import Swal from 'sweetalert2';
+import { useTranslations } from 'next-intl';
 
 // ═══════════════════════════════════════════════════════════════
 // CONSTANTS
 // ═══════════════════════════════════════════════════════════════
 
-const SEASON_OPTIONS: { id: 'auto' | 'random' | SeasonType; label: string; emoji: string; icon: typeof Snowflake }[] = [
-  { id: 'auto', label: 'Auto', emoji: '✨', icon: Clock },
-  { id: 'random', label: 'Random', emoji: '🎲', icon: Sparkles },
-  { id: 'winter', label: 'Winter', emoji: '❄️', icon: Snowflake },
-  { id: 'spring', label: 'Spring', emoji: '🌸', icon: Flower2 },
-  { id: 'autumn', label: 'Autumn', emoji: '🍂', icon: Leaf },
-  { id: 'off', label: 'Off', emoji: '🌙', icon: Moon },
+const SEASON_OPTIONS: { id: 'auto' | 'random' | SeasonType; labelKey: string; emoji: string; icon: typeof Snowflake }[] = [
+  { id: 'auto', labelKey: 'seasonOptions.auto', emoji: '✨', icon: Clock },
+  { id: 'random', labelKey: 'seasonOptions.random', emoji: '🎲', icon: Sparkles },
+  { id: 'winter', labelKey: 'seasonOptions.winter', emoji: '❄️', icon: Snowflake },
+  { id: 'spring', labelKey: 'seasonOptions.spring', emoji: '🌸', icon: Flower2 },
+  { id: 'autumn', labelKey: 'seasonOptions.autumn', emoji: '🍂', icon: Leaf },
+  { id: 'off', labelKey: 'seasonOptions.off', emoji: '🌙', icon: Moon },
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -66,6 +67,7 @@ const SEASON_OPTIONS: { id: 'auto' | 'random' | SeasonType; label: string; emoji
 // ═══════════════════════════════════════════════════════════════
 
 export function SeasonalSettings() {
+  const t = useTranslations('settingsSeasonal');
   // Experimental toggle
   const [experimentalEnabled, setExperimentalEnabled] = useState(true);
 
@@ -154,8 +156,8 @@ export function SeasonalSettings() {
       setHasShownWarning(true);
       Swal.fire({
         icon: 'warning',
-        title: 'High Opacity Warning',
-        text: 'High opacity may cause readability issues. You have been warned!',
+        title: t('alerts.highOpacity.title'),
+        text: t('alerts.highOpacity.text'),
         background: 'var(--bg-card)',
         color: 'var(--text-primary)',
         timer: 3000,
@@ -226,9 +228,9 @@ export function SeasonalSettings() {
 
       Swal.fire({
         icon: 'success',
-        title: 'Background Set!',
-        text: 'Custom background has been applied!',
-        confirmButtonText: 'OK',
+        title: t('alerts.backgroundSet.title'),
+        text: t('alerts.backgroundSet.text'),
+        confirmButtonText: t('actions.ok'),
         background: 'var(--bg-card)',
         color: 'var(--text-primary)',
       });
@@ -236,11 +238,11 @@ export function SeasonalSettings() {
       console.error('[SeasonalSettings] Failed to upload background:', err);
       Swal.fire({
         icon: 'error',
-        title: 'Upload Failed',
-        text: err instanceof Error ? err.message : 'Could not process file',
+        title: t('alerts.uploadFailed.title'),
+        text: err instanceof Error ? err.message : t('alerts.uploadFailed.text'),
         background: 'var(--bg-card)',
         color: 'var(--text-primary)',
-        confirmButtonText: 'OK',
+        confirmButtonText: t('actions.ok'),
       });
     } finally {
       setIsUploading(false);
@@ -261,8 +263,8 @@ export function SeasonalSettings() {
         <div className="flex items-center gap-3">
           <Sparkles className={cn('w-5 h-5', experimentalEnabled ? 'text-[var(--accent-primary)]' : 'text-[var(--text-muted)]')} />
           <div>
-            <p className="text-sm font-medium text-[var(--text-primary)]">Enable Experimental Features</p>
-            <p className="text-xs text-[var(--text-muted)]">Access beta features and early previews</p>
+            <p className="text-sm font-medium text-[var(--text-primary)]">{t('toggleExperimental.title')}</p>
+            <p className="text-xs text-[var(--text-muted)]">{t('toggleExperimental.description')}</p>
           </div>
         </div>
         <button
@@ -292,9 +294,9 @@ export function SeasonalSettings() {
               <div className="flex gap-3">
                 <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-medium text-amber-500">Experimental Features Warning</p>
+                  <p className="text-sm font-medium text-amber-500">{t('warning.title')}</p>
                   <p className="text-xs text-[var(--text-muted)] mt-1">
-                    These features are in beta and may cause unexpected behavior. If you experience background flickering or blinking, try refreshing the page.
+                    {t('warning.description')}
                   </p>
                 </div>
               </div>
@@ -305,8 +307,8 @@ export function SeasonalSettings() {
               <div className="flex items-center gap-3 mb-3">
                 <Sparkles className="w-5 h-5 text-[var(--accent-primary)]" />
                 <div>
-                  <p className="text-sm font-medium text-[var(--text-primary)]">Seasonal Effects</p>
-                  <p className="text-xs text-[var(--text-muted)]">Particle animations (snow, cherry blossoms, leaves)</p>
+                  <p className="text-sm font-medium text-[var(--text-primary)]">{t('seasonalEffects.title')}</p>
+                  <p className="text-xs text-[var(--text-muted)]">{t('seasonalEffects.description')}</p>
                 </div>
               </div>
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
@@ -320,10 +322,10 @@ export function SeasonalSettings() {
                         ? 'bg-[var(--accent-primary)]/20 border-[var(--accent-primary)] text-[var(--accent-primary)]'
                         : 'border-[var(--border-color)] text-[var(--text-secondary)] hover:border-[var(--accent-primary)]/50'
                     )}
-                  >
-                    <span className="text-lg">{option.emoji}</span>
-                    <span className="text-[10px] font-medium">{option.label}</span>
-                  </button>
+                    >
+                      <span className="text-lg">{option.emoji}</span>
+                      <span className="text-[10px] font-medium">{t(option.labelKey)}</span>
+                    </button>
                 ))}
               </div>
 
@@ -331,7 +333,7 @@ export function SeasonalSettings() {
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <Leaf className="w-4 h-4 text-[var(--text-muted)]" />
-                    <span className="text-xs text-[var(--text-secondary)]">Particle Intensity</span>
+                    <span className="text-xs text-[var(--text-secondary)]">{t('seasonalEffects.particleIntensity')}</span>
                   </div>
                   <Slider
                     value={particleIntensity}
@@ -342,13 +344,13 @@ export function SeasonalSettings() {
                     valueFormat={(v) => `${v}%`}
                     color="blue"
                   />
-                  <p className="text-[10px] text-[var(--text-muted)]">Increase or decrease total floating items (up to 200%)</p>
+                  <p className="text-[10px] text-[var(--text-muted)]">{t('seasonalEffects.particleIntensityHint')}</p>
                 </div>
 
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <ArrowUpDown className="w-4 h-4 text-[var(--text-muted)]" />
-                    <span className="text-xs text-[var(--text-secondary)]">Fall Speed</span>
+                    <span className="text-xs text-[var(--text-secondary)]">{t('seasonalEffects.fallSpeed')}</span>
                   </div>
                   <Slider
                     value={particleSpeed}
@@ -359,13 +361,13 @@ export function SeasonalSettings() {
                     valueFormat={(v) => `${v}%`}
                     color="blue"
                   />
-                  <p className="text-[10px] text-[var(--text-muted)]">Lower = slower floating, higher = faster falling</p>
+                  <p className="text-[10px] text-[var(--text-muted)]">{t('seasonalEffects.fallSpeedHint')}</p>
                 </div>
 
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <Eye className="w-4 h-4 text-[var(--text-muted)]" />
-                    <span className="text-xs text-[var(--text-secondary)]">Particle Opacity</span>
+                    <span className="text-xs text-[var(--text-secondary)]">{t('seasonalEffects.particleOpacity')}</span>
                   </div>
                   <Slider
                     value={particleOpacity}
@@ -376,7 +378,7 @@ export function SeasonalSettings() {
                     valueFormat={(v) => `${v}%`}
                     color="blue"
                   />
-                  <p className="text-[10px] text-[var(--text-muted)]">Make particles more subtle or more visible</p>
+                  <p className="text-[10px] text-[var(--text-muted)]">{t('seasonalEffects.particleOpacityHint')}</p>
                 </div>
               </div>
             </div>
@@ -395,11 +397,11 @@ export function SeasonalSettings() {
                     <Image className="w-5 h-5 text-[var(--text-muted)]" />
                   )}
                   <div>
-                    <p className="text-sm font-medium text-[var(--text-primary)]">Custom Background</p>
+                    <p className="text-sm font-medium text-[var(--text-primary)]">{t('customBackground.title')}</p>
                     <p className="text-xs text-[var(--text-muted)]">
                       {hasBackground && backgroundInfo
-                        ? `${backgroundInfo.type === 'video' ? 'Video' : 'Image'} • ${formatFileSize(backgroundInfo.size)}`
-                        : 'Image/Video/GIF (max 800MB)'}
+                        ? `${backgroundInfo.type === 'video' ? t('customBackground.video') : t('customBackground.image')} - ${formatFileSize(backgroundInfo.size)}`
+                        : t('customBackground.emptyState')}
                     </p>
                   </div>
                 </div>
@@ -418,7 +420,7 @@ export function SeasonalSettings() {
                       onClick={() => fileInputRef.current?.click()}
                       disabled={isUploading}
                     >
-                      {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Change'}
+                      {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('actions.change')}
                     </Button>
                     <Button
                       variant="danger"
@@ -436,7 +438,7 @@ export function SeasonalSettings() {
                     disabled={isUploading}
                   >
                     {isUploading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                    Upload
+                    {t('actions.upload')}
                   </Button>
                 )}
               </div>
@@ -448,7 +450,7 @@ export function SeasonalSettings() {
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <Eye className="w-4 h-4 text-[var(--text-muted)]" />
-                      <span className="text-xs text-[var(--text-secondary)]">Visibility</span>
+                      <span className="text-xs text-[var(--text-secondary)]">{t('backgroundControls.visibility')}</span>
                     </div>
                     <Slider
                       value={backgroundOpacity}
@@ -459,14 +461,14 @@ export function SeasonalSettings() {
                       valueFormat={(v) => `${v}%`}
                       color="blue"
                     />
-                    <p className="text-[10px] text-[var(--text-muted)]">Best on dark theme and 8% transparency</p>
+                    <p className="text-[10px] text-[var(--text-muted)]">{t('backgroundControls.visibilityHint')}</p>
                   </div>
 
                   {/* Blur Slider */}
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <Droplets className="w-4 h-4 text-[var(--text-muted)]" />
-                      <span className="text-xs text-[var(--text-secondary)]">Background Blur</span>
+                      <span className="text-xs text-[var(--text-secondary)]">{t('backgroundControls.blur')}</span>
                     </div>
                     <Slider
                       value={backgroundBlur}
@@ -483,7 +485,7 @@ export function SeasonalSettings() {
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <ZoomIn className="w-4 h-4 text-[var(--text-muted)]" />
-                      <span className="text-xs text-[var(--text-secondary)]">Background Zoom</span>
+                      <span className="text-xs text-[var(--text-secondary)]">{t('backgroundControls.zoom')}</span>
                     </div>
                     <Slider
                       value={backgroundZoom}
@@ -494,14 +496,14 @@ export function SeasonalSettings() {
                       valueFormat={(v) => `${v}%`}
                       color="blue"
                     />
-                    <p className="text-[10px] text-[var(--text-muted)]">65% - 150%</p>
+                    <p className="text-[10px] text-[var(--text-muted)]">{t('backgroundControls.zoomHint')}</p>
                   </div>
 
                   {/* Move Background (Vertical) */}
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <ArrowUpDown className="w-4 h-4 text-[var(--text-muted)]" />
-                      <span className="text-xs text-[var(--text-secondary)]">Move Background (Up/Down) NEW!</span>
+                      <span className="text-xs text-[var(--text-secondary)]">{t('backgroundControls.moveVertical')}</span>
                     </div>
                     <Slider
                       value={backgroundPositionY}
@@ -512,7 +514,7 @@ export function SeasonalSettings() {
                       valueFormat={(v) => `${v}%`}
                       color="blue"
                     />
-                    <p className="text-[10px] text-[var(--text-muted)]">0% = Up, 100% = Down</p>
+                    <p className="text-[10px] text-[var(--text-muted)]">{t('backgroundControls.moveVerticalHint')}</p>
                   </div>
 
                   {/* Sound Toggle - only for video */}
@@ -525,7 +527,7 @@ export function SeasonalSettings() {
                           ) : (
                             <VolumeX className="w-4 h-4 text-[var(--text-muted)]" />
                           )}
-                          <span className="text-xs text-[var(--text-secondary)]">Background Sound</span>
+                          <span className="text-xs text-[var(--text-secondary)]">{t('backgroundControls.sound')}</span>
                         </div>
                         <button
                           onClick={handleSoundToggle}
@@ -544,7 +546,7 @@ export function SeasonalSettings() {
                       {backgroundSoundEnabled && (
                         <div className="space-y-2 pl-6">
                           <div className="flex items-center gap-2">
-                            <span className="text-xs text-[var(--text-muted)]">Volume</span>
+                            <span className="text-xs text-[var(--text-muted)]">{t('backgroundControls.volume')}</span>
                           </div>
                           <Slider
                             value={backgroundVolumeState}
@@ -570,8 +572,8 @@ export function SeasonalSettings() {
                         <EyeOff className="w-4 h-4 text-[var(--text-muted)]" />
                       )}
                       <div>
-                        <span className="text-xs text-[var(--text-secondary)]">Background Enabled</span>
-                        <p className="text-[10px] text-[var(--text-muted)]">Disable without deleting</p>
+                        <span className="text-xs text-[var(--text-secondary)]">{t('backgroundControls.enabled')}</span>
+                        <p className="text-[10px] text-[var(--text-muted)]">{t('backgroundControls.enabledHint')}</p>
                       </div>
                     </div>
                     <button

@@ -56,6 +56,7 @@ export async function GET(request: Request) {
   const query = inputUrl.searchParams.toString();
   const upstreamUrl = `${backendBase}${path}${query ? `?${query}` : ''}`;
   const signatureHeaders = buildWebSignatureHeaders(sharedSecret, 'GET', path, '');
+  const rangeHeader = request.headers.get('range');
 
   try {
     const upstream = await fetch(upstreamUrl, {
@@ -65,6 +66,7 @@ export async function GET(request: Request) {
         'Sec-Fetch-Dest': 'empty',
         'Sec-Fetch-Mode': 'cors',
         Origin: origin,
+        ...(rangeHeader ? { Range: rangeHeader } : {}),
         ...signatureHeaders,
       },
       signal: request.signal,
@@ -80,6 +82,8 @@ export async function GET(request: Request) {
       'etag',
       'last-modified',
       'accept-ranges',
+      'content-range',
+      'x-file-size',
     ];
 
     for (const key of passHeaders) {

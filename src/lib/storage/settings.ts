@@ -31,7 +31,7 @@ export const STORAGE_KEYS = {
 export type ThemeType = 'auto' | 'light' | 'solarized' | 'dark';
 export type ResolvedTheme = 'light' | 'solarized' | 'dark';
 export type LanguagePreference = 'auto' | Locale;
-export type CookiePlatform = 'facebook' | 'instagram' | 'twitter' | 'weibo';
+export type CookiePlatform = 'facebook' | 'instagram' | 'twitter' | 'youtube' | 'weibo';
 export type AccentColorType = 'coral' | 'blue' | 'emerald' | 'amber';
 
 export interface DiscordSettings {
@@ -447,6 +447,7 @@ export function getAllCookieStatus(): Record<CookiePlatform, boolean> {
     facebook: hasPlatformCookie('facebook'),
     instagram: hasPlatformCookie('instagram'),
     twitter: hasPlatformCookie('twitter'),
+    youtube: hasPlatformCookie('youtube'),
     weibo: hasPlatformCookie('weibo'),
   };
 }

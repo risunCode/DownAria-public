@@ -93,13 +93,13 @@ export default function RootLayout({
       <body
         className={`${jetbrainsMono.variable} font-mono antialiased bg-[var(--bg-primary)] text-[var(--text-primary)]`}
       >
-        <SkipToContent />
-        <ThemeColorMeta />
-        <SeasonalEffects />
-        <ScreenSizeGuard />
-        <AdaptText />
-        <CacheInitializer />
         <IntlProvider>
+          <SkipToContent />
+          <ThemeColorMeta />
+          <SeasonalEffects />
+          <ScreenSizeGuard />
+          <AdaptText />
+          <CacheInitializer />
           <PendingDownloadProvider>
             <ServiceWorkerRegister />
             {children}

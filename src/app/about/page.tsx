@@ -28,17 +28,19 @@ import {
 } from 'lucide-react';
 import { SidebarLayout } from '@/components/layout/Sidebar';
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 
 export default function AboutPage() {
   const t = useTranslations('about');
+  const tPage = useTranslations('aboutPage');
+  const locale = useLocale();
   const [feedbackName, setFeedbackName] = useState('');
   const [feedbackComment, setFeedbackComment] = useState('');
   const [feedbackStatus, setFeedbackStatus] = useState<{ type: 'idle' | 'success' | 'error'; message: string }>({ type: 'idle', message: '' });
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
 
   const feedbackDateTime = useMemo(() => {
-    return new Date().toLocaleString('en-US', {
+    return new Date().toLocaleString(locale, {
       weekday: 'short',
       year: 'numeric',
       month: 'short',
@@ -46,7 +48,7 @@ export default function AboutPage() {
       hour: '2-digit',
       minute: '2-digit',
     });
-  }, []);
+  }, [locale]);
 
   async function handleFeedbackSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -56,11 +58,11 @@ export default function AboutPage() {
     const comment = feedbackComment.trim();
 
     if (name.length < 2) {
-      setFeedbackStatus({ type: 'error', message: 'Name must be at least 2 characters.' });
+      setFeedbackStatus({ type: 'error', message: tPage('feedback.errors.nameTooShort') });
       return;
     }
     if (comment.length < 3) {
-      setFeedbackStatus({ type: 'error', message: 'Comment must be at least 3 characters.' });
+      setFeedbackStatus({ type: 'error', message: tPage('feedback.errors.commentTooShort') });
       return;
     }
 
@@ -81,33 +83,33 @@ export default function AboutPage() {
       const payload = (await response.json().catch(() => ({}))) as { error?: string };
 
       if (!response.ok) {
-        setFeedbackStatus({ type: 'error', message: payload.error || 'Failed to send feedback.' });
+        setFeedbackStatus({ type: 'error', message: payload.error || tPage('feedback.errors.sendFailed') });
         return;
       }
 
       setFeedbackComment('');
-      setFeedbackStatus({ type: 'success', message: 'Thanks! Your feedback has been sent.' });
+      setFeedbackStatus({ type: 'success', message: tPage('feedback.success') });
     } catch {
-      setFeedbackStatus({ type: 'error', message: 'Network error while sending feedback.' });
+      setFeedbackStatus({ type: 'error', message: tPage('feedback.errors.network') });
     } finally {
       setIsSubmittingFeedback(false);
     }
   }
 
   const features = [
-    { icon: Video, title: 'Video', desc: 'Up to 4K quality', color: 'text-purple-400' },
-    { icon: Music, title: 'Audio', desc: 'MP3, M4A, FLAC', color: 'text-pink-400' },
-    { icon: Smartphone, title: 'Stories & Reels', desc: 'All platforms', color: 'text-orange-400' },
-    { icon: Shield, title: 'No Watermark', desc: 'Clean downloads', color: 'text-green-400' },
-    { icon: Zap, title: 'Fast Servers', desc: 'Optimized CDN', color: 'text-yellow-400' },
-    { icon: Globe, title: 'REST API', desc: 'For developers', color: 'text-sky-400' },
+    { icon: Video, title: tPage('features.video.title'), desc: tPage('features.video.description'), color: 'text-purple-400' },
+    { icon: Music, title: tPage('features.audio.title'), desc: tPage('features.audio.description'), color: 'text-pink-400' },
+    { icon: Smartphone, title: tPage('features.stories.title'), desc: tPage('features.stories.description'), color: 'text-orange-400' },
+    { icon: Shield, title: tPage('features.noWatermark.title'), desc: tPage('features.noWatermark.description'), color: 'text-green-400' },
+    { icon: Zap, title: tPage('features.fastServers.title'), desc: tPage('features.fastServers.description'), color: 'text-yellow-400' },
+    { icon: Globe, title: tPage('features.api.title'), desc: tPage('features.api.description'), color: 'text-sky-400' },
   ];
 
   const quickLinks = [
-    { href: '/docs', icon: FileText, title: 'Documentation', description: 'Guides, API reference, and integration flow' },
-    { href: '/docs/changelog', icon: Clock, title: 'Changelog', description: 'Track updates and improvements' },
-    { href: '/privacy', icon: Lock, title: 'Privacy', description: 'Read data and security policy' },
-    { href: '/credits', icon: Handshake, title: 'Credits', description: 'Open-source acknowledgements and stack' },
+    { href: '/docs', icon: FileText, title: tPage('quickLinks.documentation.title'), description: tPage('quickLinks.documentation.description') },
+    { href: '/docs/changelog', icon: Clock, title: tPage('quickLinks.changelog.title'), description: tPage('quickLinks.changelog.description') },
+    { href: '/privacy', icon: Lock, title: tPage('quickLinks.privacy.title'), description: tPage('quickLinks.privacy.description') },
+    { href: '/credits', icon: Handshake, title: tPage('quickLinks.credits.title'), description: tPage('quickLinks.credits.description') },
   ];
 
   return (
@@ -152,7 +154,7 @@ export default function AboutPage() {
             >
               <h2 className="font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
                 <Zap className="w-4 h-4 text-[var(--accent-primary)]" />
-                Features
+                {tPage('sections.features')}
               </h2>
               <div className="grid grid-cols-2 gap-3">
                 {features.map((feature, i) => (
@@ -175,7 +177,7 @@ export default function AboutPage() {
             >
               <h2 className="font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
                 <Zap className="w-4 h-4 text-[var(--accent-primary)]" />
-                Quick Links
+                {tPage('sections.quickLinks')}
               </h2>
               <div className="grid grid-cols-2 gap-2">
                 {quickLinks.map((link, i) => (
@@ -202,7 +204,7 @@ export default function AboutPage() {
             >
               <h2 className="font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
                 <Github className="w-4 h-4 text-[var(--accent-primary)]" />
-                More Projects
+                {tPage('sections.moreProjects')}
               </h2>
               <div className="space-y-2">
                 <a
@@ -215,10 +217,9 @@ export default function AboutPage() {
                     <Bot className="w-4 h-4 text-[var(--accent-primary)]" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-[var(--text-primary)]">Downaria</p>
+                    <p className="text-sm font-medium text-[var(--text-primary)]">{tPage('projects.downaria.title')}</p>
                     <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                      Free, fast, and easy-to-use tool for downloading videos from social media. No registration, no
-                      limits, no BS.
+                      {tPage('projects.downaria.description')}
                     </p>
                   </div>
                   <ExternalLink className="w-4 h-4 text-[var(--text-muted)] opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
@@ -233,10 +234,9 @@ export default function AboutPage() {
                     <Globe className="w-4 h-4 text-[var(--accent-primary)]" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-[var(--text-primary)]">SurfManager</p>
+                    <p className="text-sm font-medium text-[var(--text-primary)]">{tPage('projects.surfManager.title')}</p>
                     <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                      Reset IDE data, create backup and restore, manage multi-account easily. Works for VS-Code/fork
-                      based app.
+                      {tPage('projects.surfManager.description')}
                     </p>
                   </div>
                   <ExternalLink className="w-4 h-4 text-[var(--text-muted)] opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
@@ -251,10 +251,9 @@ export default function AboutPage() {
                     <Lock className="w-4 h-4 text-[var(--accent-primary)]" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-[var(--text-primary)]">SesWi-Session-Manager</p>
+                    <p className="text-sm font-medium text-[var(--text-primary)]">{tPage('projects.seswi.title')}</p>
                     <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                      A Chrome Extension that manages cookie & session securely, supporting Netscape export, JSON
-                      raw, and encrypted save.
+                      {tPage('projects.seswi.description')}
                     </p>
                   </div>
                   <ExternalLink className="w-4 h-4 text-[var(--text-muted)] opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
@@ -271,25 +270,25 @@ export default function AboutPage() {
           >
             <h2 className="font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
               <MessageSquare className="w-4 h-4 text-[var(--accent-primary)]" />
-              Feedback
+              {tPage('feedback.title')}
             </h2>
 
             <form onSubmit={handleFeedbackSubmit} className="feedback-surface space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div className="feedback-panel settings-surface-card rounded-xl p-2.5 transition-colors focus-within:border-[var(--accent-primary)]/45 focus-within:bg-[var(--bg-card)]/90">
-                  <label htmlFor="feedback-name" className="block text-[11px] text-[var(--text-muted)] mb-1">Name</label>
+                  <label htmlFor="feedback-name" className="block text-[11px] text-[var(--text-muted)] mb-1">{tPage('feedback.fields.name')}</label>
                   <input
                     id="feedback-name"
                     type="text"
                     maxLength={40}
                     value={feedbackName}
                     onChange={(event) => setFeedbackName(event.target.value)}
-                    placeholder="Your name"
+                    placeholder={tPage('feedback.placeholders.name')}
                     className="feedback-input w-full rounded-md border border-transparent focus:border-[var(--accent-primary)]/35 px-2.5 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none transition-colors"
                   />
                 </div>
                 <div className="feedback-panel settings-surface-card rounded-xl p-2.5">
-                  <label htmlFor="feedback-datetime" className="block text-[11px] text-[var(--text-muted)] mb-1">Datetime</label>
+                  <label htmlFor="feedback-datetime" className="block text-[11px] text-[var(--text-muted)] mb-1">{tPage('feedback.fields.datetime')}</label>
                   <div
                     id="feedback-datetime"
                     className="feedback-input w-full rounded-md px-2.5 py-2 text-sm text-[var(--text-secondary)] border border-[var(--border-color)]/50"
@@ -300,14 +299,14 @@ export default function AboutPage() {
               </div>
 
               <div className="feedback-panel settings-surface-card rounded-xl p-2.5 transition-colors focus-within:border-[var(--accent-primary)]/45 focus-within:bg-[var(--bg-card)]/90">
-                <label htmlFor="feedback-comment" className="block text-[11px] text-[var(--text-muted)] mb-1">Comment</label>
+                <label htmlFor="feedback-comment" className="block text-[11px] text-[var(--text-muted)] mb-1">{tPage('feedback.fields.comment')}</label>
                 <textarea
                   id="feedback-comment"
                   value={feedbackComment}
                   onChange={(event) => setFeedbackComment(event.target.value)}
                   maxLength={500}
                   rows={5}
-                  placeholder="Text + emojis only"
+                  placeholder={tPage('feedback.placeholders.comment')}
                   className="feedback-input w-full resize-y min-h-[120px] rounded-md border border-transparent focus:border-[var(--accent-primary)]/35 px-2.5 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none transition-colors"
                 />
                 <p className={`text-[11px] mt-1 text-right ${feedbackComment.length > 450 ? 'text-amber-400' : 'text-[var(--text-muted)]'}`}>{feedbackComment.length}/500</p>
@@ -315,7 +314,7 @@ export default function AboutPage() {
 
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <p className={`text-xs leading-relaxed ${feedbackStatus.type === 'error' ? 'text-red-400' : feedbackStatus.type === 'success' ? 'text-emerald-400' : 'text-[var(--text-muted)]'}`}>
-                  {feedbackStatus.message || 'Drop your thoughts here. We read every note and emoji.'}
+                  {feedbackStatus.message || tPage('feedback.hint')}
                 </p>
                 <button
                   type="submit"
@@ -323,7 +322,7 @@ export default function AboutPage() {
                   className="inline-flex w-full sm:w-auto items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-[var(--accent-primary)] text-white text-xs font-semibold hover:opacity-90 transition-opacity disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <Send className="w-3.5 h-3.5" />
-                  {isSubmittingFeedback ? 'Sending...' : 'Send Feedback'}
+                  {isSubmittingFeedback ? tPage('feedback.sending') : tPage('feedback.submit')}
                 </button>
               </div>
             </form>
@@ -336,7 +335,7 @@ export default function AboutPage() {
             className="text-center mt-8 pt-6 border-t border-[var(--border-color)]"
           >
             <p className="text-xs text-[var(--text-muted)]">
-              DownAria by{' '}
+              {tPage('footer.prefix')}{' '}
               <a
                 href="https://github.com/risunCode"
                 target="_blank"
@@ -345,7 +344,7 @@ export default function AboutPage() {
               >
                 risunCode
               </a>
-              {' - Licensed under GPL-3 - © '}
+              {` ${tPage('footer.middle')} `}
               {new Date().getFullYear()}
             </p>
           </motion.div>

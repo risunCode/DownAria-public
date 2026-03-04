@@ -2,12 +2,11 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowRight, FileText, Handshake, HelpCircle, Info, Settings, Shield, Zap } from 'lucide-react';
+import { ArrowRight, FileText, Handshake, HelpCircle, Info, Settings, Shield } from 'lucide-react';
 import { SidebarLayout } from '@/components/layout/Sidebar';
 import { DocsNavbar } from '@/components/docs/DocsNavbar';
 
 const highlights = [
-    { icon: Zap, title: 'BFF runtime first', desc: 'Frontend runtime traffic uses signed `/api/web/*` routes.' },
     { icon: Shield, title: 'Clear response contract', desc: 'Each error includes category and metadata, so frontend handling is predictable and easier to debug.' },
     { icon: Shield, title: 'Safer cookie flow', desc: 'Use your private cookie only when needed for protected content.' },
     { icon: Settings, title: 'Easy setup', desc: 'Open Settings to manage cookies, language, theme, and cache behavior.' },

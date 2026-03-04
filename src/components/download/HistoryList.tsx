@@ -34,8 +34,9 @@ import { PlatformIcon, VideoIcon, ImageIcon, MusicIcon } from '@/components/ui/I
 import { getProxiedThumbnail } from '@/lib/api/proxy';
 import { PublicStats } from '@/components/download/PublicStats';
 import Swal from 'sweetalert2';
+import { useTranslations } from 'next-intl';
 
-function idbToHistoryItem(entry: HistoryEntry): HistoryItem {
+function idbToHistoryItem(entry: HistoryEntry, unknownQuality: string): HistoryItem {
   return {
     id: entry.id,
     platform: entry.platform,
@@ -43,7 +44,7 @@ function idbToHistoryItem(entry: HistoryEntry): HistoryItem {
     thumbnail: entry.thumbnail,
     url: entry.resolvedUrl,
     downloadedAt: new Date(entry.downloadedAt).toISOString(),
-    quality: entry.quality || 'Unknown',
+    quality: entry.quality || unknownQuality,
     type: entry.type || 'video',
   };
 }
@@ -60,9 +61,9 @@ function sanitizeExternalHttpUrl(value: string): string | null {
   }
 }
 
-function toDisplayPlatformLabel(platformId: string, platformName?: string): string {
+function toDisplayPlatformLabel(platformId: string, unknownLabel: string, platformName?: string): string {
   if (platformName) return platformName;
-  if (!platformId) return 'Unknown';
+  if (!platformId) return unknownLabel;
   return platformId.charAt(0).toUpperCase() + platformId.slice(1);
 }
 
@@ -78,6 +79,8 @@ type PageSize = 10 | 20 | 50;
 const PAGE_SIZE_OPTIONS: PageSize[] = [10, 20, 50];
 const DEFAULT_PAGE_SIZE: PageSize = 10;
 export function HistoryList({ refreshTrigger, compact = false, maxItems = 2 }: HistoryListProps) {
+  const t = useTranslations('historyList');
+  const tCommon = useTranslations('common');
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -130,7 +133,7 @@ export function HistoryList({ refreshTrigger, compact = false, maxItems = 2 }: H
           getHistoryCount(),
           getHistoryTypeCounts(),
         ]);
-        setHistory(entries.map(idbToHistoryItem));
+        setHistory(entries.map(entry => idbToHistoryItem(entry, t('unknownQuality'))));
         setTotalCount(total);
         setTypeCountsState(counts);
         return;
@@ -143,7 +146,7 @@ export function HistoryList({ refreshTrigger, compact = false, maxItems = 2 }: H
           getHistoryCount(),
           getHistoryTypeCounts(),
         ]);
-        setHistory(entries.map(idbToHistoryItem));
+        setHistory(entries.map(entry => idbToHistoryItem(entry, t('unknownQuality'))));
         setTotalCount(total);
         setTypeCountsState(counts);
         return;
@@ -153,7 +156,7 @@ export function HistoryList({ refreshTrigger, compact = false, maxItems = 2 }: H
         getHistory(1000, 0),
         getHistoryCount(),
       ]);
-      setHistory(entries.map(idbToHistoryItem));
+      setHistory(entries.map(entry => idbToHistoryItem(entry, t('unknownQuality'))));
       setTotalCount(total);
       setTypeCountsState({
         all: entries.length,
@@ -169,7 +172,7 @@ export function HistoryList({ refreshTrigger, compact = false, maxItems = 2 }: H
     } finally {
       setIsLoaded(true);
     }
-  }, [compact, maxItems, shouldUsePagedFetch, currentPage, currentLimit]);
+  }, [compact, maxItems, shouldUsePagedFetch, currentPage, currentLimit, t]);
 
   useEffect(() => {
     loadHistory();
@@ -216,12 +219,12 @@ export function HistoryList({ refreshTrigger, compact = false, maxItems = 2 }: H
 
   const handleDelete = async (id: string, title: string) => {
     const result = await Swal.fire({
-      title: 'Delete item?',
+      title: t('alerts.deleteItemTitle'),
       text: title.length > 50 ? `${title.substring(0, 50)}...` : title,
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonText: 'Delete',
-      cancelButtonText: 'Cancel',
+      confirmButtonText: tCommon('delete'),
+      cancelButtonText: tCommon('cancel'),
       background: 'var(--bg-card)',
       color: 'var(--text-primary)',
       confirmButtonColor: 'var(--error)',
@@ -236,12 +239,12 @@ export function HistoryList({ refreshTrigger, compact = false, maxItems = 2 }: H
 
   const handleClearAll = async () => {
     const result = await Swal.fire({
-      title: 'Clear all history?',
-      text: 'This action cannot be undone.',
+      title: t('alerts.clearAllTitle'),
+      text: t('alerts.clearAllText'),
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonText: 'Clear All',
-      cancelButtonText: 'Cancel',
+      confirmButtonText: tCommon('clearAll'),
+      cancelButtonText: tCommon('cancel'),
       background: 'var(--bg-card)',
       color: 'var(--text-primary)',
       confirmButtonColor: 'var(--error)',
@@ -295,8 +298,8 @@ export function HistoryList({ refreshTrigger, compact = false, maxItems = 2 }: H
     return (
       <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl p-8 text-center">
         <Clock className="w-12 h-12 mx-auto text-[var(--text-muted)] mb-4" />
-        <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">No history yet</h3>
-        <p className="text-[var(--text-secondary)]">Your extracted media history will appear here</p>
+        <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">{t('emptyTitle')}</h3>
+        <p className="text-[var(--text-secondary)]">{t('emptyDescription')}</p>
       </div>
     );
   }
@@ -312,7 +315,7 @@ export function HistoryList({ refreshTrigger, compact = false, maxItems = 2 }: H
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <h2 className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
           <Clock className="w-5 h-5 text-[var(--accent-primary)]" />
-          History
+          {t('title')}
           {!compact && <span className="text-sm font-normal text-[var(--text-muted)]">({totalFiltered})</span>}
         </h2>
 
@@ -322,7 +325,7 @@ export function HistoryList({ refreshTrigger, compact = false, maxItems = 2 }: H
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
               <input
                 type="text"
-                placeholder="Search..."
+                placeholder={t('searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
@@ -335,7 +338,7 @@ export function HistoryList({ refreshTrigger, compact = false, maxItems = 2 }: H
           {!compact && (
             <Button variant="danger" size="sm" onClick={handleClearAll}>
               <Trash2 className="w-4 h-4" />
-              Clear
+              {tCommon('clear')}
             </Button>
           )}
         </div>
@@ -353,7 +356,12 @@ export function HistoryList({ refreshTrigger, compact = false, maxItems = 2 }: H
               image: <ImageIcon className="w-3.5 h-3.5" />,
               audio: <MusicIcon className="w-3.5 h-3.5" />,
             };
-            const labels = { all: 'All', video: 'Video', image: 'Image', audio: 'Audio' };
+            const labels = {
+              all: t('filters.all'),
+              video: t('filters.video'),
+              image: t('filters.image'),
+              audio: t('filters.audio'),
+            };
 
             return (
               <button
@@ -383,14 +391,14 @@ export function HistoryList({ refreshTrigger, compact = false, maxItems = 2 }: H
         {displayedHistory.length === 0 ? (
           <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl p-8 text-center">
             <Clock className="w-12 h-12 mx-auto text-[var(--text-muted)] mb-4" />
-            <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">No history yet</h3>
-            <p className="text-[var(--text-secondary)]">Your extracted media history will appear here</p>
+            <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">{t('emptyTitle')}</h3>
+            <p className="text-[var(--text-secondary)]">{t('emptyDescription')}</p>
           </div>
         ) : (
           <AnimatePresence mode="popLayout">
             {displayedHistory.map((item, index) => {
               const platformConfig = PLATFORMS.find((p) => p.id === item.platform);
-              const platformLabel = toDisplayPlatformLabel(item.platform, platformConfig?.name);
+              const platformLabel = toDisplayPlatformLabel(item.platform, t('unknownPlatform'), platformConfig?.name);
               const safeExternalUrl = sanitizeExternalHttpUrl(item.url);
               return (
                 <motion.div
@@ -443,14 +451,14 @@ export function HistoryList({ refreshTrigger, compact = false, maxItems = 2 }: H
                       <button
                         onClick={() => handleRefetch(item.url, item.platform)}
                         className="p-1 rounded-lg bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/25 text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/20 transition-colors"
-                        title="Refetch"
+                        title={t('actions.refetch')}
                       >
                         <RotateCcw className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleCopyUrl(item.id, item.url)}
                         className="p-1 rounded-lg bg-[var(--accent-primary)]/8 border border-[var(--accent-primary)]/20 text-[var(--text-secondary)] hover:text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/15 transition-colors"
-                        title="Copy URL"
+                        title={t('actions.copyUrl')}
                       >
                         {copiedId === item.id ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
                       </button>
@@ -460,7 +468,7 @@ export function HistoryList({ refreshTrigger, compact = false, maxItems = 2 }: H
                           target="_blank"
                           rel="noopener noreferrer"
                           className="p-1 rounded-lg bg-[var(--accent-primary)]/8 border border-[var(--accent-primary)]/20 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--accent-primary)]/15 transition-colors"
-                          title="Open"
+                          title={t('actions.open')}
                         >
                           <ExternalLink className="w-4 h-4" />
                         </a>
@@ -470,7 +478,7 @@ export function HistoryList({ refreshTrigger, compact = false, maxItems = 2 }: H
                           disabled
                           aria-disabled="true"
                           className="p-1 rounded-lg bg-[var(--accent-primary)]/8 border border-[var(--accent-primary)]/20 text-[var(--text-muted)] opacity-50 cursor-not-allowed"
-                          title="Invalid URL"
+                          title={t('actions.invalidUrl')}
                         >
                           <ExternalLink className="w-4 h-4" />
                         </button>
@@ -478,7 +486,7 @@ export function HistoryList({ refreshTrigger, compact = false, maxItems = 2 }: H
                       <button
                         onClick={() => handleDelete(item.id, item.title)}
                         className="p-1 rounded-lg bg-red-500/8 border border-red-500/20 text-[var(--text-secondary)] hover:bg-red-500/15 hover:text-red-400 transition-colors"
-                        title="Delete"
+                        title={tCommon('delete')}
                       >
                         <XCircle className="w-4 h-4" />
                       </button>
@@ -494,7 +502,7 @@ export function HistoryList({ refreshTrigger, compact = false, maxItems = 2 }: H
       {!compact && (
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-1">
           <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-            <label htmlFor="history-page-size" className="text-[var(--text-muted)]">Per page</label>
+            <label htmlFor="history-page-size" className="text-[var(--text-muted)]">{t('perPage')}</label>
             <select
               id="history-page-size"
               value={currentLimit}
@@ -512,7 +520,7 @@ export function HistoryList({ refreshTrigger, compact = false, maxItems = 2 }: H
           </div>
 
           <div className="flex items-center justify-between sm:justify-end gap-2 flex-wrap">
-            <span className="text-xs sm:text-sm text-[var(--text-secondary)]">Page {normalizedCurrentPage} of {totalPages}</span>
+            <span className="text-xs sm:text-sm text-[var(--text-secondary)]">{t('pageOf', { page: normalizedCurrentPage, total: totalPages })}</span>
             <div className="flex items-center gap-1">
               <Button
                 variant="secondary"
@@ -521,7 +529,7 @@ export function HistoryList({ refreshTrigger, compact = false, maxItems = 2 }: H
                 disabled={currentPage <= 1}
               >
                 <ChevronLeft className="w-4 h-4" />
-                Prev
+                {t('prev')}
               </Button>
               <Button
                 variant="secondary"
@@ -529,7 +537,7 @@ export function HistoryList({ refreshTrigger, compact = false, maxItems = 2 }: H
                 onClick={() => updatePaginationParams(currentPage + 1, currentLimit)}
                 disabled={currentPage >= totalPages}
               >
-                Next
+                {t('next')}
                 <ChevronRight className="w-4 h-4" />
               </Button>
             </div>
@@ -543,7 +551,7 @@ export function HistoryList({ refreshTrigger, compact = false, maxItems = 2 }: H
             onClick={() => router.push('/history')}
             className="w-full text-center text-sm text-[var(--text-muted)] hover:text-[var(--accent-primary)] transition-colors py-2"
           >
-            View all ({totalCount}) history
+            {t('viewAllHistory', { count: totalCount })}
           </button>
           <PublicStats />
         </>

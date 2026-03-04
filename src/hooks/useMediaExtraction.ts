@@ -131,13 +131,16 @@ export async function retryLastExtraction(
   await extract(lastRequest.url, lastRequest.skipCache);
 }
 
-function defaultCookieResolver(platform: PlatformId): string | undefined {
+export function defaultCookieResolver(
+  platform: PlatformId,
+  resolver: (platform: 'facebook' | 'instagram' | 'twitter' | 'youtube' | 'weibo') => string | null = getPlatformCookie,
+): string | undefined {
   if (platform === 'weibo') {
-    return getPlatformCookie('weibo') || undefined;
+    return resolver('weibo') || undefined;
   }
 
-  if (platform === 'facebook' || platform === 'instagram') {
-    return getPlatformCookie(platform) || undefined;
+  if (platform === 'facebook' || platform === 'instagram' || platform === 'twitter' || platform === 'youtube') {
+    return resolver(platform) || undefined;
   }
 
   return undefined;

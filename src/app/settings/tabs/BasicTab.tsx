@@ -1,23 +1,24 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Beaker, Clock, Globe, MessageSquare, Moon, Palette, RotateCcw, Smartphone, Sparkles, Sun } from 'lucide-react';
+import { Beaker, Clock, Globe, Moon, Palette, RotateCcw, Sparkles, Sun } from 'lucide-react';
 import { locales, localeFlags, localeNames } from '@/i18n/config';
 import { ACCENT_COLOR_PRESETS, type AccentColorType, type LanguagePreference, type ThemeType } from '@/lib/storage';
 import { Button } from '@/components/ui/Button';
+import { useTranslations } from 'next-intl';
 
-const THEMES: { id: ThemeType; label: string; icon: typeof Sun; tip: string }[] = [
-  { id: 'auto', label: 'Auto', icon: Clock, tip: 'Time-based switching' },
-  { id: 'dark', label: 'Dark', icon: Moon, tip: 'Easy on the eyes' },
-  { id: 'light', label: 'Light', icon: Sun, tip: 'Classic bright' },
-  { id: 'solarized', label: 'Solarized', icon: Sparkles, tip: 'Warm tones' },
+const THEMES: { id: ThemeType; icon: typeof Sun; labelKey: string; tipKey: string }[] = [
+  { id: 'auto', icon: Clock, labelKey: 'theme.auto', tipKey: 'theme.autoTip' },
+  { id: 'dark', icon: Moon, labelKey: 'theme.dark', tipKey: 'theme.darkTip' },
+  { id: 'light', icon: Sun, labelKey: 'theme.light', tipKey: 'theme.lightTip' },
+  { id: 'solarized', icon: Sparkles, labelKey: 'theme.solarized', tipKey: 'theme.solarizedTip' },
 ];
 
-const ACCENT_COLORS: { id: AccentColorType; label: string }[] = [
-  { id: 'coral', label: 'New Color (Coral)' },
-  { id: 'blue', label: 'Old DownAria' },
-  { id: 'emerald', label: 'Emerald' },
-  { id: 'amber', label: 'Amber' },
+const ACCENT_COLORS: { id: AccentColorType; labelKey: string }[] = [
+  { id: 'coral', labelKey: 'accentColors.coral' },
+  { id: 'blue', labelKey: 'accentColors.blue' },
+  { id: 'emerald', labelKey: 'accentColors.emerald' },
+  { id: 'amber', labelKey: 'accentColors.amber' },
 ];
 
 interface BasicTabProps {
@@ -53,12 +54,14 @@ export function BasicTab({
   onResetExperimentalValues,
   children,
 }: BasicTabProps) {
+  const t = useTranslations('settingsTabs.basic');
+
   return (
     <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-6">
       <div className="glass-card p-6 rounded-2xl border border-[var(--border-color)]">
         <div className="flex items-center gap-3 mb-4">
           <Globe className="w-5 h-5 text-[var(--accent-primary)]" />
-          <h2 className="text-lg font-semibold text-[var(--text-primary)]">Language</h2>
+          <h2 className="text-lg font-semibold text-[var(--text-primary)]">{t('language.title')}</h2>
         </div>
         <div className="flex flex-wrap gap-2">
           <button
@@ -70,7 +73,7 @@ export function BasicTab({
             }`}
           >
             <Globe className="w-4 h-4" />
-            <span className="font-medium">Auto</span>
+            <span className="font-medium">{t('language.auto')}</span>
           </button>
           {locales.map(locale => (
             <button
@@ -92,7 +95,7 @@ export function BasicTab({
       <div className="glass-card p-6 rounded-2xl border border-[var(--border-color)]">
         <div className="flex items-center gap-3 mb-4">
           <Sun className="w-5 h-5 text-[var(--accent-primary)]" />
-          <h2 className="text-lg font-semibold text-[var(--text-primary)]">Theme</h2>
+          <h2 className="text-lg font-semibold text-[var(--text-primary)]">{t('theme.title')}</h2>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {THEMES.map(theme => (
@@ -109,26 +112,26 @@ export function BasicTab({
                 <div className="flex items-center gap-2">
                   <theme.icon className={`w-4 h-4 ${currentTheme === theme.id ? 'text-[var(--accent-primary)]' : 'text-[var(--text-secondary)]'}`} />
                   <span className={`text-sm font-medium ${currentTheme === theme.id ? 'text-[var(--accent-primary)]' : 'text-[var(--text-primary)]'}`}>
-                    {theme.label}
+                    {t(theme.labelKey)}
                     {theme.id === 'auto' && currentTheme === 'auto' && resolvedAutoTheme ? ` (${resolvedAutoTheme})` : ''}
                   </span>
                 </div>
                 {currentTheme === theme.id && (
                   <span className="px-1.5 py-0.5 rounded bg-[var(--accent-primary)] text-white text-[9px] font-medium">
-                    Active
+                    {t('active')}
                   </span>
                 )}
               </div>
-              <span className="text-[10px] text-[var(--text-muted)] pl-6">{theme.tip}</span>
+              <span className="text-[10px] text-[var(--text-muted)] pl-6">{t(theme.tipKey)}</span>
             </button>
           ))}
         </div>
         <div className="mt-5 pt-4 border-t border-[var(--border-color)]">
           <div className="flex items-center gap-2 mb-2">
             <Palette className="w-4 h-4 text-[var(--accent-primary)]" />
-            <h3 className="text-sm font-semibold text-[var(--text-primary)]">Accent Color</h3>
+            <h3 className="text-sm font-semibold text-[var(--text-primary)]">{t('accentColor.title')}</h3>
           </div>
-          <p className="text-xs text-[var(--text-muted)] mb-4">Choose your preferred accent color for buttons and highlights</p>
+          <p className="text-xs text-[var(--text-muted)] mb-4">{t('accentColor.description')}</p>
           <div className="flex flex-wrap gap-3">
             {ACCENT_COLORS.map(color => (
               <button
@@ -146,10 +149,10 @@ export function BasicTab({
                     background: `linear-gradient(135deg, ${ACCENT_COLOR_PRESETS[color.id].default.primary} 0%, ${ACCENT_COLOR_PRESETS[color.id].default.secondary} 100%)`,
                   }}
                 />
-                <span className="font-medium text-sm">{color.label}</span>
+                <span className="font-medium text-sm">{t(color.labelKey)}</span>
                 {currentAccentColor === color.id && (
                   <span className="ml-1 text-[10px] bg-[var(--accent-primary)] text-white px-1.5 py-0.5 rounded">
-                    Active
+                    {t('active')}
                   </span>
                 )}
               </button>
@@ -163,8 +166,8 @@ export function BasicTab({
           <div className="flex items-center gap-3">
             <Beaker className="w-5 h-5 text-[var(--accent-primary)]" />
             <div>
-              <h2 className="text-lg font-semibold text-[var(--text-primary)]">Experimental</h2>
-              <p className="text-xs text-[var(--text-muted)]">Beta features - may change or be removed</p>
+              <h2 className="text-lg font-semibold text-[var(--text-primary)]">{t('experimental.title')}</h2>
+              <p className="text-xs text-[var(--text-muted)]">{t('experimental.description')}</p>
             </div>
           </div>
 
@@ -175,7 +178,7 @@ export function BasicTab({
             className="shrink-0"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            <span className="ml-1.5">Reset All Values</span>
+            <span className="ml-1.5">{t('experimental.resetAllValues')}</span>
           </Button>
         </div>
 

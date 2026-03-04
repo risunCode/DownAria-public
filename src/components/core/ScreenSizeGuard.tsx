@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import Swal from 'sweetalert2';
+import { useTranslations } from 'next-intl';
 
 const WIDTH_SHRINK_DELTA_PX = 24;
 const OVERFLOW_TOLERANCE_PX = 6;
@@ -21,6 +22,7 @@ function getViewportSize(): { width: number; height: number } {
 }
 
 export function ScreenSizeGuard() {
+  const t = useTranslations('screenSizeGuard');
   const isShowingRef = useRef(false);
   const prevSizeRef = useRef<{ width: number; height: number } | null>(null);
   const lastWarningAtRef = useRef(0);
@@ -52,9 +54,9 @@ export function ScreenSizeGuard() {
 
       void Swal.fire({
         icon: 'warning',
-        title: 'Screen size change detected',
-        html: 'Viewport kamu menyempit. Beberapa elemen bisa kurang nyaman dilihat. Coba putar device atau lebarkan jendela.',
-        confirmButtonText: 'OK',
+        title: t('title'),
+        html: t('message'),
+        confirmButtonText: t('confirm'),
         allowOutsideClick: true,
         allowEscapeKey: true,
         showCloseButton: true,

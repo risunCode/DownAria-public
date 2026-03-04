@@ -21,6 +21,7 @@ export interface CookieStorage {
   facebook?: string;
   instagram?: string;
   twitter?: string;
+  youtube?: string;
   weibo?: string;
 }
 
@@ -70,7 +71,7 @@ function computeHMAC(data: string, key: string): string {
 const ENCRYPTED_PREFIX = 'enc:';
 const COOKIE_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
-const COOKIE_KEYS: Array<keyof CookieStorage> = ['facebook', 'instagram', 'twitter', 'weibo'];
+const COOKIE_KEYS: Array<keyof CookieStorage> = ['facebook', 'instagram', 'twitter', 'youtube', 'weibo'];
 
 function normalizeCookies(input: unknown): CookieStorage {
   const normalized: CookieStorage = {};

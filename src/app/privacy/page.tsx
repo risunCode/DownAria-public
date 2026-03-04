@@ -4,12 +4,16 @@ import { motion } from 'framer-motion';
 import { SidebarLayout } from '@/components/layout/Sidebar';
 import { Shield, Lock, Database, Cookie, Server, FileText, Github, Trash2, BadgeCheck, HelpCircle } from 'lucide-react';
 import Link from 'next/link';
+import { useLocale, useTranslations } from 'next-intl';
 
 export default function PrivacyPage() {
+    const t = useTranslations('privacyPage');
+    const locale = useLocale();
+
     const quickLinks = [
-        { href: '/docs', title: 'Documentation', description: 'How extraction and downloads work' },
-        { href: '/docs/changelog', title: 'Changelog', description: 'Product and policy updates' },
-        { href: '/about', title: 'About DownAria', description: 'Project overview and ecosystem' },
+        { href: '/docs', title: t('quickLinks.documentation.title'), description: t('quickLinks.documentation.description') },
+        { href: '/docs/changelog', title: t('quickLinks.changelog.title'), description: t('quickLinks.changelog.description') },
+        { href: '/about', title: t('quickLinks.about.title'), description: t('quickLinks.about.description') },
     ];
 
     return (
@@ -18,13 +22,13 @@ export default function PrivacyPage() {
                 <div className="max-w-4xl mx-auto">
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
                         <h1 className="text-3xl sm:text-4xl font-bold mb-3">
-                            Privacy <span className="gradient-text">Policy</span>
+                            {t('titlePrefix')} <span className="gradient-text">{t('titleHighlight')}</span>
                         </h1>
                         <p className="text-[var(--text-secondary)] text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
-                            We keep DownAria simple: no account required, minimal stored data, and transparent handling for extraction requests.
+                            {t('subtitle')}
                         </p>
                         <p className="text-xs text-[var(--text-muted)] mt-2">
-                            Last updated: {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                            {t('lastUpdated')}: {new Date().toLocaleDateString(locale, { month: 'long', year: 'numeric' })}
                         </p>
                     </motion.div>
 
@@ -36,12 +40,12 @@ export default function PrivacyPage() {
                     >
                         <div className="flex items-center gap-2 mb-3">
                             <Shield className="w-4 h-4 text-[var(--accent-primary)]" />
-                            <h2 className="font-semibold text-[var(--text-primary)]">Privacy at a Glance</h2>
+                            <h2 className="font-semibold text-[var(--text-primary)]">{t('atAGlance.title')}</h2>
                         </div>
                         <div className="space-y-2 text-sm text-[var(--text-secondary)] leading-relaxed">
-                            <p>No registration is required to use DownAria.</p>
-                            <p>We do not permanently host downloaded media files.</p>
-                            <p>You control optional cookie usage in Settings for platforms that need authentication.</p>
+                            <p>{t('atAGlance.point1')}</p>
+                            <p>{t('atAGlance.point2')}</p>
+                            <p>{t('atAGlance.point3')}</p>
                         </div>
                     </motion.div>
 
@@ -54,22 +58,22 @@ export default function PrivacyPage() {
                         >
                             <h2 className="font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
                                 <Database className="w-4 h-4 text-[var(--accent-primary)]" />
-                                Data We Process
+                                {t('dataWeProcess.title')}
                             </h2>
                             <div className="space-y-3 text-sm text-[var(--text-secondary)]">
                                 <div className="settings-surface-card flex items-start gap-2.5 p-2.5 rounded-xl">
                                     <FileText className="w-4 h-4 text-sky-400 mt-0.5 flex-shrink-0" />
-                                    <p>Submitted URLs and extraction metadata needed to return media formats and preview info.</p>
+                                    <p>{t('dataWeProcess.urls')}</p>
                                 </div>
                                 <div className="settings-surface-card flex items-start gap-2.5 p-2.5 rounded-xl">
                                     <Cookie className="w-4 h-4 text-orange-400 mt-0.5 flex-shrink-0" />
                                     <p>
-                                        Optional cookies that you set in Settings for private/auth-required content, handled with separate server-side rules.
+                                        {t('dataWeProcess.cookies')}
                                     </p>
                                 </div>
                                 <div className="settings-surface-card flex items-start gap-2.5 p-2.5 rounded-xl">
                                     <Server className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
-                                    <p>Operational stats for reliability and abuse protection (rate limiting, retry, and service health).</p>
+                                    <p>{t('dataWeProcess.operational')}</p>
                                 </div>
                             </div>
                         </motion.div>
@@ -82,20 +86,20 @@ export default function PrivacyPage() {
                         >
                             <h2 className="font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
                                 <Lock className="w-4 h-4 text-[var(--accent-primary)]" />
-                                How We Handle Data
+                                {t('handlingData.title')}
                             </h2>
                             <div className="space-y-3 text-sm text-[var(--text-secondary)] leading-relaxed">
                                 <p className="settings-surface-card p-2.5 rounded-xl">
-                                    Theme, preferences, and local history are stored on your device using browser storage.
+                                    {t('handlingData.point1')}
                                 </p>
                                 <p className="settings-surface-card p-2.5 rounded-xl">
-                                    Downloads are fetched from provider/CDN sources and proxied only for delivery compatibility.
+                                    {t('handlingData.point2')}
                                 </p>
                                 <p className="settings-surface-card p-2.5 rounded-xl">
-                                    Authentication lanes are applied in order: Guest → Server → UserProvided. Cookies from Settings are private per user, never shared with other users, and processed through a separate private path in temporary server pooling.
+                                    {t('handlingData.point3')}
                                 </p>
                                 <p className="settings-surface-card p-2.5 rounded-xl">
-                                    We do not sell personal data. Use this tool only for content you are authorized to access.
+                                    {t('handlingData.point4')}
                                 </p>
                             </div>
                         </motion.div>
@@ -108,17 +112,17 @@ export default function PrivacyPage() {
                         >
                             <h2 className="font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
                                 <Trash2 className="w-4 h-4 text-[var(--accent-primary)]" />
-                                Retention & Deletion
+                                {t('retention.title')}
                             </h2>
                             <div className="space-y-3 text-sm text-[var(--text-secondary)] leading-relaxed">
                                 <p className="settings-surface-card p-2.5 rounded-xl">
-                                    Local history and preferences stay in your browser until you clear them from Settings or browser storage.
+                                    {t('retention.point1')}
                                 </p>
                                 <p className="settings-surface-card p-2.5 rounded-xl">
-                                    Temporary extraction and operational logs are rotated and retained only for reliability and abuse prevention.
+                                    {t('retention.point2')}
                                 </p>
                                 <p className="settings-surface-card p-2.5 rounded-xl">
-                                    If you provide authentication cookies, you can remove them anytime in Settings; they are not required for public content.
+                                    {t('retention.point3')}
                                 </p>
                             </div>
                         </motion.div>
@@ -131,17 +135,17 @@ export default function PrivacyPage() {
                         >
                             <h2 className="font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
                                 <BadgeCheck className="w-4 h-4 text-[var(--accent-primary)]" />
-                                Security & Responsibility
+                                {t('security.title')}
                             </h2>
                             <div className="space-y-3 text-sm text-[var(--text-secondary)] leading-relaxed">
                                 <p className="settings-surface-card p-2.5 rounded-xl">
-                                    We use request validation, rate limiting, and retry controls to keep the service stable and safe.
+                                    {t('security.point1')}
                                 </p>
                                 <p className="settings-surface-card p-2.5 rounded-xl">
-                                    DownAria is intended for personal and authorized use only. You are responsible for respecting platform terms and copyright laws.
+                                    {t('security.point2')}
                                 </p>
                                 <p className="settings-surface-card p-2.5 rounded-xl">
-                                    For security reports, open a private disclosure through the project repository maintainer.
+                                    {t('security.point3')}
                                 </p>
                             </div>
                         </motion.div>
@@ -154,26 +158,26 @@ export default function PrivacyPage() {
                         >
                             <h2 className="font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
                                 <HelpCircle className="w-4 h-4 text-[var(--accent-primary)]" />
-                                Privacy FAQ
+                                {t('faq.title')}
                             </h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-[var(--text-secondary)]">
                                 <div className="settings-surface-card p-2.5 rounded-xl">
-                                    <p className="font-medium text-[var(--text-primary)]">Do I need an account?</p>
-                                    <p className="mt-1">No. Core download and extraction flow works without registration.</p>
+                                    <p className="font-medium text-[var(--text-primary)]">{t('faq.q1')}</p>
+                                    <p className="mt-1">{t('faq.a1')}</p>
                                 </div>
                                 <div className="settings-surface-card p-2.5 rounded-xl">
-                                    <p className="font-medium text-[var(--text-primary)]">Do you store downloaded files?</p>
-                                    <p className="mt-1">No permanent hosting. Media is fetched from source/CDN and delivered for your request.</p>
+                                    <p className="font-medium text-[var(--text-primary)]">{t('faq.q2')}</p>
+                                    <p className="mt-1">{t('faq.a2')}</p>
                                 </div>
                                 <div className="settings-surface-card p-2.5 rounded-xl">
-                                    <p className="font-medium text-[var(--text-primary)]">What about cookies?</p>
+                                    <p className="font-medium text-[var(--text-primary)]">{t('faq.q3')}</p>
                                     <p className="mt-1">
-                                        Cookies are optional and scoped to your own requests only. They are not shared with other users and are only kept temporarily via a private processing lane.
+                                        {t('faq.a3')}
                                     </p>
                                 </div>
                                 <div className="settings-surface-card p-2.5 rounded-xl">
-                                    <p className="font-medium text-[var(--text-primary)]">How can I request changes?</p>
-                                    <p className="mt-1">Open an issue in the repository and include the page + policy section you want updated.</p>
+                                    <p className="font-medium text-[var(--text-primary)]">{t('faq.q4')}</p>
+                                    <p className="mt-1">{t('faq.a4')}</p>
                                 </div>
                             </div>
                         </motion.div>
@@ -186,7 +190,7 @@ export default function PrivacyPage() {
                         >
                             <h2 className="font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
                                 <FileText className="w-4 h-4 text-[var(--accent-primary)]" />
-                                Quick Links
+                                {t('quickLinks.title')}
                             </h2>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                 {quickLinks.map((link) => (
@@ -212,7 +216,7 @@ export default function PrivacyPage() {
                         className="text-center mt-8 pt-6 border-t border-[var(--border-color)]"
                     >
                         <p className="text-xs text-[var(--text-muted)]">
-                            Questions or privacy concerns? Open an issue at{' '}
+                            {t('footer.prefix')}{' '}
                             <a
                                 href="https://github.com/risunCode/DownAria"
                                 target="_blank"

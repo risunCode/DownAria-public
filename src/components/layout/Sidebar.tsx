@@ -16,21 +16,21 @@ import {
 import { ThemeType, saveTheme, initTheme, getTheme, initAccentColor, getSeasonalSettings, setBackgroundEnabled, setBackgroundSound, setSeasonalMode } from '@/lib/storage';
 import { useTranslations } from 'next-intl';
 
-const THEMES: { id: ThemeType; label: string; icon: typeof Sun }[] = [
-    { id: 'auto', label: 'Auto', icon: Clock },
-    { id: 'dark', label: 'Dark', icon: Moon },
-    { id: 'light', label: 'Light', icon: Sun },
-    { id: 'solarized', label: 'Solarized', icon: Sparkles },
+const THEMES: { id: ThemeType; labelKey: string; icon: typeof Sun }[] = [
+    { id: 'auto', labelKey: 'themes.auto', icon: Clock },
+    { id: 'dark', labelKey: 'themes.dark', icon: Moon },
+    { id: 'light', labelKey: 'themes.light', icon: Sun },
+    { id: 'solarized', labelKey: 'themes.solarized', icon: Sparkles },
 ];
 
 // Supported platforms shown in sidebar
 const PLATFORMS_CONFIG = [
-    { id: 'facebook', icon: FacebookIcon, label: 'Facebook', color: 'text-blue-500' },
-    { id: 'instagram', icon: InstagramIcon, label: 'Instagram', color: 'text-pink-500' },
-    { id: 'tiktok', icon: TiktokIcon, label: 'TikTok', color: 'text-cyan-400' },
-    { id: 'twitter', icon: XTwitterIcon, label: 'Twitter', color: 'text-[var(--text-primary)]' },
-    { id: 'pixiv', icon: GlobeIcon, label: 'Pixiv', color: 'text-blue-400' },
-    { id: 'youtube', icon: YoutubeIcon, label: 'YouTube', color: 'text-red-500' },
+    { id: 'facebook', icon: FacebookIcon, color: 'text-blue-500' },
+    { id: 'instagram', icon: InstagramIcon, color: 'text-pink-500' },
+    { id: 'tiktok', icon: TiktokIcon, color: 'text-cyan-400' },
+    { id: 'twitter', icon: XTwitterIcon, color: 'text-[var(--text-primary)]' },
+    { id: 'pixiv', icon: GlobeIcon, color: 'text-blue-400' },
+    { id: 'youtube', icon: YoutubeIcon, color: 'text-red-500' },
 ] as const;
 
 interface SidebarProps {
@@ -38,6 +38,7 @@ interface SidebarProps {
 }
 
 export function SidebarLayout({ children }: SidebarProps) {
+    const tSidebar = useTranslations('sidebar');
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [themeOpen, setThemeOpen] = useState(false);
     const [profileOpen, setProfileOpen] = useState(false);
@@ -170,7 +171,7 @@ export function SidebarLayout({ children }: SidebarProps) {
                             <img src="/icon.png" alt="DownAria" className="w-8 h-8 rounded-lg" />
                             <div>
                                 <h1 className="text-sm font-bold gradient-text">DownAria</h1>
-                                <p className="text-[9px] text-[var(--text-muted)] -mt-0.5">Social Media Downloader</p>
+                                <p className="text-[9px] text-[var(--text-muted)] -mt-0.5">{tSidebar('tagline')}</p>
                             </div>
                         </Link>
                     </div>
@@ -195,7 +196,7 @@ export function SidebarLayout({ children }: SidebarProps) {
                                         className="absolute right-0 top-full mt-2 w-64 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] shadow-xl z-50"
                                     >
                                         <div className="px-4 pb-2">
-                                            <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Theme</p>
+                                            <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">{tSidebar('theme')}</p>
                                         </div>
                                         {THEMES.map((theme) => (
                                             <button
@@ -207,7 +208,7 @@ export function SidebarLayout({ children }: SidebarProps) {
                                                     }`}
                                             >
                                                 <theme.icon className="w-4 h-4" />
-                                                    <span>{theme.label}</span>
+                                                    <span>{tSidebar(theme.labelKey)}</span>
                                                     {currentTheme === theme.id && (
                                                         <span className="ml-auto text-xs">✓</span>
                                                     )}
@@ -215,7 +216,7 @@ export function SidebarLayout({ children }: SidebarProps) {
                                         ))}
 
                                         <div className="lg:hidden mt-2 pt-2 border-t border-[var(--border-color)] px-4 pb-1">
-                                            <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2">Fast Experimental</p>
+                                            <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2">{tSidebar('fastExperimental')}</p>
 
                                             <button
                                                 onClick={handleSeasonalToggle}
@@ -223,10 +224,10 @@ export function SidebarLayout({ children }: SidebarProps) {
                                             >
                                                 <span className="flex items-center gap-2">
                                                     <Sparkles className="w-4 h-4" />
-                                                    Seasonal Effects
+                                                    {tSidebar('toggles.seasonalEffects')}
                                                 </span>
                                                 <span className={`text-xs px-2 py-0.5 rounded ${seasonalEnabled ? 'bg-[var(--accent-primary)]/15 text-[var(--accent-primary)]' : 'bg-[var(--bg-secondary)] text-[var(--text-muted)]'}`}>
-                                                    {seasonalEnabled ? 'ON' : 'OFF'}
+                                                    {seasonalEnabled ? tSidebar('on') : tSidebar('off')}
                                                 </span>
                                             </button>
 
@@ -236,10 +237,10 @@ export function SidebarLayout({ children }: SidebarProps) {
                                             >
                                                 <span className="flex items-center gap-2">
                                                     <Image className="w-4 h-4" />
-                                                    Custom Background
+                                                    {tSidebar('toggles.customBackground')}
                                                 </span>
                                                 <span className={`text-xs px-2 py-0.5 rounded ${quickBackgroundEnabled ? 'bg-[var(--accent-primary)]/15 text-[var(--accent-primary)]' : 'bg-[var(--bg-secondary)] text-[var(--text-muted)]'}`}>
-                                                    {quickBackgroundEnabled ? 'ON' : 'OFF'}
+                                                    {quickBackgroundEnabled ? tSidebar('on') : tSidebar('off')}
                                                 </span>
                                             </button>
 
@@ -249,10 +250,10 @@ export function SidebarLayout({ children }: SidebarProps) {
                                             >
                                                 <span className="flex items-center gap-2">
                                                     <Volume2 className="w-4 h-4" />
-                                                    Background Sound
+                                                    {tSidebar('toggles.backgroundSound')}
                                                 </span>
                                                 <span className={`text-xs px-2 py-0.5 rounded ${quickBackgroundSound ? 'bg-[var(--accent-primary)]/15 text-[var(--accent-primary)]' : 'bg-[var(--bg-secondary)] text-[var(--text-muted)]'}`}>
-                                                    {quickBackgroundSound ? 'ON' : 'OFF'}
+                                                    {quickBackgroundSound ? tSidebar('on') : tSidebar('off')}
                                                 </span>
                                             </button>
                                         </div>
@@ -266,7 +267,7 @@ export function SidebarLayout({ children }: SidebarProps) {
                             <button
                                 onClick={() => setProfileOpen(!profileOpen)}
                                 className="p-2 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-card)] transition-colors flex items-center gap-1"
-                                aria-label="Profile menu"
+                                aria-label={tSidebar('profileMenuAria')}
                             >
                                 <User className="w-5 h-5" />
                             </button>
@@ -280,8 +281,8 @@ export function SidebarLayout({ children }: SidebarProps) {
                                     >
                                         {/* User Header */}
                                         <div className="px-4 py-2 border-b border-[var(--border-color)]">
-                                            <p className="text-sm font-medium text-[var(--text-primary)]">Guest</p>
-                                            <p className="text-xs text-[var(--text-muted)]">Not logged in</p>
+                                            <p className="text-sm font-medium text-[var(--text-primary)]">{tSidebar('guest')}</p>
+                                            <p className="text-xs text-[var(--text-muted)]">{tSidebar('notLoggedIn')}</p>
                                         </div>
 
                                         {/* Menu Items */}
@@ -291,7 +292,7 @@ export function SidebarLayout({ children }: SidebarProps) {
                                             className="w-full flex items-center gap-3 px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors"
                                         >
                                             <Settings className="w-4 h-4" />
-                                            <span>Settings</span>
+                                            <span>{tSidebar('settings')}</span>
                                         </Link>
                                     </motion.div>
                                 )}
@@ -355,13 +356,15 @@ export function SidebarLayout({ children }: SidebarProps) {
 
 interface SidebarContentProps {
     navLinks: { href: string; labelKey: string; icon: React.FC<{ className?: string }> }[];
-    platforms: { id: string; icon: React.FC<{ className?: string }>; label: string; color: string }[];
+    platforms: { id: string; icon: React.FC<{ className?: string }>; color: string }[];
     isActive: (href: string) => boolean;
     onNavigate?: (href: string) => void;
 }
 
 function SidebarContent({ navLinks, platforms, isActive, onNavigate }: SidebarContentProps) {
     const t = useTranslations('nav');
+    const tSidebar = useTranslations('sidebar');
+    const tPlatforms = useTranslations('platforms');
     const [accountOpen, setAccountOpen] = useState(false);
 
     // Handle link click - use custom navigation if provided (mobile), otherwise default Link behavior (desktop)
@@ -388,7 +391,7 @@ function SidebarContent({ navLinks, platforms, isActive, onNavigate }: SidebarCo
                     />
                     <div>
                         <h1 className="text-lg font-bold gradient-text">DownAria</h1>
-                        <p className="text-xs text-[var(--text-muted)] -mt-0.5">Social Media Downloader</p>
+                        <p className="text-xs text-[var(--text-muted)] -mt-0.5">{tSidebar('tagline')}</p>
                     </div>
                 </Link>
             </div>
@@ -416,7 +419,7 @@ function SidebarContent({ navLinks, platforms, isActive, onNavigate }: SidebarCo
                 {/* Platforms Section */}
                 <div className="pt-6">
                     <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider px-3 mb-3">
-                        Platform Didukung
+                        {t('supportedPlatforms')}
                     </p>
                     <div className="space-y-1">
                         {platforms.map((platform, index) => (
@@ -425,7 +428,7 @@ function SidebarContent({ navLinks, platforms, isActive, onNavigate }: SidebarCo
                                 className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[var(--text-secondary)]"
                             >
                                 <platform.icon className={`w-4 h-4 ${platform.color}`} />
-                                <span className="text-sm leading-none">{platform.label}</span>
+                                <span className="text-sm leading-none">{tPlatforms(platform.id)}</span>
                             </div>
                         ))}
 
@@ -437,7 +440,7 @@ function SidebarContent({ navLinks, platforms, isActive, onNavigate }: SidebarCo
                         >
                             <Link2 className="w-4 h-4 mt-0.5 text-[var(--accent-primary)] shrink-0" />
                             <div className="min-w-0">
-                                <p className="text-[11px] leading-tight font-medium">+1000 platform via yt-dlp</p>
+                                <p className="text-[11px] leading-tight font-medium">{tSidebar('ytDlp.title')}</p>
                                 <p className="text-[10px] text-[var(--text-muted)] truncate">github.com/yt-dlp/yt-dlp</p>
                             </div>
                         </a>
@@ -448,7 +451,7 @@ function SidebarContent({ navLinks, platforms, isActive, onNavigate }: SidebarCo
             {/* Account Section */}
             <div className="hidden lg:block p-4 border-t border-[var(--border-color)]">
                 <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider px-3 mb-3">
-                    ACCOUNT
+                    {tSidebar('account')}
                 </p>
                 <div className="relative">
                     <button
@@ -459,7 +462,7 @@ function SidebarContent({ navLinks, platforms, isActive, onNavigate }: SidebarCo
                             <User className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
                         </div>
                         <div className="flex-1 text-left">
-                            <p className="text-sm font-medium text-[var(--text-primary)] leading-none">Guest</p>
+                            <p className="text-sm font-medium text-[var(--text-primary)] leading-none">{tSidebar('guest')}</p>
                         </div>
                         <ChevronDown className={`w-4 h-4 transition-transform ${accountOpen ? 'rotate-180' : ''}`} />
                     </button>
@@ -477,7 +480,7 @@ function SidebarContent({ navLinks, platforms, isActive, onNavigate }: SidebarCo
                                     className="w-full flex items-center gap-3 px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors"
                                 >
                                     <Settings className="w-4 h-4" />
-                                    <span>Settings</span>
+                                    <span>{tSidebar('settings')}</span>
                                 </Link>
                                 <Link
                                     href="/about"
@@ -485,7 +488,7 @@ function SidebarContent({ navLinks, platforms, isActive, onNavigate }: SidebarCo
                                     className="w-full flex items-center gap-3 px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors"
                                 >
                                     <Info className="w-4 h-4" />
-                                    <span>About DownAria</span>
+                                    <span>{tSidebar('aboutDownAria')}</span>
                                 </Link>
                             </motion.div>
                         )}

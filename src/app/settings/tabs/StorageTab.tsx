@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Cookie, Database, Download, HardDrive, Loader2, Package, RefreshCw, Sparkles, Trash2, Upload, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { type CacheStats } from '@/lib/storage';
+import { useTranslations } from 'next-intl';
 
 interface StorageTabProps {
   skipCache: boolean;
@@ -46,23 +47,25 @@ export function StorageTab({
   onClearSeasonalData,
   onClearAllData,
 }: StorageTabProps) {
+  const t = useTranslations('settingsTabs.storage');
+
   return (
     <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-6">
       <div className="glass-card p-6 rounded-2xl border border-[var(--border-color)]">
         <div className="flex items-center gap-3 mb-4">
           <Database className="w-5 h-5 text-[var(--accent-primary)]" />
-          <h2 className="text-lg font-semibold text-[var(--text-primary)]">Data & Storage</h2>
+          <h2 className="text-lg font-semibold text-[var(--text-primary)]">{t('title')}</h2>
         </div>
 
         <div className="space-y-4">
           <div className="flex items-center justify-between p-4 rounded-xl border border-[var(--border-color)] hover:border-[var(--accent-primary)] transition-all">
             <div className="flex items-center gap-3">
-              <Zap className={`w-5 h-5 ${skipCache ? 'text-emerald-400' : 'text-[var(--text-muted)]'}`} />
-              <div>
-                <p className="text-sm font-medium text-[var(--text-primary)]">Skip Cache</p>
-                <p className="text-xs text-[var(--text-muted)]">Always fetch fresh results (bypass local cache)</p>
+                <Zap className={`w-5 h-5 ${skipCache ? 'text-emerald-400' : 'text-[var(--text-muted)]'}`} />
+                <div>
+                  <p className="text-sm font-medium text-[var(--text-primary)]">{t('skipCache.title')}</p>
+                  <p className="text-xs text-[var(--text-muted)]">{t('skipCache.description')}</p>
+                </div>
               </div>
-            </div>
             <button
               type="button"
               onClick={onToggleSkipCache}
@@ -81,8 +84,8 @@ export function StorageTab({
               <div className="flex items-center gap-3">
                 <Package className="w-5 h-5 text-[var(--accent-primary)]" />
                 <div>
-                  <p className="text-sm font-medium text-[var(--text-primary)]">Full Backup</p>
-                  <p className="text-xs text-[var(--text-muted)]">{historyCount} history + settings</p>
+                  <p className="text-sm font-medium text-[var(--text-primary)]">{t('backup.title')}</p>
+                  <p className="text-xs text-[var(--text-muted)]">{t('backup.historyAndSettings', { count: historyCount })}</p>
                 </div>
               </div>
               <button onClick={onRefreshHistory} className="p-2 rounded-lg hover:bg-[var(--bg-card)] text-[var(--text-muted)]">
@@ -94,22 +97,22 @@ export function StorageTab({
             <div className="flex gap-2">
               <Button variant="secondary" size="sm" onClick={onExportBackup} disabled={isExporting} className="flex-1">
                 {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                Export
+                {t('backup.export')}
               </Button>
               <Button variant="secondary" size="sm" onClick={() => backupFileInputRef.current?.click()} disabled={isImporting} className="flex-1">
                 {isImporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                Import
+                {t('backup.import')}
               </Button>
             </div>
-            <p className="text-[10px] text-[var(--text-muted)] mt-2">Backup contains history + settings and merges on import.</p>
+            <p className="text-[10px] text-[var(--text-muted)] mt-2">{t('backup.description')}</p>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
             <StorageCard
               icon={Database}
               iconColor="text-cyan-400"
-              title="Download History"
-              subtitle="IndexedDB history"
+              title={t('cards.downloadHistory.title')}
+              subtitle={t('cards.downloadHistory.subtitle')}
               storageKeys={['indexeddb:ariaindex/history']}
               onClear={onClearIndexedDB}
               isClearing={isClearing === 'indexeddb'}
@@ -117,8 +120,8 @@ export function StorageTab({
             <StorageCard
               icon={Zap}
               iconColor="text-emerald-400"
-              title="Scraper Cache"
-              subtitle={cacheStats ? `${cacheStats.count} items • ${cacheStats.hitRate} hit rate` : 'Local cache'}
+              title={t('cards.scraperCache.title')}
+              subtitle={cacheStats ? t('cards.scraperCache.withStats', { count: cacheStats.count, hitRate: cacheStats.hitRate }) : t('cards.scraperCache.subtitle')}
               storageKeys={['downaria_cache_stats']}
               onClear={onClearScraperCache}
               isClearing={isClearing === 'scraper_cache'}
@@ -126,8 +129,8 @@ export function StorageTab({
             <StorageCard
               icon={HardDrive}
               iconColor="text-purple-400"
-              title="LocalStorage"
-              subtitle="Themes & app preferences"
+              title={t('cards.localStorage.title')}
+              subtitle={t('cards.localStorage.subtitle')}
               storageKeys={['downaria_settings', 'downaria_experimental_audio', 'downaria_queue', 'downaria_discord_webhook']}
               onClear={onClearLocalStorage}
               isClearing={isClearing === 'localstorage'}
@@ -135,8 +138,8 @@ export function StorageTab({
             <StorageCard
               icon={Sparkles}
               iconColor="text-pink-400"
-              title="Seasonal Effects"
-              subtitle="Background and particles"
+              title={t('cards.seasonal.title')}
+              subtitle={t('cards.seasonal.subtitle')}
               storageKeys={['indexeddb:ariaindex/backgrounds']}
               onClear={onClearSeasonalData}
               isClearing={isClearing === 'seasonal'}
@@ -144,8 +147,8 @@ export function StorageTab({
             <StorageCard
               icon={Cookie}
               iconColor="text-amber-400"
-              title="Cookies"
-              subtitle="Platform auth"
+              title={t('cards.cookies.title')}
+              subtitle={t('cards.cookies.subtitle')}
               storageKeys={['downaria_cookies']}
               onClear={onClearCookies}
               isClearing={isClearing === 'cookies'}
@@ -153,8 +156,8 @@ export function StorageTab({
             <StorageCard
               icon={Package}
               iconColor="text-blue-400"
-              title="Service Worker"
-              subtitle="Offline cache + history/cache"
+              title={t('cards.serviceWorker.title')}
+              subtitle={t('cards.serviceWorker.subtitle')}
               storageKeys={['cachestorage:*', 'indexeddb:ariaindex/history', 'indexeddb:ariaindex/backgrounds']}
               onClear={onClearHistoryAndCache}
               isClearing={isClearing === 'history_cache'}
@@ -170,13 +173,13 @@ export function StorageTab({
               <Trash2 className="w-5 h-5 text-red-500" />
             </div>
             <div>
-              <p className="font-medium text-[var(--text-primary)]">Reset All Data</p>
-              <p className="text-xs text-[var(--text-muted)]">Factory reset and clear everything</p>
+              <p className="font-medium text-[var(--text-primary)]">{t('resetAll.title')}</p>
+              <p className="text-xs text-[var(--text-muted)]">{t('resetAll.subtitle')}</p>
             </div>
           </div>
           <Button variant="danger" size="sm" onClick={onClearAllData} disabled={isClearing === 'all'}>
             {isClearing === 'all' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-            Reset All
+            {t('resetAll.button')}
           </Button>
         </div>
       </div>
@@ -201,31 +204,33 @@ function StorageCard({
   onClear: () => void;
   isClearing: boolean;
 }) {
+  const t = useTranslations('settingsTabs.storage');
+
   const formatStorageKey = (key: string): string => {
     if (key.startsWith('indexeddb:')) {
       const raw = key.replace('indexeddb:', '');
       const [dbName, storeName] = raw.split('/');
       if (storeName && storeName !== '*') {
-        return `IndexedDB: ${dbName} (${storeName})`;
+        return `${t('storageKeyLabels.indexedDb')}: ${dbName} (${storeName})`;
       }
-      return `IndexedDB: ${dbName}`;
+      return `${t('storageKeyLabels.indexedDb')}: ${dbName}`;
     }
 
     if (key.startsWith('cachestorage:')) {
-      return `CacheStorage: ${key.replace('cachestorage:', '')}`;
+      return `${t('storageKeyLabels.cacheStorage')}: ${key.replace('cachestorage:', '')}`;
     }
 
     const aliases: Record<string, string> = {
-      downaria_settings: 'App settings',
-      downaria_queue: 'Download queue',
-      downaria_experimental_audio: 'Experimental audio',
-      downaria_discord_webhook: 'Discord webhook (encrypted)',
-      downaria_cache_stats: 'Scraper cache stats',
-      downaria_cookies: 'Platform cookies (encrypted)',
+      downaria_settings: t('storageAliases.appSettings'),
+      downaria_queue: t('storageAliases.downloadQueue'),
+      downaria_experimental_audio: t('storageAliases.experimentalAudio'),
+      downaria_discord_webhook: t('storageAliases.discordWebhook'),
+      downaria_cache_stats: t('storageAliases.scraperCacheStats'),
+      downaria_cookies: t('storageAliases.platformCookies'),
     } as const;
 
     const label = aliases[key as keyof typeof aliases] || key;
-    return `LocalStorage: ${label}`;
+    return `${t('storageKeyLabels.localStorage')}: ${label}`;
   };
 
   const friendlyKeys = Array.from(new Set(storageKeys.map(formatStorageKey))).slice(0, 2);
@@ -252,7 +257,7 @@ function StorageCard({
       </div>
       <Button variant="secondary" size="xs" onClick={onClear} disabled={isClearing} className="w-full">
         {isClearing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
-        Clear
+        {t('clear')}
       </Button>
     </div>
   );

@@ -35,16 +35,16 @@ function ShareContent() {
 
     if (normalizedCode && cookieTipCodes.has(normalizedCode)) {
       return {
-        title: 'Extraction Error',
+        title: t('errors.extractionTitle'),
         message: normalizedMessage,
         code: normalizedCode,
-        tip: 'Set cookie in Settings to access protected content.',
+        tip: t('errors.cookieTip'),
         tipHref: '/settings?tab=cookies',
       };
     }
 
     return {
-      title: 'Extraction Error',
+      title: t('errors.extractionTitle'),
       message: normalizedMessage,
       code: normalizedCode,
     };
@@ -205,11 +205,11 @@ function ShareContent() {
               </h3>
               <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed">{previewError.message}</p>
               {previewError.code && (
-                <p className="text-[11px] text-[var(--text-muted)] mt-2">Code: {previewError.code}</p>
+                <p className="text-[11px] text-[var(--text-muted)] mt-2">{t('errors.codeLabel')}: {previewError.code}</p>
               )}
               {previewError.tip && (
                 <p className="text-[11px] text-[var(--text-muted)] mt-1">
-                  Tips:{' '}
+                  {t('errors.tipLabel')}{' '}
                   {previewError.tipHref ? (
                     <a href={previewError.tipHref} className="text-[var(--accent-primary)] hover:underline">
                       {previewError.tip}
@@ -226,7 +226,7 @@ function ShareContent() {
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-[var(--border-color)] text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors"
                   >
                     <Settings className="w-3.5 h-3.5" />
-                    Open Cookie Settings
+                    {t('errors.openCookieSettings')}
                   </a>
                 </div>
               )}

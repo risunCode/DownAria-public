@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { MediaData } from '../lib/types';
 import {
   createMediaExtractionInitialState,
+  defaultCookieResolver,
   mediaExtractionReducer,
   retryLastExtraction,
 } from './useMediaExtraction';
@@ -123,5 +124,44 @@ describe('retryLastExtraction', () => {
     await retryLastExtraction(null, extract);
 
     expect(extract).not.toHaveBeenCalled();
+  });
+});
+
+describe('defaultCookieResolver', () => {
+  it('returns twitter cookie when twitter platform is detected', () => {
+    const resolver = vi.fn((platform: 'facebook' | 'instagram' | 'twitter' | 'youtube' | 'weibo') => {
+      if (platform === 'twitter') {
+        return 'auth_token=abc; ct0=xyz';
+      }
+      return null;
+    });
+
+    const cookie = defaultCookieResolver('twitter', resolver);
+
+    expect(cookie).toBe('auth_token=abc; ct0=xyz');
+    expect(resolver).toHaveBeenCalledWith('twitter');
+  });
+
+  it('returns youtube cookie when youtube platform is detected', () => {
+    const resolver = vi.fn((platform: 'facebook' | 'instagram' | 'twitter' | 'youtube' | 'weibo') => {
+      if (platform === 'youtube') {
+        return 'VISITOR_INFO1_LIVE=abc123';
+      }
+      return null;
+    });
+
+    const cookie = defaultCookieResolver('youtube', resolver);
+
+    expect(cookie).toBe('VISITOR_INFO1_LIVE=abc123');
+    expect(resolver).toHaveBeenCalledWith('youtube');
+  });
+
+  it('returns undefined for platforms without cookie lane support', () => {
+    const resolver = vi.fn(() => 'sid=unused');
+
+    const cookie = defaultCookieResolver('tiktok', resolver);
+
+    expect(cookie).toBeUndefined();
+    expect(resolver).not.toHaveBeenCalled();
   });
 });

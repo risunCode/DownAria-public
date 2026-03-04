@@ -46,6 +46,7 @@
       "instagram": "Instagram",
       "tiktok": "TikTok",
       "twitter": "Twitter",
+      "weibo": "Weibo",
       "pixiv": "Pixiv",
       "youtube": "YouTube"
     },
@@ -247,6 +248,660 @@
     }
   },
 
+  "settingsPage": {
+    "badge": "Preferences",
+    "tabs": {
+      "basic": {
+        "title": "General Settings"
+      },
+      "cookies": {
+        "title": "Cookie Management"
+      },
+      "storage": {
+        "title": "Storage & Data"
+      },
+      "integrations": {
+        "title": "Integrations"
+      }
+    },
+    "alerts": {
+      "installSuccess": {
+        "title": "Installed!",
+        "text": "App added to home screen"
+      },
+      "cookies": {
+        "noValidCookies": "No valid cookies found",
+        "invalidCookieFormat": "Invalid cookie format"
+      },
+      "unknownError": "Unknown error",
+      "cleared": "Cleared",
+      "scraperCacheClear": {
+        "title": "Clear Scraper Cache?",
+        "text": "This will remove cached scraper results. Next requests will fetch fresh data.",
+        "success": "Scraper Cache Cleared"
+      },
+      "indexedDbClear": {
+        "title": "Clear IndexedDB?",
+        "text": "This will delete all IndexedDB data including history and cache.",
+        "warning": "This action cannot be undone!",
+        "confirm": "Delete All",
+        "success": "IndexedDB Cleared"
+      },
+      "seasonalClear": {
+        "title": "Clear Seasonal Effects?",
+        "text": "This will remove custom background and reset seasonal settings.",
+        "success": "Seasonal Effects Cleared"
+      },
+      "experimentalReset": {
+        "title": "Reset Experimental Values?",
+        "text": "This will reset seasonal effects, custom background, and experimental toggles to defaults.",
+        "confirm": "Reset",
+        "success": "Experimental Values Reset",
+        "failed": "Reset Failed"
+      },
+      "allDataCleared": "All Data Cleared"
+    },
+    "backup": {
+      "invalidFileTitle": "Invalid File",
+      "fileLabel": "File",
+      "historyItemsLabel": "history items",
+      "settingsLabel": "settings",
+      "cookiesRestoredLabel": "cookies restored",
+      "duplicatesSkippedLabel": "duplicates skipped",
+      "invalidBackupFile": "Invalid backup file"
+    }
+  },
+
+  "settingsTabs": {
+    "basic": {
+      "language": {
+        "title": "Language",
+        "auto": "Auto"
+      },
+      "theme": {
+        "title": "Theme",
+        "auto": "Auto",
+        "autoTip": "Time-based switching",
+        "dark": "Dark",
+        "darkTip": "Easy on the eyes",
+        "light": "Light",
+        "lightTip": "Classic bright",
+        "solarized": "Solarized",
+        "solarizedTip": "Warm tones"
+      },
+      "accentColor": {
+        "title": "Accent Color",
+        "description": "Choose your preferred accent color for buttons and highlights"
+      },
+      "accentColors": {
+        "coral": "New Color (Coral)",
+        "blue": "Old DownAria",
+        "emerald": "Emerald",
+        "amber": "Amber"
+      },
+      "active": "Active",
+      "experimental": {
+        "title": "Experimental",
+        "description": "Beta features - may change or be removed",
+        "resetAllValues": "Reset All Values"
+      }
+    },
+    "cookies": {
+      "security": {
+        "title": "Security & Privacy Notice",
+        "description": "Cookies are stored locally on your device and transmitted securely (encrypted) to the server only for media processing. Your private cookies are always prioritized over shared server cookies. Using cookies to access private content may violate platform Terms of Service. Use at your own risk."
+      },
+      "platformCookies": {
+        "title": "Platform Cookies",
+        "configured": "<active></active> of {total} configured",
+        "none": "No cookies configured yet"
+      },
+      "actions": {
+        "clearAll": "Clear All",
+        "clearCookie": "Clear cookie",
+        "close": "Close",
+        "edit": "Edit",
+        "addCookie": "Add Cookie",
+        "cancel": "Cancel",
+        "save": "Save"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "platformDescriptions": {
+        "facebook": "Stories & private groups",
+        "instagram": "Private posts & stories",
+        "twitter": "Age-restricted content",
+        "youtube": "Age/login-restricted videos"
+      },
+      "editor": {
+        "placeholder": "Paste cookie string (JSON, Netscape, or Header format)...",
+        "encryptedHint": "Stored encrypted on your device"
+      },
+      "guide": {
+        "title": "How to get cookies",
+        "subtitle": "Step-by-step guide",
+        "step1": "Log in to the platform in your browser",
+        "step2": "Open DevTools (F12) -> Application -> Cookies",
+        "step3": "Copy all cookie values, or use a cookie export extension",
+        "supportsPrefix": "Supports",
+        "and": "and",
+        "supportsSuffix": "formats"
+      }
+    },
+    "storage": {
+      "title": "Data & Storage",
+      "skipCache": {
+        "title": "Skip Cache",
+        "description": "Always fetch fresh results (bypass local cache)"
+      },
+      "backup": {
+        "title": "Full Backup",
+        "historyAndSettings": "{count} history + settings",
+        "export": "Export",
+        "import": "Import",
+        "description": "Backup contains history + settings and merges on import."
+      },
+      "cards": {
+        "downloadHistory": {
+          "title": "Download History",
+          "subtitle": "IndexedDB history"
+        },
+        "scraperCache": {
+          "title": "Scraper Cache",
+          "subtitle": "Local cache",
+          "withStats": "{count} items • {hitRate} hit rate"
+        },
+        "localStorage": {
+          "title": "LocalStorage",
+          "subtitle": "Themes & app preferences"
+        },
+        "seasonal": {
+          "title": "Seasonal Effects",
+          "subtitle": "Background and particles"
+        },
+        "cookies": {
+          "title": "Cookies",
+          "subtitle": "Platform auth"
+        },
+        "serviceWorker": {
+          "title": "Service Worker",
+          "subtitle": "Offline cache + history/cache"
+        }
+      },
+      "resetAll": {
+        "title": "Reset All Data",
+        "subtitle": "Factory reset and clear everything",
+        "button": "Reset All"
+      },
+      "storageKeyLabels": {
+        "indexedDb": "IndexedDB",
+        "cacheStorage": "CacheStorage",
+        "localStorage": "LocalStorage"
+      },
+      "storageAliases": {
+        "appSettings": "App settings",
+        "downloadQueue": "Download queue",
+        "experimentalAudio": "Experimental audio",
+        "discordWebhook": "Discord webhook (encrypted)",
+        "scraperCacheStats": "Scraper cache stats",
+        "platformCookies": "Platform cookies (encrypted)"
+      },
+      "clear": "Clear"
+    },
+    "integrations": {
+      "title": "Integrations",
+      "description": "Connect webhook workflows and preview notification output in one place.",
+      "comingSoon": "More integrations coming soon..."
+    }
+  },
+
+  "settingsDiscord": {
+    "header": {
+      "title": "Discord Webhook",
+      "description": "Video notifications use 2 messages: link first, then metadata embed. Your webhook URL is stored locally.",
+      "toggleTipsAria": "Toggle webhook tips"
+    },
+    "tips": {
+      "content": "Create a channel webhook in Discord Integrations, then paste the URL here."
+    },
+    "notifications": {
+      "title": "Enable Discord Notifications",
+      "description": "Master switch for webhook notifications"
+    },
+    "fields": {
+      "webhookUrl": {
+        "label": "Webhook URL",
+        "placeholder": "https://discord.com/api/webhooks/..."
+      },
+      "mention": {
+        "label": "Mention (optional)",
+        "placeholder": "@everyone or <@&role_id>"
+      },
+      "embedColor": {
+        "label": "Embed Color"
+      },
+      "footer": {
+        "label": "Footer",
+        "placeholder": "via DownAria"
+      }
+    },
+    "autoSend": {
+      "title": "Auto-send on download",
+      "description": "Runs only when notification is enabled and webhook URL is valid",
+      "canonicalNote": "Canonical mode is fixed: 2 messages for video (link first, then metadata embed)."
+    },
+    "preview": {
+      "title": "Discord embed preview",
+      "live": "Live",
+      "sampleTitle": "Facebook Downloader",
+      "sampleDescription": "Open Media Source",
+      "fields": {
+        "platform": "Platform",
+        "type": "Type",
+        "author": "Author"
+      },
+      "values": {
+        "platform": "Facebook",
+        "type": "video",
+        "author": "Nikki."
+      },
+      "thumbnailAlt": "Preview thumbnail",
+      "todayAt": "Today at {time}",
+      "note": "Note: Preview updates from Embed Color and Footer fields. Real messages also include dynamic platform/title/author data."
+    },
+    "defaults": {
+      "footer": "via DownAria"
+    },
+    "test": {
+      "embedTitle": "Download Notification Test",
+      "embedDescription": "Webhook test message from DownAria.",
+      "content": "Download notification test from DownAria.",
+      "sent": "Webhook test sent.",
+      "testing": "Testing...",
+      "button": "Test Webhook"
+    },
+    "errors": {
+      "webhookStatus": "Webhook error {status}",
+      "webhookHtml": "Webhook error {status}. Endpoint returned HTML instead of Discord API response.",
+      "enableFirst": "Enable notifications first.",
+      "setWebhookFirst": "Set webhook URL first.",
+      "testFailed": "Failed to send test message."
+    }
+  },
+
+  "settingsSeasonal": {
+    "seasonOptions": {
+      "auto": "Auto",
+      "random": "Random",
+      "winter": "Winter",
+      "spring": "Spring",
+      "autumn": "Autumn",
+      "off": "Off"
+    },
+    "actions": {
+      "ok": "OK",
+      "change": "Change",
+      "upload": "Upload"
+    },
+    "alerts": {
+      "highOpacity": {
+        "title": "High Opacity Warning",
+        "text": "High opacity may cause readability issues. You have been warned!"
+      },
+      "backgroundSet": {
+        "title": "Background Set!",
+        "text": "Custom background has been applied!"
+      },
+      "uploadFailed": {
+        "title": "Upload Failed",
+        "text": "Could not process file"
+      }
+    },
+    "toggleExperimental": {
+      "title": "Enable Experimental Features",
+      "description": "Access beta features and early previews"
+    },
+    "warning": {
+      "title": "Experimental Features Warning",
+      "description": "These features are in beta and may cause unexpected behavior. If you experience background flickering or blinking, try refreshing the page."
+    },
+    "seasonalEffects": {
+      "title": "Seasonal Effects",
+      "description": "Particle animations (snow, cherry blossoms, leaves)",
+      "particleIntensity": "Particle Intensity",
+      "particleIntensityHint": "Increase or decrease total floating items (up to 200%)",
+      "fallSpeed": "Fall Speed",
+      "fallSpeedHint": "Lower = slower floating, higher = faster falling",
+      "particleOpacity": "Particle Opacity",
+      "particleOpacityHint": "Make particles more subtle or more visible"
+    },
+    "customBackground": {
+      "title": "Custom Background",
+      "video": "Video",
+      "image": "Image",
+      "emptyState": "Image/Video/GIF (max 800MB)"
+    },
+    "backgroundControls": {
+      "visibility": "Visibility",
+      "visibilityHint": "Best on dark theme and 8% transparency",
+      "blur": "Background Blur",
+      "zoom": "Background Zoom",
+      "zoomHint": "65% - 150%",
+      "moveVertical": "Move Background (Up/Down)",
+      "moveVerticalHint": "0% = Up, 100% = Down",
+      "sound": "Background Sound",
+      "volume": "Volume",
+      "enabled": "Background Enabled",
+      "enabledHint": "Disable without deleting"
+    }
+  },
+
+  "privacyPage": {
+    "titlePrefix": "Privacy",
+    "titleHighlight": "Policy",
+    "subtitle": "We keep DownAria simple: no account required, minimal stored data, and transparent handling for extraction requests.",
+    "lastUpdated": "Last updated",
+    "atAGlance": {
+      "title": "Privacy at a Glance",
+      "point1": "No registration is required to use DownAria.",
+      "point2": "We do not permanently host downloaded media files.",
+      "point3": "You control optional cookie usage in Settings for platforms that need authentication."
+    },
+    "dataWeProcess": {
+      "title": "Data We Process",
+      "urls": "Submitted URLs and extraction metadata needed to return media formats and preview info.",
+      "cookies": "Optional cookies that you set in Settings for private/auth-required content, handled with separate server-side rules.",
+      "operational": "Operational stats for reliability and abuse protection (rate limiting, retry, and service health)."
+    },
+    "handlingData": {
+      "title": "How We Handle Data",
+      "point1": "Theme, preferences, and local history are stored on your device using browser storage.",
+      "point2": "Downloads are fetched from provider/CDN sources and proxied only for delivery compatibility.",
+      "point3": "Authentication lanes are applied in order: Guest -> Server -> UserProvided. Cookies from Settings are private per user, never shared with other users, and processed through a separate private path in temporary server pooling.",
+      "point4": "We do not sell personal data. Use this tool only for content you are authorized to access."
+    },
+    "retention": {
+      "title": "Retention & Deletion",
+      "point1": "Local history and preferences stay in your browser until you clear them from Settings or browser storage.",
+      "point2": "Temporary extraction and operational logs are rotated and retained only for reliability and abuse prevention.",
+      "point3": "If you provide authentication cookies, you can remove them anytime in Settings; they are not required for public content."
+    },
+    "security": {
+      "title": "Security & Responsibility",
+      "point1": "We use request validation, rate limiting, and retry controls to keep the service stable and safe.",
+      "point2": "DownAria is intended for personal and authorized use only. You are responsible for respecting platform terms and copyright laws.",
+      "point3": "For security reports, open a private disclosure through the project repository maintainer."
+    },
+    "faq": {
+      "title": "Privacy FAQ",
+      "q1": "Do I need an account?",
+      "a1": "No. Core download and extraction flow works without registration.",
+      "q2": "Do you store downloaded files?",
+      "a2": "No permanent hosting. Media is fetched from source/CDN and delivered for your request.",
+      "q3": "What about cookies?",
+      "a3": "Cookies are optional and scoped to your own requests only. They are not shared with other users and are only kept temporarily via a private processing lane.",
+      "q4": "How can I request changes?",
+      "a4": "Open an issue in the repository and include the page + policy section you want updated."
+    },
+    "quickLinks": {
+      "title": "Quick Links",
+      "documentation": {
+        "title": "Documentation",
+        "description": "How extraction and downloads work"
+      },
+      "changelog": {
+        "title": "Changelog",
+        "description": "Product and policy updates"
+      },
+      "about": {
+        "title": "About DownAria",
+        "description": "Project overview and ecosystem"
+      }
+    },
+    "footer": {
+      "prefix": "Questions or privacy concerns? Open an issue at"
+    }
+  },
+
+  "creditsPage": {
+    "titleHighlight": "Credits",
+    "titleSuffix": "& Acknowledgements",
+    "subtitleLine1": "DownAria is built on top of open-source tools and community-maintained technologies.",
+    "subtitleLine2": "This page credits the stack and contributors behind the project.",
+    "builtBy": {
+      "title": "Built by risunCode",
+      "description": "Designed and maintained as an open-source downloader platform with both frontend and backend runtime ownership.",
+      "repositoryLabel": "Repository"
+    },
+    "sections": {
+      "frontend": "Frontend Stack",
+      "backend": "Backend Stack",
+      "tools": "Tools & Workflow",
+      "license": "License & Credits Notes"
+    },
+    "stacks": {
+      "frontend": {
+        "next": "Next.js",
+        "react": "React",
+        "typescript": "TypeScript",
+        "tailwind": "Tailwind CSS",
+        "framer": "Framer Motion",
+        "lucide": "Lucide"
+      },
+      "backend": {
+        "go": "Go",
+        "chi": "chi router",
+        "ffmpeg": "FFmpeg",
+        "ytdlp": "yt-dlp",
+        "extractors": "Custom extractors",
+        "proxy": "HTTP proxy"
+      },
+      "tools": {
+        "vitest": "Vitest",
+        "eslint": "ESLint",
+        "gotest": "Go test",
+        "github": "GitHub",
+        "vscode": "VS Code"
+      }
+    },
+    "licenseNotes": {
+      "point1": "DownAria is distributed under GPL-3 and includes integrations with third-party tools and services.",
+      "point2": "All product names, logos, and platform trademarks remain property of their respective owners.",
+      "point3": "Usage must follow local laws, copyright rules, and platform terms of service."
+    },
+    "quickLinks": {
+      "title": "Quick Links",
+      "about": {
+        "title": "About",
+        "description": "Project background and ecosystem"
+      },
+      "documentation": {
+        "title": "Documentation",
+        "description": "Guides, API flow, and troubleshooting"
+      },
+      "privacy": {
+        "title": "Privacy",
+        "description": "Cookie lane and data handling policy"
+      }
+    }
+  },
+
+  "aboutPage": {
+    "sections": {
+      "features": "Features",
+      "quickLinks": "Quick Links",
+      "moreProjects": "More Projects"
+    },
+    "features": {
+      "video": { "title": "Video", "description": "Up to 4K quality" },
+      "audio": { "title": "Audio", "description": "MP3, M4A, FLAC" },
+      "stories": { "title": "Stories & Reels", "description": "All platforms" },
+      "noWatermark": { "title": "No Watermark", "description": "Clean downloads" },
+      "fastServers": { "title": "Fast Servers", "description": "Optimized CDN" },
+      "api": { "title": "REST API", "description": "For developers" }
+    },
+    "quickLinks": {
+      "documentation": { "title": "Documentation", "description": "Guides, API reference, and integration flow" },
+      "changelog": { "title": "Changelog", "description": "Track updates and improvements" },
+      "privacy": { "title": "Privacy", "description": "Read data and security policy" },
+      "credits": { "title": "Credits", "description": "Open-source acknowledgements and stack" }
+    },
+    "projects": {
+      "downaria": {
+        "title": "Downaria",
+        "description": "Free, fast, and easy-to-use tool for downloading videos from social media. No registration, no limits, no BS."
+      },
+      "surfManager": {
+        "title": "SurfManager",
+        "description": "Reset IDE data, create backup and restore, manage multi-account easily. Works for VS-Code/fork based app."
+      },
+      "seswi": {
+        "title": "SesWi-Session-Manager",
+        "description": "A Chrome Extension that manages cookie & session securely, supporting Netscape export, JSON raw, and encrypted save."
+      }
+    },
+    "feedback": {
+      "title": "Feedback",
+      "fields": {
+        "name": "Name",
+        "datetime": "Datetime",
+        "comment": "Comment"
+      },
+      "placeholders": {
+        "name": "Your name",
+        "comment": "Text + emojis only"
+      },
+      "hint": "Drop your thoughts here. We read every note and emoji.",
+      "submit": "Send Feedback",
+      "sending": "Sending...",
+      "success": "Thanks! Your feedback has been sent.",
+      "errors": {
+        "nameTooShort": "Name must be at least 2 characters.",
+        "commentTooShort": "Comment must be at least 3 characters.",
+        "sendFailed": "Failed to send feedback.",
+        "network": "Network error while sending feedback."
+      }
+    },
+    "footer": {
+      "prefix": "DownAria by",
+      "middle": "- Licensed under GPL-3 - ©"
+    }
+  },
+
+  "historyList": {
+    "title": "History",
+    "unknownPlatform": "Unknown",
+    "unknownQuality": "Unknown",
+    "searchPlaceholder": "Search...",
+    "emptyTitle": "No history yet",
+    "emptyDescription": "Your extracted media history will appear here",
+    "perPage": "Per page",
+    "pageOf": "Page {page} of {total}",
+    "prev": "Prev",
+    "next": "Next",
+    "viewAllHistory": "View all ({count}) history",
+    "filters": {
+      "all": "All",
+      "video": "Video",
+      "image": "Image",
+      "audio": "Audio"
+    },
+    "actions": {
+      "refetch": "Refetch",
+      "copyUrl": "Copy URL",
+      "open": "Open",
+      "invalidUrl": "Invalid URL"
+    },
+    "alerts": {
+      "deleteItemTitle": "Delete item?",
+      "clearAllTitle": "Clear all history?",
+      "clearAllText": "This action cannot be undone."
+    }
+  },
+
+  "publicStats": {
+    "freshness": {
+      "waiting": "Waiting for data",
+      "waitingRetry": "Waiting for data (retrying)",
+      "updatedJustNow": "Updated just now",
+      "updatedAgo": "Updated {seconds}s ago",
+      "updatedAgoWithFailed": "{base} (last refresh failed)"
+    },
+    "pollingEvery": "Polling every {seconds}s",
+    "cards": {
+      "visitors": {
+        "label": "Visitors",
+        "today": "Today: {value}",
+        "total": "Total: {value}"
+      },
+      "extractions": {
+        "label": "Extractions"
+      },
+      "downloads": {
+        "label": "Downloads"
+      }
+    }
+  },
+
+  "sidebar": {
+    "tagline": "Social Media Downloader",
+    "theme": "Theme",
+    "themes": {
+      "auto": "Auto",
+      "dark": "Dark",
+      "light": "Light",
+      "solarized": "Solarized"
+    },
+    "fastExperimental": "Fast Experimental",
+    "toggles": {
+      "seasonalEffects": "Seasonal Effects",
+      "customBackground": "Custom Background",
+      "backgroundSound": "Background Sound"
+    },
+    "on": "ON",
+    "off": "OFF",
+    "profileMenuAria": "Profile menu",
+    "guest": "Guest",
+    "notLoggedIn": "Not logged in",
+    "settings": "Settings",
+    "account": "Account",
+    "aboutDownAria": "About DownAria",
+    "ytDlp": {
+      "title": "+1000 platform via yt-dlp"
+    }
+  },
+
+  "rateLimit": {
+    "title": "Rate Limit",
+    "reachedTitle": "Rate Limit Reached",
+    "limitMessage": "Limit: {limit} requests per {window}",
+    "tooManyRequests": "Too many requests. Please wait until the timer resets.",
+    "currentLimit": "Current limit:",
+    "guestLimit": "Guest limit",
+    "guestLimitValue": "{limit} req/{window}",
+    "configuredByServer": "configured by server",
+    "retryNow": "Retry now",
+    "wait": "Wait",
+    "countdown": {
+      "retryStatus": "Retry status",
+      "readyToRetry": "Ready to retry now",
+      "resetsIn": "Resets in"
+    }
+  },
+
+  "accessibility": {
+    "skipToMainContent": "Skip to main content",
+    "loading": "Loading..."
+  },
+
+  "screenSizeGuard": {
+    "title": "Screen size change detected",
+    "message": "Your viewport has become narrower. Some elements may be less comfortable to view. Try rotating your device or widening the window.",
+    "confirm": "OK"
+  },
+
   "about": {
     "title": "About",
     "subtitle": "Social media downloader without limits.",
@@ -359,7 +1014,14 @@
     "noUrl": "No URL detected from share",
     "backToHome": "← Back to Home",
     "failed": "Failed",
-    "error": "An error occurred"
+    "error": "An error occurred",
+    "errors": {
+      "extractionTitle": "Extraction Error",
+      "cookieTip": "Set cookie in Settings to access protected content.",
+      "codeLabel": "Code",
+      "tipLabel": "Tips:",
+      "openCookieSettings": "Open Cookie Settings"
+    }
   },
 
   "errors": {
@@ -413,6 +1075,7 @@
     "instagram": "Instagram",
     "twitter": "Twitter/X",
     "tiktok": "TikTok",
+    "pixiv": "Pixiv",
     "weibo": "Weibo",
     "youtube": "YouTube",
     "status": {

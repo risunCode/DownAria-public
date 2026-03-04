@@ -4,17 +4,20 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { SidebarLayout } from '@/components/layout/Sidebar';
 import { Bot, Code2, Cpu, Github, Handshake, Heart, Layers, Lock, Wrench } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export default function CreditsPage() {
+  const t = useTranslations('creditsPage');
+
   const quickLinks = [
-    { href: '/about', title: 'About', description: 'Project background and ecosystem' },
-    { href: '/docs', title: 'Documentation', description: 'Guides, API flow, and troubleshooting' },
-    { href: '/privacy', title: 'Privacy', description: 'Cookie lane and data handling policy' },
+    { href: '/about', title: t('quickLinks.about.title'), description: t('quickLinks.about.description') },
+    { href: '/docs', title: t('quickLinks.documentation.title'), description: t('quickLinks.documentation.description') },
+    { href: '/privacy', title: t('quickLinks.privacy.title'), description: t('quickLinks.privacy.description') },
   ];
 
-  const frontendStack = ['Next.js', 'React', 'TypeScript', 'Tailwind CSS', 'Framer Motion', 'Lucide'];
-  const backendStack = ['Go', 'chi router', 'FFmpeg', 'yt-dlp', 'Custom extractors', 'HTTP proxy'];
-  const tools = ['Vitest', 'ESLint', 'Go test', 'GitHub', 'VS Code'];
+  const frontendStack = [t('stacks.frontend.next'), t('stacks.frontend.react'), t('stacks.frontend.typescript'), t('stacks.frontend.tailwind'), t('stacks.frontend.framer'), t('stacks.frontend.lucide')];
+  const backendStack = [t('stacks.backend.go'), t('stacks.backend.chi'), t('stacks.backend.ffmpeg'), t('stacks.backend.ytdlp'), t('stacks.backend.extractors'), t('stacks.backend.proxy')];
+  const tools = [t('stacks.tools.vitest'), t('stacks.tools.eslint'), t('stacks.tools.gotest'), t('stacks.tools.github'), t('stacks.tools.vscode')];
 
   return (
     <SidebarLayout>
@@ -22,11 +25,11 @@ export default function CreditsPage() {
         <div className="max-w-4xl mx-auto">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
             <h1 className="text-3xl sm:text-4xl font-bold mb-3">
-              <span className="gradient-text">Credits</span> & Acknowledgements
+              <span className="gradient-text">{t('titleHighlight')}</span> {t('titleSuffix')}
             </h1>
             <p className="text-[var(--text-secondary)] text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
-              DownAria is built on top of open-source tools and community-maintained technologies.
-              This page credits the stack and contributors behind the project.
+              {t('subtitleLine1')}
+              {t('subtitleLine2')}
             </p>
           </motion.div>
 
@@ -38,14 +41,14 @@ export default function CreditsPage() {
           >
             <div className="flex items-center gap-2 mb-3">
               <Heart className="w-4 h-4 text-red-400" />
-              <h2 className="font-semibold text-[var(--text-primary)]">Built by risunCode</h2>
+              <h2 className="font-semibold text-[var(--text-primary)]">{t('builtBy.title')}</h2>
             </div>
             <div className="space-y-3 text-sm leading-relaxed">
               <p className="text-[var(--text-secondary)]">
-                Designed and maintained as an open-source downloader platform with both frontend and backend runtime ownership.
+                {t('builtBy.description')}
               </p>
               <p className="text-[var(--text-secondary)]">
-                Repository: <a href="https://github.com/risunCode/DownAria" target="_blank" rel="noopener noreferrer" className="text-[var(--accent-primary)] hover:underline">github.com/risunCode/DownAria</a>
+                {t('builtBy.repositoryLabel')}: <a href="https://github.com/risunCode/DownAria" target="_blank" rel="noopener noreferrer" className="text-[var(--accent-primary)] hover:underline">github.com/risunCode/DownAria</a>
               </p>
             </div>
           </motion.div>
@@ -59,7 +62,7 @@ export default function CreditsPage() {
             >
               <h2 className="font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
                 <Layers className="w-4 h-4 text-[var(--accent-primary)]" />
-                Frontend Stack
+                {t('sections.frontend')}
               </h2>
               <div className="grid grid-cols-2 gap-2">
                 {frontendStack.map((item) => (
@@ -79,7 +82,7 @@ export default function CreditsPage() {
             >
               <h2 className="font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
                 <Cpu className="w-4 h-4 text-[var(--accent-primary)]" />
-                Backend Stack
+                {t('sections.backend')}
               </h2>
               <div className="grid grid-cols-2 gap-2">
                 {backendStack.map((item) => (
@@ -99,7 +102,7 @@ export default function CreditsPage() {
             >
               <h2 className="font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
                 <Wrench className="w-4 h-4 text-[var(--accent-primary)]" />
-                Tools & Workflow
+                {t('sections.tools')}
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {tools.map((item) => (
@@ -119,17 +122,17 @@ export default function CreditsPage() {
             >
               <h2 className="font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
                 <Handshake className="w-4 h-4 text-[var(--accent-primary)]" />
-                License & Credits Notes
+                {t('sections.license')}
               </h2>
               <div className="space-y-3 text-sm text-[var(--text-secondary)] leading-relaxed">
                 <p className="settings-surface-card p-2.5 rounded-xl">
-                  DownAria is distributed under GPL-3 and includes integrations with third-party tools and services.
+                  {t('licenseNotes.point1')}
                 </p>
                 <p className="settings-surface-card p-2.5 rounded-xl">
-                  All product names, logos, and platform trademarks remain property of their respective owners.
+                  {t('licenseNotes.point2')}
                 </p>
                 <p className="settings-surface-card p-2.5 rounded-xl">
-                  Usage must follow local laws, copyright rules, and platform terms of service.
+                  {t('licenseNotes.point3')}
                 </p>
               </div>
             </motion.div>
@@ -142,7 +145,7 @@ export default function CreditsPage() {
             >
               <h2 className="font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
                 <Lock className="w-4 h-4 text-[var(--accent-primary)]" />
-                Quick Links
+                {t('quickLinks.title')}
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 {quickLinks.map((link) => (

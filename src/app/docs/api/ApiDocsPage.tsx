@@ -58,7 +58,7 @@ const endpoints: EndpointDoc[] = [
   -H "Content-Type: application/json" \\
   -d '{"url":"YOUTUBE_URL","quality":"1080p","format":"mp4"}'`,
     params: 'url (YouTube mode) or videoUrl+audioUrl (pair mode), plus optional quality/format/filename',
-    notes: 'Pair mode is used for frontend paired streams, including HLS audio/video merge path.',
+    notes: 'Primary runtime merge path. Pair mode is used for frontend paired streams, including HLS audio/video merge path. Public `/api/v1/merge` is conditional and non-default (available only when `WEB_INTERNAL_SHARED_SECRET` is unset).',
   },
   {
     method: 'GET',
@@ -185,6 +185,7 @@ export function ApiDocsPage() {
   const [requestTab, setRequestTab] = useState<'curl' | 'powershell' | 'javascript'>('curl');
   const [responseTab, setResponseTab] = useState<'success' | 'error'>('success');
   const [openEndpoint, setOpenEndpoint] = useState<string | null>('/api/web/proxy');
+  const [showResponseShapeGuide, setShowResponseShapeGuide] = useState(false);
 
   const otherEndpoints = endpoints.filter((ep) => ep.path !== '/api/web/extract');
   const rawBaseUrl = (process.env.NEXT_PUBLIC_API_URL || '').trim();
@@ -383,7 +384,7 @@ const json = await res.json();`,
                 <span className="text-[10px] px-2 py-0.5 rounded font-semibold bg-green-500/20 text-green-300">POST</span>
                 <code className="text-sm text-[var(--text-primary)]">/api/web/extract</code>
               </div>
-              <p className="text-xs text-[var(--text-muted)] mb-4">Extract media information from supported URL with optional cookie lane fallback.</p>
+              <p className="text-xs text-[var(--text-muted)] mb-4">Extract media information from supported URL with optional cookie lane fallback. Frontend runtime uses signed `/api/web/*` routes.</p>
 
               <div className="rounded-xl border border-sky-500/35 bg-sky-500/12 p-3 mb-4">
                 <p className="text-xs font-semibold text-sky-400 mb-1">Cookie Support</p>
@@ -441,89 +442,6 @@ const json = await res.json();`,
               transition={{ delay: 0.11 }}
               className="glass-card border border-[var(--border-color)] rounded-2xl p-4 sm:p-5"
             >
-              <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-3">Response Shape Guide</h2>
-              <p className="text-xs text-[var(--text-muted)] mb-4 leading-relaxed">
-                Response envelope is stable across all platforms. Field values vary per source, but array/object shape stays consistent.
-                This section helps clients adapt without platform-specific hardcoding.
-              </p>
-
-              <div className="space-y-3">
-                <MacPanel title="Envelope (top level)">
-                  <div className="space-y-2">
-                    {responseShape.map((item) => (
-                      <div key={item.field} className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-card)]/55 p-2.5">
-                        <div className="flex flex-wrap items-center gap-2 mb-1">
-                          <code className="text-xs text-[var(--text-primary)]">{item.field}</code>
-                          <span className="text-[10px] px-2 py-0.5 rounded bg-[var(--bg-secondary)] text-[var(--text-secondary)]">{item.type}</span>
-                          <span
-                            className={`text-[10px] px-2 py-0.5 rounded ${
-                              item.required === 'required'
-                                ? 'bg-emerald-500/15 text-emerald-300'
-                                : item.required === 'conditional'
-                                  ? 'bg-amber-500/15 text-amber-300'
-                                  : 'bg-zinc-500/15 text-zinc-300'
-                            }`}
-                          >
-                            {item.required}
-                          </span>
-                        </div>
-                        <p className="text-xs text-[var(--text-muted)] leading-relaxed">{item.notes}</p>
-                      </div>
-                    ))}
-                  </div>
-                </MacPanel>
-
-                <MacPanel title="data object">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {dataShape.map((item) => (
-                      <div key={item.field} className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-card)]/55 p-2.5">
-                        <div className="flex flex-wrap items-center gap-2 mb-1">
-                          <code className="text-xs text-[var(--text-primary)]">{item.field}</code>
-                          <span className="text-[10px] px-2 py-0.5 rounded bg-[var(--bg-secondary)] text-[var(--text-secondary)]">{item.type}</span>
-                        </div>
-                        <p className="text-xs text-[var(--text-muted)] leading-relaxed">{item.notes}</p>
-                      </div>
-                    ))}
-                  </div>
-                </MacPanel>
-
-                <MacPanel title="media[] and variants[]">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <p className="text-xs font-semibold text-[var(--text-primary)]">Media item</p>
-                      {mediaShape.map((item) => (
-                        <div key={item.field} className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-card)]/55 p-2.5">
-                          <div className="flex flex-wrap items-center gap-2 mb-1">
-                            <code className="text-xs text-[var(--text-primary)]">{item.field}</code>
-                            <span className="text-[10px] px-2 py-0.5 rounded bg-[var(--bg-secondary)] text-[var(--text-secondary)]">{item.type}</span>
-                          </div>
-                          <p className="text-xs text-[var(--text-muted)] leading-relaxed">{item.notes}</p>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-xs font-semibold text-[var(--text-primary)]">Variant item</p>
-                      {variantShape.map((item) => (
-                        <div key={item.field} className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-card)]/55 p-2.5">
-                          <div className="flex flex-wrap items-center gap-2 mb-1">
-                            <code className="text-xs text-[var(--text-primary)]">{item.field}</code>
-                            <span className="text-[10px] px-2 py-0.5 rounded bg-[var(--bg-secondary)] text-[var(--text-secondary)]">{item.type}</span>
-                          </div>
-                          <p className="text-xs text-[var(--text-muted)] leading-relaxed">{item.notes}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </MacPanel>
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.12 }}
-              className="glass-card border border-[var(--border-color)] rounded-2xl p-4 sm:p-5"
-            >
               <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-3">Other Endpoints</h2>
               <div className="space-y-2.5">
                 {otherEndpoints.map((ep) => {
@@ -565,6 +483,105 @@ const json = await res.json();`,
                   );
                 })}
               </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.12 }}
+              className="glass-card border border-[var(--border-color)] rounded-2xl p-4 sm:p-5"
+            >
+              <button
+                type="button"
+                onClick={() => setShowResponseShapeGuide((prev) => !prev)}
+                className="w-full flex items-start sm:items-center justify-between gap-2 text-left"
+              >
+                <h2 className="text-lg font-semibold text-[var(--text-primary)]">Response Shape Guide</h2>
+                {showResponseShapeGuide ? (
+                  <ChevronUp className="w-4 h-4 text-[var(--text-muted)] flex-shrink-0 mt-0.5 sm:mt-0" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-[var(--text-muted)] flex-shrink-0 mt-0.5 sm:mt-0" />
+                )}
+              </button>
+
+              <p className="text-xs text-[var(--text-muted)] mt-2 leading-relaxed">
+                Response envelope is stable across all platforms. Field values vary per source, but array/object shape stays consistent.
+                This section helps clients adapt without platform-specific hardcoding.
+              </p>
+
+              {showResponseShapeGuide ? (
+                <div className="space-y-3 mt-4">
+                  <MacPanel title="Envelope (top level)">
+                    <div className="space-y-2">
+                      {responseShape.map((item) => (
+                        <div key={item.field} className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-card)]/55 p-2.5">
+                          <div className="flex flex-wrap items-center gap-2 mb-1">
+                            <code className="text-xs text-[var(--text-primary)]">{item.field}</code>
+                            <span className="text-[10px] px-2 py-0.5 rounded bg-[var(--bg-secondary)] text-[var(--text-secondary)]">{item.type}</span>
+                            <span
+                              className={`text-[10px] px-2 py-0.5 rounded ${
+                                item.required === 'required'
+                                  ? 'bg-emerald-500/15 text-emerald-300'
+                                  : item.required === 'conditional'
+                                    ? 'bg-amber-500/15 text-amber-300'
+                                    : 'bg-zinc-500/15 text-zinc-300'
+                              }`}
+                            >
+                              {item.required}
+                            </span>
+                          </div>
+                          <p className="text-xs text-[var(--text-muted)] leading-relaxed">{item.notes}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </MacPanel>
+
+                  <MacPanel title="data object">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {dataShape.map((item) => (
+                        <div key={item.field} className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-card)]/55 p-2.5">
+                          <div className="flex flex-wrap items-center gap-2 mb-1">
+                            <code className="text-xs text-[var(--text-primary)]">{item.field}</code>
+                            <span className="text-[10px] px-2 py-0.5 rounded bg-[var(--bg-secondary)] text-[var(--text-secondary)]">{item.type}</span>
+                          </div>
+                          <p className="text-xs text-[var(--text-muted)] leading-relaxed">{item.notes}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </MacPanel>
+
+                  <MacPanel title="media[] and variants[]">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold text-[var(--text-primary)]">Media item</p>
+                        {mediaShape.map((item) => (
+                          <div key={item.field} className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-card)]/55 p-2.5">
+                            <div className="flex flex-wrap items-center gap-2 mb-1">
+                              <code className="text-xs text-[var(--text-primary)]">{item.field}</code>
+                              <span className="text-[10px] px-2 py-0.5 rounded bg-[var(--bg-secondary)] text-[var(--text-secondary)]">{item.type}</span>
+                            </div>
+                            <p className="text-xs text-[var(--text-muted)] leading-relaxed">{item.notes}</p>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold text-[var(--text-primary)]">Variant item</p>
+                        {variantShape.map((item) => (
+                          <div key={item.field} className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-card)]/55 p-2.5">
+                            <div className="flex flex-wrap items-center gap-2 mb-1">
+                              <code className="text-xs text-[var(--text-primary)]">{item.field}</code>
+                              <span className="text-[10px] px-2 py-0.5 rounded bg-[var(--bg-secondary)] text-[var(--text-secondary)]">{item.type}</span>
+                            </div>
+                            <p className="text-xs text-[var(--text-muted)] leading-relaxed">{item.notes}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </MacPanel>
+                </div>
+              ) : (
+                <p className="text-[11px] text-[var(--text-muted)] mt-3">Collapsed by default. Click to expand full response field map.</p>
+              )}
             </motion.div>
 
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -725,7 +742,7 @@ const json = await res.json();`,
               </div>
               <div className="mt-3 text-[11px] text-[var(--text-muted)] flex items-start gap-1.5 leading-relaxed">
                 <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                <span className="min-w-0 break-words [overflow-wrap:anywhere]">This page is synced to current frontend runtime routes (`/api/web/*`) and active backend public routes.</span>
+                <span className="min-w-0 break-words [overflow-wrap:anywhere]">This page is synced to current frontend runtime routes (`/api/web/*`) and active FetchMoona public routes.</span>
               </div>
               <div className="mt-2 text-[11px] text-[var(--text-muted)] flex items-start gap-1.5 leading-relaxed">
                 <Sparkles className="w-3.5 h-3.5 text-sky-400 shrink-0" />
