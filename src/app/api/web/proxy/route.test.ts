@@ -94,13 +94,13 @@ describe('/api/web/proxy route', () => {
     expect(response.headers.get('content-type')).toBe('application/vnd.apple.mpegurl; charset=utf-8');
     expect(response.headers.get('content-length')).toBeNull();
     expect(rewritten).toContain(
-      '/api/web/proxy?url=https%3A%2F%2Fcdn.example.com%2Flow%2Findex.m3u8&inline=1&hls=1&platform=youtube',
+      '/api/web/proxy?url=https%3A%2F%2Fcdn.example.com%2Flow%2Findex.m3u8&platform=youtube',
     );
     expect(rewritten).toContain(
-      'URI="/api/web/proxy?url=https%3A%2F%2Fcdn.example.com%2Fkey.key&inline=1&hls=1&platform=youtube"',
+      'URI="/api/web/proxy?url=https%3A%2F%2Fcdn.example.com%2Fkey.key&platform=youtube"',
     );
     expect(rewritten).toContain(
-      '/api/web/proxy?url=https%3A%2F%2Fcdn.example.com%2Fsegment.ts&inline=1&hls=1&platform=youtube',
+      '/api/web/proxy?url=https%3A%2F%2Fcdn.example.com%2Fsegment.ts&platform=youtube',
     );
   });
 });
