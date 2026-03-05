@@ -190,6 +190,11 @@ export function SidebarLayout({ children }: SidebarProps) {
                                         initial={{ opacity: 0, y: -10 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, y: -10 }}
+                                        transition={{
+                                            type: 'spring',
+                                            stiffness: 500,
+                                            damping: 30
+                                        }}
                                         className="absolute right-0 top-full mt-2 w-64 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] shadow-xl z-50"
                                     >
                                         <div className="px-4 pb-2">
@@ -274,6 +279,11 @@ export function SidebarLayout({ children }: SidebarProps) {
                                         initial={{ opacity: 0, y: -10 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, y: -10 }}
+                                        transition={{
+                                            type: 'spring',
+                                            stiffness: 500,
+                                            damping: 30
+                                        }}
                                         className="absolute right-0 top-full mt-2 w-44 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] shadow-xl z-[9999]"
                                     >
                                         {/* User Header */}
@@ -308,6 +318,7 @@ export function SidebarLayout({ children }: SidebarProps) {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
+                            transition={{ duration: 0.15 }}
                             onClick={() => setSidebarOpen(false)}
                             className="lg:hidden fixed inset-0 z-40 bg-black/60"
                         />
@@ -316,7 +327,12 @@ export function SidebarLayout({ children }: SidebarProps) {
                             initial={{ x: -280 }}
                             animate={{ x: 0 }}
                             exit={{ x: -280 }}
-                            transition={{ type: 'tween', duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+                            transition={{
+                                type: 'spring',
+                                stiffness: 400,
+                                damping: 30,
+                                mass: 0.8
+                            }}
                             className="lg:hidden fixed top-0 left-0 bottom-0 z-50 w-[280px] bg-[var(--bg-secondary)] border-r border-[var(--border-color)] will-change-transform"
                             onAnimationComplete={(definition) => {
                                 if (definition && typeof definition === 'object' && 'x' in definition && definition.x === -280) {
@@ -477,6 +493,11 @@ function SidebarContent({ navLinks, platforms, isActive, onNavigate }: SidebarCo
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: 10 }}
+                                transition={{
+                                    type: 'spring',
+                                    stiffness: 500,
+                                    damping: 30
+                                }}
                                 className="absolute bottom-full left-0 right-0 mb-2 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] shadow-xl z-50"
                             >
                                 <Link
