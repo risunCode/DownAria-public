@@ -233,14 +233,14 @@ export function ChangelogPage({ markdownContent }: ChangelogPageProps) {
 
     return (
         <SidebarLayout>
-            <div className="docs-surface py-6 px-4 lg:px-8">
+            <div className="docs-surface py-5 sm:py-6 px-3 sm:px-4 lg:px-8">
                 <div className="max-w-4xl mx-auto">
                     <DocsNavbar />
                     <div className="space-y-6">
                         {/* Header */}
                         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                            <h1 className="text-3xl font-bold mb-2"><span className="gradient-text">Changelog</span></h1>
-                            <p className="text-[var(--text-muted)] text-sm">Version history and release notes.</p>
+                            <h1 className="text-2xl sm:text-3xl font-bold mb-2 leading-tight"><span className="gradient-text">Changelog</span></h1>
+                            <p className="text-[var(--text-muted)] text-sm leading-relaxed">Version history and release notes.</p>
                         </motion.div>
 
                         {/* Changelog cards */}

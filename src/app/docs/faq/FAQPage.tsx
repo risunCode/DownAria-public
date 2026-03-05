@@ -63,13 +63,13 @@ function FAQAccordion({ item }: { item: FAQItem }) {
 export function FAQPage() {
     return (
         <SidebarLayout>
-            <div className="docs-surface py-6 px-4 lg:px-8">
+            <div className="docs-surface py-5 sm:py-6 px-3 sm:px-4 lg:px-8">
                 <div className="max-w-4xl mx-auto">
                     <DocsNavbar />
                     <div className="space-y-6">
                         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                            <h1 className="text-3xl font-bold mb-3">Frequently Asked <span className="gradient-text">Questions</span></h1>
-                            <p className="text-[var(--text-muted)] text-sm">Common user and integration questions for current Downaria runtime behavior.</p>
+                            <h1 className="text-2xl sm:text-3xl font-bold mb-3 leading-tight">Frequently Asked <span className="gradient-text">Questions</span></h1>
+                            <p className="text-[var(--text-muted)] text-sm leading-relaxed">Common user and integration questions for current Downaria runtime behavior.</p>
                         </motion.div>
 
                         {faqs.map((section, idx) => (
@@ -78,7 +78,7 @@ export function FAQPage() {
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: idx * 0.08 }}
-                                className="glass-card p-5 border border-[var(--border-color)] rounded-xl"
+                                className="glass-card p-4 sm:p-5 border border-[var(--border-color)] rounded-xl"
                             >
                                 <h2 className="text-sm font-semibold text-[var(--text-primary)] mb-4">{section.category}</h2>
                                 <div className="px-1">

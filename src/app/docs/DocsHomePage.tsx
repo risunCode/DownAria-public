@@ -69,14 +69,19 @@ export function DocsHomePage() {
                             transition={{ delay: 0.14 }}
                             className="glass-card p-4 sm:p-5 border border-[var(--border-color)] rounded-xl"
                         >
-                            <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-3">Quick runtime API path</h2>
+                            <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-3">Public API v1 Endpoints</h2>
                             <ul className="space-y-2 text-xs text-[var(--text-muted)] list-disc pl-4">
-                                <li>Extract metadata with <code className="text-[var(--text-secondary)]">POST /api/web/extract</code></li>
-                                <li>Preview or stream media with <code className="text-[var(--text-secondary)]">GET /api/web/proxy</code></li>
-                                <li>Download file output with <code className="text-[var(--text-secondary)]">GET /api/web/download</code></li>
-                                <li>Merge via YouTube URL mode or direct pair mode on <code className="text-[var(--text-secondary)]">POST /api/web/merge</code></li>
-                                <li>Check server health with <code className="text-[var(--text-secondary)]">GET /health</code></li>
+                                <li>Extract media metadata: <code className="text-[var(--text-secondary)]">POST /api/v1/extract</code></li>
+                                <li>Proxy/stream media files: <code className="text-[var(--text-secondary)]">GET /api/v1/proxy</code></li>
+                                <li>Download with proper headers: <code className="text-[var(--text-secondary)]">GET /api/v1/download</code></li>
+                                <li>Merge video+audio streams: <code className="text-[var(--text-secondary)]">POST /api/v1/merge</code> (when enabled)</li>
+                                <li>Public usage statistics: <code className="text-[var(--text-secondary)]">GET /api/v1/stats/public</code></li>
+                                <li>Health check endpoint: <code className="text-[var(--text-secondary)]">GET /health</code></li>
                             </ul>
+                            <p className="mt-3 text-xs text-[var(--text-muted)]">
+                                Note: Frontend uses signed <code className="text-[var(--text-secondary)]">/api/web/*</code> routes internally.
+                                Public API v1 is for direct integrations without signature requirements.
+                            </p>
                         </motion.div>
 
                         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>

@@ -32,52 +32,62 @@ type ShapeItem = {
 
 const endpoints: EndpointDoc[] = [
   {
-    method: 'GET',
-    path: '/api/web/proxy',
-    label: 'Preview / Stream Media',
-    summary: 'Proxy/stream media URL for preview playback and HLS proxy flow.',
-    example: `curl "{BASE_URL}/api/web/proxy?url=MEDIA_URL"`,
-    params: 'url (required) - media URL from extract response',
-    notes: 'Use this route for preview/stream. Dedicated download uses `/api/web/download`.',
+    method: 'POST',
+    path: '/api/v1/extract',
+    label: 'Extract Media Metadata',
+    summary: 'Extract media metadata and download variants from supported platforms.',
+    example: `curl -X POST {BASE_URL}/api/v1/extract \\
+  -H "Content-Type: application/json" \\
+  -d '{"url":"POST_URL","cookie":"optional_cookie"}'`,
+    params: 'url (required), cookie (optional)',
+    notes: 'Public API endpoint. Accepts `{ url, cookie? }`. Cookie lane order: Guest -> Server -> UserProvided.',
   },
   {
     method: 'GET',
-    path: '/api/web/download',
-    label: 'Dedicated Download Route',
-    summary: 'Download route used by runtime for file output.',
-    example: `curl -L "{BASE_URL}/api/web/download?url=MEDIA_URL&filename=output.mp4"`,
+    path: '/api/v1/proxy',
+    label: 'Proxy / Stream Media',
+    summary: 'Proxy/stream media URL for preview playback.',
+    example: `curl "{BASE_URL}/api/v1/proxy?url=MEDIA_URL"`,
+    params: 'url (required) - media URL from extract response',
+    notes: 'Use this route for preview/stream. For downloads with proper headers, use `/api/v1/download`.',
+  },
+  {
+    method: 'GET',
+    path: '/api/v1/download',
+    label: 'Download with Headers',
+    summary: 'Download route with proper Content-Disposition headers for file output.',
+    example: `curl -L "{BASE_URL}/api/v1/download?url=MEDIA_URL&filename=output.mp4"`,
     params: 'url (required), filename/platform (optional)',
-    notes: 'Backend public equivalent: `GET /api/v1/download`.',
+    notes: 'Sets proper download headers. Frontend uses signed `/api/web/download` internally.',
   },
   {
     method: 'POST',
-    path: '/api/web/merge',
-    label: 'Merge / Convert',
-    summary: 'Supports YouTube URL mode and direct pair mode (`videoUrl + audioUrl`).',
-    example: `curl -X POST {BASE_URL}/api/web/merge \\
+    path: '/api/v1/merge',
+    label: 'Merge Video + Audio',
+    summary: 'Merge separate video and audio streams (YouTube mode or direct pair mode).',
+    example: `curl -X POST {BASE_URL}/api/v1/merge \\
   -H "Content-Type: application/json" \\
   -d '{"url":"YOUTUBE_URL","quality":"1080p","format":"mp4"}'`,
     params: 'url (YouTube mode) or videoUrl+audioUrl (pair mode), plus optional quality/format/filename',
-    notes: 'Primary runtime merge path. Pair mode is used for frontend paired streams, including HLS audio/video merge path. Public `/api/v1/merge` is conditional and non-default (available only when `WEB_INTERNAL_SHARED_SECRET` is unset).',
+    notes: 'Only available when `WEB_INTERNAL_SHARED_SECRET` is not configured. Production deployments use signed `/api/web/merge` instead.',
   },
   {
     method: 'GET',
     path: '/api/v1/stats/public',
     label: 'Public Usage Stats',
-    summary: 'Read public aggregate service usage stats.',
+    summary: 'Read public aggregate service usage statistics.',
     example: `curl "{BASE_URL}/api/v1/stats/public"`,
     params: 'No params required',
+    notes: 'Returns aggregate stats: total requests, platform breakdown, cache hit rate, etc.',
   },
   {
-    method: 'POST',
-    path: '/api/web/extract',
-    label: 'Extract Media Metadata',
-    summary: 'Extract media metadata and download variants for runtime flow.',
-    example: `curl -X POST {BASE_URL}/api/web/extract \\
-  -H "Content-Type: application/json" \\
-  -d '{"url":"POST_URL","cookie":"optional_cookie"}'`,
-    params: 'url (required), cookie (optional)',
-    notes: 'Accepts `{ url, cookie? }`. Cookie lane order: Guest -> Server -> UserProvided.',
+    method: 'GET',
+    path: '/health',
+    label: 'Health Check',
+    summary: 'Server health status with dependency monitoring.',
+    example: `curl "{BASE_URL}/health"`,
+    params: 'No params required',
+    notes: 'Returns health status (healthy/degraded/unhealthy) with FFmpeg availability and memory pressure checks.',
   },
 ];
 
@@ -153,7 +163,7 @@ const mediaShape: ShapeItem[] = [
 const variantShape: ShapeItem[] = [
   { field: 'quality', type: 'string', required: 'required', notes: 'Human quality label (1080p, HD, Audio, Original).' },
   { field: 'url', type: 'string', required: 'required', notes: 'Direct media URL (usually proxied on frontend).' },
-  { field: 'size', type: 'number', required: 'optional', notes: 'File size bytes; may be unavailable on some sources.' },
+  { field: 'filesize', type: 'number', required: 'optional', notes: 'File size in bytes; may be unavailable on some sources.' },
   { field: 'mime', type: 'string', required: 'optional', notes: 'MIME type (video/mp4, image/jpeg, ...).' },
   { field: 'format', type: 'string', required: 'optional', notes: 'Extension (mp4, m4a, jpg, webp, ...).' },
   { field: 'resolution', type: 'string', required: 'optional', notes: 'Resolution when provided by extractor.' },
@@ -247,7 +257,7 @@ export function ApiDocsPage() {
   const [openEndpoint, setOpenEndpoint] = useState<string | null>('/api/web/proxy');
   const [showResponseShapeGuide, setShowResponseShapeGuide] = useState(false);
 
-  const otherEndpoints = endpoints.filter((ep) => ep.path !== '/api/web/extract');
+  const otherEndpoints = endpoints.filter((ep) => ep.path !== '/api/v1/extract');
   const rawBaseUrl = (process.env.NEXT_PUBLIC_API_URL || '').trim();
   const normalizedRawBaseUrl = rawBaseUrl.replace(/\/+$/, '');
   const baseUrl = (() => {
@@ -261,17 +271,17 @@ export function ApiDocsPage() {
   })();
 
   const requestExamples = {
-    curl: `curl -X POST ${baseUrl}/api/web/extract \\
+    curl: `curl -X POST ${baseUrl}/api/v1/extract \\
   -H "Content-Type: application/json" \\
   -d '{
     "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
     "cookie": "optional_cookie_string"
   }'`,
-    powershell: `Invoke-RestMethod -Uri "${baseUrl}/api/web/extract" \\
+    powershell: `Invoke-RestMethod -Uri "${baseUrl}/api/v1/extract" \\
   -Method POST \\
   -ContentType "application/json" \\
   -Body '{"url":"https://www.youtube.com/watch?v=dQw4w9WgXcQ"}'`,
-    javascript: `const res = await fetch('/api/web/extract', {
+    javascript: `const res = await fetch('${baseUrl}/api/v1/extract', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
@@ -395,8 +405,8 @@ const json = await res.json();`,
                   <Zap className="w-4.5 h-4.5 text-yellow-400" />
                 </div>
                 <div>
-                  <p className="text-base sm:text-lg font-semibold text-[var(--text-primary)] leading-tight">BFF Runtime Routes</p>
-                  <p className="text-xs sm:text-[13px] text-[var(--text-muted)] mt-1.5 leading-relaxed break-words">Frontend calls signed `/api/web/*` routes by default.</p>
+                  <p className="text-base sm:text-lg font-semibold text-[var(--text-primary)] leading-tight">Public API v1</p>
+                  <p className="text-xs sm:text-[13px] text-[var(--text-muted)] mt-1.5 leading-relaxed break-words">Direct integration endpoints without signature requirements.</p>
                 </div>
               </div>
               <div className="glass-card border border-[var(--border-color)] rounded-xl p-4 sm:p-5 flex flex-col justify-between bg-gradient-to-br from-emerald-500/8 to-transparent overflow-hidden">
@@ -437,9 +447,9 @@ const json = await res.json();`,
               <Card>
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   <span className="text-[10px] px-2 py-0.5 rounded font-semibold bg-green-500/20 text-green-300">POST</span>
-                  <code className="text-sm text-[var(--text-primary)] break-all">/api/web/extract</code>
+                  <code className="text-sm text-[var(--text-primary)] break-all">/api/v1/extract</code>
                 </div>
-                <p className="text-xs text-[var(--text-muted)] mb-4 break-words">Extract media information from supported URL with optional cookie lane fallback. Frontend runtime uses signed `/api/web/*` routes.</p>
+                <p className="text-xs text-[var(--text-muted)] mb-4 break-words">Extract media information from supported URL with optional cookie lane fallback. Public API endpoint for direct integrations.</p>
 
                 <div className="rounded-xl border border-sky-500/35 bg-sky-500/12 p-3 mb-4 overflow-hidden">
                   <p className="text-xs font-semibold text-sky-400 mb-1">Cookie Support</p>
@@ -707,7 +717,7 @@ const json = await res.json();`,
                 </div>
                 <div className="mt-3 text-[11px] text-[var(--text-muted)] flex items-start gap-1.5 leading-relaxed">
                   <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                  <span className="break-words">This page is synced to current frontend runtime routes (`/api/web/*`) and active DownAria-API public routes.</span>
+                  <span className="break-words">This page documents public API v1 endpoints. Frontend uses signed `/api/web/*` routes internally.</span>
                 </div>
                 <div className="mt-2 text-[11px] text-[var(--text-muted)] flex items-start gap-1.5 leading-relaxed">
                   <Sparkles className="w-3.5 h-3.5 text-sky-400 shrink-0" />
