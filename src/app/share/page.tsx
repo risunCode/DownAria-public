@@ -124,9 +124,7 @@ function ShareContent() {
     try {
       // Get platform cookie if available
       let platformCookie: string | undefined;
-      if (detectedPlatform === 'weibo') {
-        platformCookie = getPlatformCookie('weibo') || undefined;
-      } else if (['facebook', 'instagram'].includes(detectedPlatform)) {
+      if (['facebook', 'instagram'].includes(detectedPlatform)) {
         platformCookie = getPlatformCookie(detectedPlatform as 'facebook' | 'instagram') || undefined;
       }
 

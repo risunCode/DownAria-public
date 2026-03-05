@@ -4,7 +4,7 @@
 
 /** Platform identifier - aligned with backend PlatformId */
 export type PlatformId = 
-    | 'facebook' | 'instagram' | 'threads' | 'twitter' | 'tiktok' | 'weibo' | 'youtube'
+    | 'facebook' | 'instagram' | 'threads' | 'twitter' | 'tiktok' | 'youtube'
     | 'bilibili' | 'reddit' | 'soundcloud'
     | 'eporner' | 'pornhub' | 'rule34video' | 'erome' | 'pixiv';
 
@@ -240,17 +240,6 @@ export const PLATFORMS: PlatformConfig[] = [
         patterns: [
             /^(https?:\/\/)?(www\.|vm\.|vt\.|m\.)?tiktok\.com\/.+/,
             /^(https?:\/\/)?tiktok\.com\/.+/,
-        ],
-    },
-    {
-        id: 'weibo',
-        name: 'Weibo',
-        icon: '🔴',
-        color: '#e6162d',
-        placeholder: 'https://weibo.com/...',
-        patterns: [
-            /^(https?:\/\/)?(www\.|m\.|video\.)?weibo\.(com|cn)\/.+/,
-            /^(https?:\/\/)?t\.cn\/.+/,
         ],
     },
     {

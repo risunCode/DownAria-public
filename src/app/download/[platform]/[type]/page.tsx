@@ -25,7 +25,6 @@ function formatPlatformName(p: string): string {
         facebook: 'Facebook',
         instagram: 'Instagram',
         twitter: 'Twitter/X',
-        weibo: 'Weibo',
         youtube: 'YouTube'
     };
     return map[p.toLowerCase()] || p.charAt(0).toUpperCase() + p.slice(1);
@@ -64,7 +63,7 @@ export default async function Page({ params }: Props) {
     const { platform } = await params;
 
     // Validate platform
-    const validPlatforms: PlatformId[] = ['tiktok', 'facebook', 'instagram', 'twitter', 'weibo', 'youtube'];
+    const validPlatforms: PlatformId[] = ['tiktok', 'facebook', 'instagram', 'twitter', 'youtube'];
     const normalizedPlatform = validPlatforms.includes(platform as PlatformId)
         ? (platform as PlatformId)
         : 'facebook'; // Default fallback

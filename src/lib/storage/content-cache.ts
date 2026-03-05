@@ -43,7 +43,6 @@ export const DEFAULT_PLATFORM_TTL_MS: Record<PlatformId, number> = {
   facebook: 30 * 60 * 1000,
   tiktok: 30 * 60 * 1000,
   twitter: 30 * 60 * 1000,
-  weibo: 30 * 60 * 1000,
   bilibili: 30 * 60 * 1000,
   reddit: 30 * 60 * 1000,
   soundcloud: 30 * 60 * 1000,

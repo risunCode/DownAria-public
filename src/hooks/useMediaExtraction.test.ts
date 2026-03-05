@@ -129,7 +129,7 @@ describe('retryLastExtraction', () => {
 
 describe('defaultCookieResolver', () => {
   it('returns twitter cookie when twitter platform is detected', () => {
-    const resolver = vi.fn((platform: 'facebook' | 'instagram' | 'twitter' | 'youtube' | 'weibo') => {
+    const resolver = vi.fn((platform: 'facebook' | 'instagram' | 'twitter' | 'youtube') => {
       if (platform === 'twitter') {
         return 'auth_token=abc; ct0=xyz';
       }
@@ -143,7 +143,7 @@ describe('defaultCookieResolver', () => {
   });
 
   it('returns youtube cookie when youtube platform is detected', () => {
-    const resolver = vi.fn((platform: 'facebook' | 'instagram' | 'twitter' | 'youtube' | 'weibo') => {
+    const resolver = vi.fn((platform: 'facebook' | 'instagram' | 'twitter' | 'youtube') => {
       if (platform === 'youtube') {
         return 'VISITOR_INFO1_LIVE=abc123';
       }

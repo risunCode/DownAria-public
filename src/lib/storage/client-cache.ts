@@ -70,7 +70,6 @@ const TTL_CONFIG: Record<PlatformId, number> = {
   facebook: 30 * 60 * 1000,    // 30 minutes
   tiktok: 30 * 60 * 1000,      // 30 minutes
   twitter: 30 * 60 * 1000,     // 30 minutes
-  weibo: 30 * 60 * 1000,       // 30 minutes
   bilibili: 30 * 60 * 1000,    // 30 minutes
   reddit: 30 * 60 * 1000,      // 30 minutes
   soundcloud: 30 * 60 * 1000,  // 30 minutes
@@ -157,14 +156,6 @@ const CONTENT_ID_EXTRACTORS: Record<PlatformId, (url: string) => string | null> 
     if (shortId) return shortId[1];
     const shortsId = url.match(/\/shorts\/([a-zA-Z0-9_-]{11})/);
     if (shortsId) return shortsId[1];
-    return null;
-  },
-  
-  weibo: (url) => {
-    const longId = url.match(/\/(\d{16,})/);
-    if (longId) return longId[1];
-    const detail = url.match(/\/(?:detail|status)\/(\d+)/i);
-    if (detail) return detail[1];
     return null;
   },
   

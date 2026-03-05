@@ -77,7 +77,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
         { p: 'instagram', t: 'stories' },
         { p: 'instagram', t: 'photo' },
         { p: 'twitter', t: 'video' },
-        { p: 'weibo', t: 'video' },
         { p: 'youtube', t: 'video' },
         { p: 'youtube', t: 'mp3' },
     ];

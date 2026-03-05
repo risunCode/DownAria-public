@@ -2,6 +2,17 @@
 
 All notable changes to DownAria will be documented in this file.
 
+## [2.3.1] - 2026-03-06
+
+### 🔧 Improvements
+- Disabled live HLS preview playback in media gallery and replaced it with thumbnail fallback plus clear "HLS live preview disabled" guidance to use Download/Merge.
+- Removed frontend Weibo surface from platform selection/types/icons to align with currently supported backend platform set.
+- Cleaned leftover Weibo references that were causing frontend type/runtime mismatch in route/platform handling.
+
+### 🐛 Fixed
+- Fixed Turbopack/runtime failure path caused by partial Weibo type removal.
+- Prevented HLS preview path from initializing streaming playback logic in preview modal.
+
 ## [2.3.0] - 2026-03-05
 
 ### 🏗️ Architecture Overhaul
@@ -35,6 +46,12 @@ All notable changes to DownAria will be documented in this file.
 - Added **Vidstack v1.12.13** player for direct video playback
 - `VideoPreview` component with poster support and proper cleanup
 - Separate handling for HLS streams (hls.js) vs direct MP4/WebM URLs
+
+#### 🎬 HLS Streaming Support
+- Added HLS streaming proxy routes (`/api/web/hls-stream`, `/api/v1/hls-stream`)
+- Frontend now supports HLS playlist and segment proxying for seamless playback
+- Type system updated to support `filename` field in media variants
+- Enhanced media variant schema validation for HLS-specific metadata
 
 #### 🎯 Lazy Loading Improvements
 - **LazyMarkdown** component with dynamic import and skeleton placeholder

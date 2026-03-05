@@ -84,7 +84,6 @@ export default function SettingsPage() {
     instagram: false,
     twitter: false,
     youtube: false,
-    weibo: false,
   });
   const [editPlatform, setEditPlatform] = useState<CookiePlatform | null>(null);
   const [editValue, setEditValue] = useState('');

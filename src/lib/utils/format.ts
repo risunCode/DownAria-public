@@ -96,7 +96,7 @@ export function formatNumber(num: number): string {
 
 /**
  * Domain to platform mapping for fast hostname-based detection
- * Order: facebook, youtube, instagram, tiktok, twitter, weibo + generic platforms
+ * Order: facebook, youtube, instagram, tiktok, twitter + generic platforms
  */
 const DOMAIN_PLATFORM_MAP: Record<string, PlatformId> = {
     // Facebook
@@ -144,13 +144,6 @@ const DOMAIN_PLATFORM_MAP: Record<string, PlatformId> = {
     'www.vxtwitter.com': 'twitter',
     'fixupx.com': 'twitter',
     'www.fixupx.com': 'twitter',
-    // Weibo
-    'weibo.com': 'weibo',
-    'www.weibo.com': 'weibo',
-    'm.weibo.com': 'weibo',
-    'video.weibo.com': 'weibo',
-    'weibo.cn': 'weibo',
-    't.cn': 'weibo',
     // BiliBili
     'bilibili.com': 'bilibili',
     'www.bilibili.com': 'bilibili',

@@ -124,8 +124,7 @@ async function getFileSize(url: string, platform: string): Promise<number> {
 // Check if file is large (>10MB) - for smart send method
 export async function isLargeFile(url: string, platform: string): Promise<{ isLarge: boolean; size: number }> {
     const size = await getFileSize(url, platform);
-    // If size unknown, assume large for Weibo (usually big files)
-    const isLarge = size > LARGE_FILE_THRESHOLD || (size === 0 && platform.toLowerCase() === 'weibo');
+    const isLarge = size > LARGE_FILE_THRESHOLD;
     return { isLarge, size };
 }
 
@@ -256,10 +255,8 @@ export async function sendDiscordNotification(data: {
 
     try {
         const appIcon = getAppIcon();
-        const isWeibo = data.platform.toLowerCase() === 'weibo';
-
         const linkTarget = data.mediaUrl
-            ? (isWeibo ? getInlineProxyUrl(data.mediaUrl, data.platform) : data.mediaUrl)
+            ? data.mediaUrl
             : data.sourceUrl;
 
         if (!linkTarget) {
@@ -332,7 +329,7 @@ export async function sendDiscordNotification(data: {
         }
 
         if (data.thumbnail) {
-            metadataEmbed.thumbnail = { url: isWeibo ? getInlineProxyUrl(data.thumbnail, data.platform) : data.thumbnail };
+            metadataEmbed.thumbnail = { url: data.thumbnail };
         }
 
         const mention = normalizeMentionContent(settings.mention);

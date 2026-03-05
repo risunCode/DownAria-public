@@ -44,12 +44,6 @@ export const TiktokIcon = ({ className }: { className?: string }) => (
     </svg>
 );
 
-export const WeiboIcon = ({ className }: { className?: string }) => (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-        <path d="M10.098 20.323c-3.977.391-7.414-1.406-7.672-4.02-.259-2.609 2.759-5.047 6.74-5.441 3.979-.394 7.413 1.404 7.671 4.018.259 2.6-2.759 5.049-6.739 5.443zm5.977-10.048c-.307-.088-.516-.15-.356-.537.347-.87.382-1.62.006-2.158-.719-1.015-2.686-.96-4.935-.01 0 0-.707.308-.526-.25.347-1.12.294-2.056-.244-2.594-1.226-1.226-4.486.046-7.287 2.847C.88 9.818 0 12.4 0 14.626 0 18.864 5.378 21.5 10.646 21.5c6.943 0 11.567-4.037 11.567-7.237 0-1.934-1.628-3.033-3.09-3.527l-.048-.016zm1.027-4.9c-.763-.836-1.878-1.149-2.914-.936a.813.813 0 0 0-.636.963.818.818 0 0 0 .966.637c.517-.109 1.075.05 1.455.466.376.414.49.98.335 1.487a.815.815 0 0 0 .55 1.017.819.819 0 0 0 1.018-.549c.32-1.038.056-2.192-.774-3.085zm2.881-2.613C18.516.891 16.044.14 13.67.634a.987.987 0 0 0-.775 1.165.99.99 0 0 0 1.168.773c1.554-.326 3.192.142 4.354 1.434 1.158 1.297 1.488 3.031.95 4.588a.985.985 0 0 0 .624 1.247.988.988 0 0 0 1.249-.625c.763-2.266.303-4.844-1.257-6.654z" />
-    </svg>
-);
-
 export const YoutubeIcon = ({ className }: { className?: string }) => (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
         <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
@@ -123,7 +117,6 @@ export function PlatformIcon({ platform, className }: { platform: string; classN
         case 'threads': return <InstagramIcon className={className} />;
         case 'twitter': return <XTwitterIcon className={className} />;
         case 'tiktok': return <TiktokIcon className={className} />;
-        case 'weibo': return <WeiboIcon className={className} />;
         default: return <GlobeIcon className={className} />;
     }
 }

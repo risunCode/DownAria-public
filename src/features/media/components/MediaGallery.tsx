@@ -59,8 +59,6 @@ interface DownloadState {
   message?: string;
 }
 
-type HlsInstance = import('hls.js').default;
-
 // ═══════════════════════════════════════════════════════════════
 // HOOKS
 // ═══════════════════════════════════════════════════════════════
@@ -165,13 +163,7 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
   const [discordSent, setDiscordSent] = useState<Record<string, boolean>>({});
   const [captionExpanded, setCaptionExpanded] = useState(false);
   const [showResponseJsonModal, setShowResponseJsonModal] = useState(false);
-  const [isHlsPreviewUnavailable, setIsHlsPreviewUnavailable] = useState(false);
-  const [isHlsPairBuffering, setIsHlsPairBuffering] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const hlsCompanionAudioRef = useRef<HTMLAudioElement>(null);
-  const hlsRef = useRef<HlsInstance | null>(null);
-  const hlsPairSyncLockRef = useRef(false);
-  const hlsPairPendingStartRef = useRef(false);
   const loopCountRef = useRef(0);
   const MAX_LOOPS = 8;
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -520,7 +512,6 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
   const youtubeQuality = (selectedFormat?.quality || '').toLowerCase();
 
   const isHlsVideo = selectedFormat?.type === 'video' && isHlsFormat(selectedFormat);
-  const pairedHlsAudioUrl = isHlsVideo ? selectedFormat?.pairedAudioUrl : undefined;
   const canDirectPlayYoutubeVideo =
     platform === 'youtube' &&
     selectedFormat?.type === 'video' &&
@@ -528,247 +519,7 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
   const showYoutubePreviewUnavailable =
     platform === 'youtube' && selectedFormat?.type === 'video' && !canDirectPlayYoutubeVideo;
   const showHlsPreviewUnavailable =
-    selectedFormat?.type === 'video' && isHlsVideo && isHlsPreviewUnavailable;
-
-  // HLS setup
-  useEffect(() => {
-    const videoElement = videoRef.current;
-
-    if (!videoElement || !isOpen) {
-      if (hlsRef.current) {
-        hlsRef.current.destroy();
-        hlsRef.current = null;
-      }
-      return;
-    }
-
-    if (hlsRef.current) {
-      hlsRef.current.destroy();
-      hlsRef.current = null;
-    }
-
-    if (!selectedFormat || selectedFormat.type !== 'video' || showYoutubePreviewUnavailable || !isHlsFormat(selectedFormat)) {
-      setIsHlsPreviewUnavailable(false);
-      return;
-    }
-
-    const sourceUrl = getProxyUrl(selectedFormat.url, { platform });
-    const canPlayNatively =
-      videoElement.canPlayType('application/vnd.apple.mpegurl') !== '' ||
-      videoElement.canPlayType('application/x-mpegURL') !== '';
-
-    if (canPlayNatively) {
-      videoElement.src = sourceUrl;
-      videoElement.load();
-      setIsHlsPreviewUnavailable(false);
-      return;
-    }
-
-    let cancelled = false;
-
-    const setupHlsPreview = async () => {
-      const { default: Hls } = await import('hls.js');
-      if (cancelled) return;
-
-      if (!Hls.isSupported()) {
-        setIsHlsPreviewUnavailable(true);
-        videoElement.removeAttribute('src');
-        videoElement.load();
-        return;
-      }
-
-      const hls = new Hls({ enableWorker: true });
-      hlsRef.current = hls;
-
-      hls.on(Hls.Events.ERROR, (_event, data) => {
-        if (data?.fatal) {
-          setIsHlsPreviewUnavailable(true);
-          hls.destroy();
-          if (hlsRef.current === hls) {
-            hlsRef.current = null;
-          }
-          videoElement.removeAttribute('src');
-          videoElement.load();
-        }
-      });
-
-      hls.attachMedia(videoElement);
-      hls.on(Hls.Events.MEDIA_ATTACHED, () => {
-        if (!cancelled) {
-          hls.loadSource(sourceUrl);
-          setIsHlsPreviewUnavailable(false);
-        }
-      });
-    };
-
-    setupHlsPreview().catch(() => {
-      setIsHlsPreviewUnavailable(true);
-      videoElement.removeAttribute('src');
-      videoElement.load();
-    });
-
-    return () => {
-      cancelled = true;
-      if (hlsRef.current) {
-        hlsRef.current.destroy();
-        hlsRef.current = null;
-      }
-    };
-  }, [isOpen, platform, selectedFormat, showYoutubePreviewUnavailable]);
-
-  // HLS paired audio sync
-  useEffect(() => {
-    const videoElement = videoRef.current;
-    const audioElement = hlsCompanionAudioRef.current;
-    let cancelled = false;
-
-    if (!isOpen || !videoElement || !audioElement) return;
-    const companionAudio = audioElement;
-
-    const waitForAudioReady = (): Promise<void> => {
-      if (companionAudio.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) {
-        return Promise.resolve();
-      }
-
-      return new Promise((resolve, reject) => {
-        const timeoutId = window.setTimeout(() => {
-          cleanup();
-          reject(new Error('audio buffer timeout'));
-        }, 6000);
-
-        const onReady = () => { cleanup(); resolve(); };
-        const onError = () => { cleanup(); reject(new Error('audio stream error')); };
-
-        const cleanup = () => {
-          window.clearTimeout(timeoutId);
-          companionAudio.removeEventListener('canplay', onReady);
-          companionAudio.removeEventListener('canplaythrough', onReady);
-          companionAudio.removeEventListener('error', onError);
-          companionAudio.removeEventListener('stalled', onError);
-        };
-
-        companionAudio.addEventListener('canplay', onReady);
-        companionAudio.addEventListener('canplaythrough', onReady);
-        companionAudio.addEventListener('error', onError);
-        companionAudio.addEventListener('stalled', onError);
-      });
-    };
-
-    if (!isHlsVideo || !pairedHlsAudioUrl || showYoutubePreviewUnavailable || showHlsPreviewUnavailable) {
-      companionAudio.pause();
-      companionAudio.removeAttribute('src');
-      companionAudio.load();
-      setIsHlsPairBuffering(false);
-      hlsPairSyncLockRef.current = false;
-      hlsPairPendingStartRef.current = false;
-      return;
-    }
-
-    const audioSrc = getProxyUrl(pairedHlsAudioUrl, { platform });
-    companionAudio.src = audioSrc;
-    companionAudio.preload = 'auto';
-    companionAudio.loop = false;
-
-    const syncCurrentTime = () => {
-      if (Number.isFinite(videoElement.currentTime) && Math.abs(companionAudio.currentTime - videoElement.currentTime) > 0.35) {
-        companionAudio.currentTime = videoElement.currentTime;
-      }
-    };
-
-    const startCompanionAudio = () => {
-      if (videoElement.paused || videoElement.ended) return;
-      syncCurrentTime();
-      companionAudio.playbackRate = videoElement.playbackRate;
-      companionAudio.volume = videoElement.volume;
-      companionAudio.muted = videoElement.muted;
-      companionAudio.play().catch(() => {});
-    };
-
-    const handlePlay = () => {
-      if (hlsPairSyncLockRef.current) return;
-
-      if (companionAudio.readyState < HTMLMediaElement.HAVE_FUTURE_DATA) {
-        hlsPairSyncLockRef.current = true;
-        hlsPairPendingStartRef.current = true;
-        setIsHlsPairBuffering(true);
-        companionAudio.pause();
-        videoElement.pause();
-
-        waitForAudioReady()
-          .then(() => {
-            if (cancelled) return;
-            setIsHlsPairBuffering(false);
-            hlsPairSyncLockRef.current = false;
-            hlsPairPendingStartRef.current = true;
-            videoElement.play().catch(() => {});
-          })
-          .catch(() => {
-            if (cancelled) return;
-            setIsHlsPairBuffering(false);
-            hlsPairSyncLockRef.current = false;
-            hlsPairPendingStartRef.current = false;
-            videoElement.play().catch(() => {});
-          });
-        return;
-      }
-
-      hlsPairPendingStartRef.current = false;
-      startCompanionAudio();
-    };
-    const handlePlaying = () => {
-      if (hlsPairPendingStartRef.current) {
-        hlsPairPendingStartRef.current = false;
-      }
-      startCompanionAudio();
-    };
-    const handlePause = () => {
-      hlsPairPendingStartRef.current = false;
-      companionAudio.pause();
-    };
-    const handleSeeking = () => syncCurrentTime();
-    const handleRateChange = () => {
-      companionAudio.playbackRate = videoElement.playbackRate;
-    };
-    const handleVolumeChange = () => {
-      companionAudio.volume = videoElement.volume;
-      companionAudio.muted = videoElement.muted;
-    };
-    const handleEnded = () => {
-      companionAudio.pause();
-      companionAudio.currentTime = 0;
-    };
-
-    videoElement.addEventListener('play', handlePlay);
-    videoElement.addEventListener('playing', handlePlaying);
-    videoElement.addEventListener('pause', handlePause);
-    videoElement.addEventListener('seeking', handleSeeking);
-    videoElement.addEventListener('seeked', handleSeeking);
-    videoElement.addEventListener('ratechange', handleRateChange);
-    videoElement.addEventListener('volumechange', handleVolumeChange);
-    videoElement.addEventListener('ended', handleEnded);
-
-    if (!videoElement.paused) {
-      handlePlay();
-    }
-
-    return () => {
-      cancelled = true;
-      videoElement.removeEventListener('play', handlePlay);
-      videoElement.removeEventListener('playing', handlePlaying);
-      videoElement.removeEventListener('pause', handlePause);
-      videoElement.removeEventListener('seeking', handleSeeking);
-      videoElement.removeEventListener('seeked', handleSeeking);
-      videoElement.removeEventListener('ratechange', handleRateChange);
-      videoElement.removeEventListener('volumechange', handleVolumeChange);
-      videoElement.removeEventListener('ended', handleEnded);
-      companionAudio.pause();
-      companionAudio.removeAttribute('src');
-      companionAudio.load();
-      setIsHlsPairBuffering(false);
-      hlsPairSyncLockRef.current = false;
-      hlsPairPendingStartRef.current = false;
-    };
-  }, [isOpen, isHlsVideo, pairedHlsAudioUrl, platform, showHlsPreviewUnavailable, showYoutubePreviewUnavailable]);
+    selectedFormat?.type === 'video' && isHlsVideo;
 
   const content = (
     <>
@@ -814,33 +565,23 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
                     <p className="text-xs text-white/70 mt-1">
                       {showYoutubePreviewUnavailable
                         ? '360p and audio formats can be played directly. Other YouTube video qualities stay downloadable.'
-                        : 'This HLS stream cannot be previewed in your browser. You can still download this format.'}
+                        : 'HLS live preview disabled. Use Download/Merge to get the final media file.'}
                     </p>
                   </div>
                 </div>
               </div>
             </div>
           ) : (
-            <>
-              <video
-                ref={videoRef}
-                src={isHlsVideo ? undefined : getProxyUrl(selectedFormat.url, { platform })}
-                poster={currentThumbnail ? getProxiedThumbnail(currentThumbnail, platform) : undefined}
-                className="w-full h-full object-contain"
-                controls
-                autoPlay={platform !== 'youtube'}
-                playsInline
-                onEnded={handleVideoEnded}
-              />
-              {isHlsPairBuffering && (
-                <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/55 backdrop-blur-[1px]">
-                  <div className="rounded-lg border border-white/20 bg-black/65 p-4">
-                    <Loader2 className="w-8 h-8 text-white/90 animate-spin" />
-                  </div>
-                </div>
-              )}
-              <audio ref={hlsCompanionAudioRef} className="hidden" />
-            </>
+            <video
+              ref={videoRef}
+              src={getProxyUrl(selectedFormat.url, { platform })}
+              poster={currentThumbnail ? getProxiedThumbnail(currentThumbnail, platform) : undefined}
+              className="w-full h-full object-contain"
+              controls
+              autoPlay={platform !== 'youtube'}
+              playsInline
+              onEnded={handleVideoEnded}
+            />
           )
         ) : selectedFormat?.type === 'audio' ? (
           <div className="w-full h-full flex flex-col items-center justify-center p-4 bg-gradient-to-b from-purple-900/50 to-black">

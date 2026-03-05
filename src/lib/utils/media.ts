@@ -28,7 +28,6 @@ export const PLATFORM_SHORT_NAMES: Record<string, string> = {
     instagram: 'IG',
     twitter: 'X',
     tiktok: 'TT',
-    weibo: 'WB',
     youtube: 'YT'
 };
 

@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 
 /**
- * HLS Stream Handler - No signature required for player compatibility
- * Forwards HLS playlist/segment requests directly to backend
+ * Compatibility route so direct `/api/v1/hls-stream` calls on frontend host
+ * keep working in development and production.
  */
 export async function GET(request: Request) {
   const backendBase = (process.env.NEXT_PUBLIC_API_URL || '').trim();
@@ -16,8 +16,6 @@ export async function GET(request: Request) {
 
   const inputUrl = new URL(request.url);
   const query = inputUrl.searchParams.toString();
-
-  // Forward to backend /api/v1/hls-stream (public, no signature)
   const upstreamUrl = `${backendBase}/api/v1/hls-stream${query ? `?${query}` : ''}`;
 
   try {

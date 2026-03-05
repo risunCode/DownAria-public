@@ -68,16 +68,6 @@ const CONTENT_ID_EXTRACTORS: Record<PlatformId, ContentIdExtractor> = {
     return null;
   },
 
-  weibo: (url) => {
-    const longId = url.match(/\/(\d{16,})/);
-    if (longId) return longId[1];
-
-    const detail = url.match(/\/(?:detail|status)\/(\d+)/i);
-    if (detail) return detail[1];
-
-    return null;
-  },
-
   bilibili: (url) => {
     const bvId = url.match(/\/video\/(BV[a-zA-Z0-9]+)/i);
     if (bvId) return bvId[1];
