@@ -130,7 +130,7 @@ export interface ExtractResult {
             resolution?: string;
             mime?: string;
             format?: string;
-            size?: number;
+            filesize?: number;
             bitrate?: number;
             codec?: string;
             hasAudio?: boolean;

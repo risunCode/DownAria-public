@@ -13,7 +13,7 @@ export const MediaVariantSchema = z.object({
   resolution: z.string().optional(),
   mime: z.string().optional(),
   format: z.string().optional(),
-  size: nonNegativeInt.optional(),
+  filesize: nonNegativeInt.optional(),
   bitrate: nonNegativeInt.optional(),
   codec: z.string().optional(),
   hasAudio: z.boolean().optional(),

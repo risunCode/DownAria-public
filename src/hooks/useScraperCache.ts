@@ -148,7 +148,7 @@ function mapBackendResultToMediaData(result: ExtractResult, requestUrl: string):
         quality: variant.quality || 'Original',
         type: inferredType,
         url: variant.url,
-        filesize: typeof variant.size === 'number' ? variant.size : undefined,
+        filesize: typeof variant.filesize === 'number' ? variant.filesize : undefined,
         mimeType: variant.mime,
         format: variant.format,
         extension: variant.format,
