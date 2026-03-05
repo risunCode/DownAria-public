@@ -16,28 +16,22 @@ import { SplitButton } from '@/components/ui/SplitButton';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { TrafficLights } from '@/components/ui/TrafficLights';
-
-// Global filesize limit for all platforms (1GB)
-const MAX_FILESIZE_MB = 1024;
-const MAX_FILESIZE_LABEL = '1GB';
-const MAX_FILESIZE_BYTES = MAX_FILESIZE_MB * 1024 * 1024;
-
-// Shared utilities and components
-import { 
-  groupFormatsByItem, 
+import { MAX_FILESIZE_BYTES, MAX_FILESIZE_LABEL, MAX_FILESIZE_MB } from '@/lib/constants/download-limits';
+import {
+  groupFormatsByItem,
   getDisplayFormatsForPlatform,
   getMediaFormatIdentity,
   getItemThumbnails,
   findPreferredFormat,
   buildSelectorFormats,
   getQualityBadge,
+  isHlsFormat,
 } from '@/lib/utils/media';
-// Shared download store
-import { 
+import {
   setDownloadProgress as setGlobalDownloadProgress,
-  subscribeDownloadProgress,
-  getDownloadProgress,
 } from '@/lib/stores/download-store';
+import { useDownloadSync } from '@/hooks/useDownloadSync';
+import { useNavigationGuard } from '@/hooks/useNavigationGuard';
 import { EngagementDisplay } from './EngagementDisplay';
 import { FormatSelector } from './FormatSelector';
 import { DownloadProgress } from './DownloadProgress';
@@ -62,8 +56,7 @@ interface DownloadState {
   speed: number;
   loaded: number;
   total: number;
-  eta: number; // seconds remaining
-  message?: string; // Custom message for merge status
+  message?: string;
 }
 
 type HlsInstance = import('hls.js').default;
@@ -115,9 +108,6 @@ function useKeyboardNavigation(
   }, [isOpen, onClose, onPrev, onNext]);
 }
 
-/**
- * Hook for swipe gesture navigation (left/right)
- */
 function useSwipeNavigation(
   onPrev: () => void,
   onNext: () => void,
@@ -135,11 +125,10 @@ function useSwipeNavigation(
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (!isEnabled) return;
-    
+
     const deltaX = e.touches[0].clientX - touchStartX.current;
     const deltaY = e.touches[0].clientY - touchStartY.current;
-    
-    // Only consider horizontal swipe if deltaX > deltaY (not scrolling)
+
     if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 30) {
       isSwiping.current = true;
     }
@@ -147,16 +136,16 @@ function useSwipeNavigation(
 
   const handleTouchEnd = useCallback((e: React.TouchEvent) => {
     if (!isEnabled || !isSwiping.current) return;
-    
+
     const deltaX = e.changedTouches[0].clientX - touchStartX.current;
-    const threshold = 50; // minimum swipe distance
-    
+    const threshold = 50;
+
     if (deltaX > threshold) {
-      onPrev(); // Swipe right = go to previous
+      onPrev();
     } else if (deltaX < -threshold) {
-      onNext(); // Swipe left = go to next
+      onNext();
     }
-    
+
     isSwiping.current = false;
   }, [isEnabled, onPrev, onNext]);
 
@@ -171,9 +160,9 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
   const mode = useMediaGalleryMode();
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [selectedFormat, setSelectedFormat] = useState<MediaFormat | null>(initialFormat);
-  const [downloadState, setDownloadState] = useState<DownloadState>({ status: 'idle', progress: 0, speed: 0, loaded: 0, total: 0, eta: 0 });
+  const [downloadState, setDownloadState] = useState<DownloadState>({ status: 'idle', progress: 0, speed: 0, loaded: 0, total: 0 });
   const [fileSizes, setFileSizes] = useState<Record<string, string>>({});
-  const [discordSent, setDiscordSent] = useState<Record<string, boolean>>({}); // Track per itemId
+  const [discordSent, setDiscordSent] = useState<Record<string, boolean>>({});
   const [captionExpanded, setCaptionExpanded] = useState(false);
   const [showResponseJsonModal, setShowResponseJsonModal] = useState(false);
   const [isHlsPreviewUnavailable, setIsHlsPreviewUnavailable] = useState(false);
@@ -184,25 +173,21 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
   const hlsPairSyncLockRef = useRef(false);
   const hlsPairPendingStartRef = useRef(false);
   const loopCountRef = useRef(0);
-  const MAX_LOOPS = 8; // Auto-stop after 8 loops (user might be asleep 😴)
-  const abortControllerRef = useRef<AbortController | null>(null); // For cancelling downloads
-  const activeDownloadLabel = 'Downloading...';
+  const MAX_LOOPS = 8;
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Check if format exceeds global size limit (1GB for all platforms)
+  // Check if format exceeds global size limit
   const isOverSizeLimit = (format: MediaFormat | null): boolean => {
     if (!format) return false;
-    const size = format.filesize || 0;
-    return size > MAX_FILESIZE_BYTES;
+    return (format.filesize || 0) > MAX_FILESIZE_BYTES;
   };
 
-  // Handle close - allow close even during download (download continues in DownloadPreview)
+  // Handle close
   const handleClose = useCallback(() => {
-    // Just close the modal - download continues in DownloadPreview via shared store
-    // No need to cancel or confirm - user can reopen gallery to see progress
     onClose();
   }, [onClose]);
 
-  // Memoize grouped formats - only recalculate when formats change
+  // Memoize grouped formats
   const displayFormats = useMemo(
     () => getDisplayFormatsForPlatform(data.formats || [], platform),
     [data.formats, platform]
@@ -216,21 +201,17 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
   const selectorFormats = useMemo(() => {
     return buildSelectorFormats(currentFormats, platform, true);
   }, [currentFormats, platform]);
-  // Use item-specific thumbnail, fallback to data.thumbnail
   const currentThumbnail = itemThumbnails[currentItemId] || currentFormats[0]?.thumbnail || data.thumbnail;
   const authorHandle = data.authorUsername;
   const normalizedAuthorHandle = authorHandle
-    ? authorHandle.startsWith('@')
-      ? authorHandle
-      : `@${authorHandle}`
+    ? authorHandle.startsWith('@') ? authorHandle : `@${authorHandle}`
     : null;
   const displayAuthor = data.author || data.authorAlias || normalizedAuthorHandle || 'Unknown';
 
-  // Sync initialFormat when modal opens or initialFormat changes
+  // Sync initialFormat when modal opens
   useEffect(() => {
     if (isOpen && initialFormat) {
       setSelectedFormat(initialFormat);
-      // Also sync currentIndex to match the initialFormat's item
       if (initialFormat.itemId) {
         const idx = itemIds.indexOf(initialFormat.itemId);
         if (idx >= 0) {
@@ -240,40 +221,25 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
     }
   }, [isOpen, initialFormat, itemIds]);
 
-  // Sync with global download store - subscribe to updates from DownloadPreview
+  // Download sync via hook
+  const { progress: syncProgress } = useDownloadSync(data.url);
+
+  // Sync download state from global store
   useEffect(() => {
     if (!isOpen) return;
-    
-    const unsubscribe = subscribeDownloadProgress(data.url, (progress) => {
+    if (syncProgress.status !== 'idle') {
       setDownloadState({
-        status: progress.status,
-        progress: progress.percent,
-        speed: progress.speed,
-        loaded: progress.loaded,
-        total: progress.total,
-        eta: 0,
-        message: progress.message,
-      });
-    });
-    
-    // Check initial state from store (in case download started from DownloadPreview)
-    const initial = getDownloadProgress(data.url);
-    if (initial.status !== 'idle') {
-      setDownloadState({
-        status: initial.status,
-        progress: initial.percent,
-        speed: initial.speed,
-        loaded: initial.loaded,
-        total: initial.total,
-        eta: 0,
-        message: initial.message,
+        status: syncProgress.status,
+        progress: syncProgress.percent,
+        speed: syncProgress.speed,
+        loaded: syncProgress.loaded,
+        total: syncProgress.total,
+        message: syncProgress.message,
       });
     }
-    
-    return unsubscribe;
-  }, [isOpen, data.url]);
+  }, [isOpen, syncProgress]);
 
-  // Auto-select format when switching items (only if no initialFormat or user switched manually)
+  // Auto-select format when switching items
   useEffect(() => {
     if (selectorFormats.length === 0) {
       if (selectedFormat) setSelectedFormat(null);
@@ -298,7 +264,7 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
     }
   }, [selectorFormats, selectedFormat]);
 
-  // Track if this is initial open (to avoid resetting initialFormat)
+  // Track if this is initial open
   const hasInitialFormat = useRef(false);
   useEffect(() => {
     if (isOpen && initialFormat) {
@@ -309,21 +275,18 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
     }
   }, [isOpen, initialFormat]);
 
-  // Reset format on item change (user navigation)
+  // Reset format on item change
   const prevIndex = useRef(currentIndex);
   useEffect(() => {
-    // Only reset if index actually changed
     if (prevIndex.current !== currentIndex) {
-      // Always select preferred format for new item when navigating
       const newItemId = itemIds[currentIndex] || 'main';
       const newFormats = groupedItems[newItemId] || [];
       const selectorFormatsForItem = buildSelectorFormats(newFormats, platform, true);
       const preferred = findPreferredFormat(selectorFormatsForItem);
       setSelectedFormat(preferred || null);
-      setDownloadState({ status: 'idle', progress: 0, speed: 0, loaded: 0, total: 0, eta: 0 });
-      loopCountRef.current = 0; // Reset loop counter on item change
-      
-      // Clear hasInitialFormat after first navigation
+      setDownloadState({ status: 'idle', progress: 0, speed: 0, loaded: 0, total: 0 });
+      loopCountRef.current = 0;
+
       if (hasInitialFormat.current) {
         hasInitialFormat.current = false;
       }
@@ -336,18 +299,16 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
     loopCountRef.current = 0;
   }, [selectedFormat]);
 
-  // Video loop handler - auto-stop after MAX_LOOPS
+  // Video loop handler
   const handleVideoEnded = useCallback(() => {
     loopCountRef.current += 1;
-    
+
     if (loopCountRef.current >= MAX_LOOPS) {
-      // Stop the video after max loops
       if (videoRef.current) {
         videoRef.current.pause();
         videoRef.current.currentTime = 0;
       }
     } else {
-      // Continue looping
       if (videoRef.current) {
         videoRef.current.currentTime = 0;
         videoRef.current.play().catch(() => {});
@@ -355,10 +316,10 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
     }
   }, []);
 
-  // Populate file sizes from backend JSON only (no frontend HEAD requests)
+  // Populate file sizes from backend JSON
   useEffect(() => {
     if (!isOpen) return;
-    
+
     const backendSizes: Record<string, string> = {};
     Object.values(groupedItems).forEach(formats => {
       formats.forEach(f => {
@@ -382,7 +343,6 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
 
   useKeyboardNavigation(handleClose, goToPrev, goToNext, isOpen);
 
-  // Swipe navigation for carousel
   const { handleTouchStart, handleTouchMove, handleTouchEnd } = useSwipeNavigation(goToPrev, goToNext, isCarousel);
 
   // Lock body scroll when open
@@ -395,50 +355,28 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
     return () => { document.body.style.overflow = ''; };
   }, [isOpen]);
 
-  // Warn user before leaving page during download
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (downloadState.status === 'downloading') {
-        e.preventDefault();
-        e.returnValue = 'Download sedang berjalan. Yakin mau meninggalkan halaman?';
-        return e.returnValue;
-      }
-    };
+  // Navigation guard: beforeunload + paste blocking
+  useNavigationGuard({
+    isActive: isOpen && downloadState.status === 'downloading',
+    useBeforeUnload: true,
+    beforeUnloadMessage: 'Download is in progress. Are you sure you want to leave?',
+    pasteBlockMessage: 'Please wait for the download to finish before pasting a new URL.',
+  });
 
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [downloadState.status]);
-
-  // Prevent paste during download (to avoid accidental new URL submission)
-  useEffect(() => {
-    if (!isOpen) return;
-    
-    const handlePaste = (e: ClipboardEvent) => {
-      if (downloadState.status === 'downloading') {
-        e.preventDefault();
-        toast.warning('Tunggu download selesai sebelum paste URL baru.');
-      }
-    };
-
-    document.addEventListener('paste', handlePaste);
-    return () => document.removeEventListener('paste', handlePaste);
-  }, [isOpen, downloadState.status]);
-
-  // Download handler - uses unified helper
-  const handleDownload = async () => {
+  // Download handler
+  const handleDownload = useCallback(async () => {
     if (!selectedFormat) return;
 
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
 
-    setDownloadState({ status: 'downloading', progress: 0, speed: 0, loaded: 0, total: 0, eta: 0 });
-    // Update global store for sync with DownloadPreview
+    setDownloadState({ status: 'downloading', progress: 0, speed: 0, loaded: 0, total: 0 });
     setGlobalDownloadProgress(data.url, { status: 'downloading', percent: 0, loaded: 0, total: 0, speed: 0 });
 
     try {
       const { downloadMedia, triggerBlobDownload } = await import('@/lib/utils/media');
       const carouselIndex = isCarousel ? currentIndex + 1 : undefined;
-      
+
       const result = await downloadMedia(selectedFormat, data, platform, carouselIndex, (progress) => {
         setDownloadState({
           status: progress.status === 'done' ? 'done' : progress.status === 'error' ? 'error' : 'downloading',
@@ -446,10 +384,8 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
           speed: progress.speed,
           loaded: progress.loaded,
           total: progress.total,
-          eta: 0,
           message: progress.message,
         });
-        // Update global store
         setGlobalDownloadProgress(data.url, {
           status: progress.status === 'done' ? 'done' : progress.status === 'error' ? 'error' : 'downloading',
           percent: progress.percent,
@@ -462,19 +398,18 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
 
       if (!result.success) {
         if (result.error === 'Download cancelled') {
-          setDownloadState({ status: 'idle', progress: 0, speed: 0, loaded: 0, total: 0, eta: 0 });
+          setDownloadState({ status: 'idle', progress: 0, speed: 0, loaded: 0, total: 0 });
           setGlobalDownloadProgress(data.url, { status: 'idle', percent: 0, loaded: 0, total: 0, speed: 0 });
           return;
         }
         throw new Error(result.error || 'Download failed');
       }
 
-      // Trigger browser download if we have a blob
       if (result.blob && result.filename) {
         triggerBlobDownload(result.blob, result.filename);
       }
 
-      setDownloadState({ status: 'done', progress: 100, speed: 0, loaded: result.blob?.size || 0, total: result.blob?.size || 0, eta: 0 });
+      setDownloadState({ status: 'done', progress: 100, speed: 0, loaded: result.blob?.size || 0, total: result.blob?.size || 0 });
       setGlobalDownloadProgress(data.url, { status: 'done', percent: 100, loaded: 0, total: 0, speed: 0 });
 
       setTimeout(() => {
@@ -483,13 +418,13 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
       }, 3000);
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
-        setDownloadState({ status: 'idle', progress: 0, speed: 0, loaded: 0, total: 0, eta: 0 });
+        setDownloadState({ status: 'idle', progress: 0, speed: 0, loaded: 0, total: 0 });
         setGlobalDownloadProgress(data.url, { status: 'idle', percent: 0, loaded: 0, total: 0, speed: 0 });
         return;
       }
 
       console.error('Download error:', err);
-      setDownloadState({ status: 'error', progress: 0, speed: 0, loaded: 0, total: 0, eta: 0 });
+      setDownloadState({ status: 'error', progress: 0, speed: 0, loaded: 0, total: 0 });
       setGlobalDownloadProgress(data.url, { status: 'error', percent: 0, loaded: 0, total: 0, speed: 0 });
       setTimeout(() => {
         setDownloadState(prev => ({ ...prev, status: 'idle' }));
@@ -498,7 +433,7 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
     } finally {
       abortControllerRef.current = null;
     }
-  };
+  }, [selectedFormat, data, platform, isCarousel, currentIndex]);
 
   const cancelDownload = useCallback(() => {
     if (abortControllerRef.current) {
@@ -506,20 +441,19 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
       abortControllerRef.current = null;
     }
 
-    setDownloadState({ status: 'idle', progress: 0, speed: 0, loaded: 0, total: 0, eta: 0 });
+    setDownloadState({ status: 'idle', progress: 0, speed: 0, loaded: 0, total: 0 });
     setGlobalDownloadProgress(data.url, { status: 'idle', percent: 0, loaded: 0, total: 0, speed: 0 });
   }, [data.url]);
 
   // Discord handler
-  const handleDiscord = async () => {
+  const handleDiscord = useCallback(async () => {
     if (!selectedFormat) return;
-    
-    // Check if already sent for this item
+
     if (discordSent[currentItemId]) {
       toast.info('This item was already sent to Discord.');
       return;
     }
-    
+
     const settings = getUserDiscordSettings();
     if (!settings?.webhookUrl) {
       lazySwal.fire({
@@ -546,20 +480,20 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
       sourceUrl: data.url,
       author: data.author,
       engagement: data.engagement,
-      fileSize: selectedFormat.filesize || 0, // Backend provides filesize for all platforms now
+      fileSize: selectedFormat.filesize || 0,
     }, true);
 
     if (result.sent) {
       setDiscordSent(prev => ({ ...prev, [currentItemId]: true }));
       toast.success('Sent!');
     }
-  };
+  }, [selectedFormat, currentItemId, discordSent, platform, data, currentThumbnail]);
 
   // Copy link handler
-  const handleCopyLink = () => {
+  const handleCopyLink = useCallback(() => {
     navigator.clipboard.writeText(data.url);
     toast.success('Link Copied!');
-  };
+  }, [data.url]);
 
   const responseJsonText = useMemo(() => {
     try {
@@ -584,19 +518,6 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
   }, [responseJsonText]);
 
   const youtubeQuality = (selectedFormat?.quality || '').toLowerCase();
-  const isHlsFormat = (format: MediaFormat | null): boolean => {
-    if (!format) return false;
-
-    const normalizedFormat = (format.format || '').toLowerCase();
-    const normalizedUrl = (format.url || '').toLowerCase();
-
-    return (
-      format.isHLS === true ||
-      normalizedFormat === 'hls' ||
-      normalizedFormat === 'm3u8' ||
-      normalizedUrl.includes('.m3u8')
-    );
-  };
 
   const isHlsVideo = selectedFormat?.type === 'video' && isHlsFormat(selectedFormat);
   const pairedHlsAudioUrl = isHlsVideo ? selectedFormat?.pairedAudioUrl : undefined;
@@ -609,6 +530,7 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
   const showHlsPreviewUnavailable =
     selectedFormat?.type === 'video' && isHlsVideo && isHlsPreviewUnavailable;
 
+  // HLS setup
   useEffect(() => {
     const videoElement = videoRef.current;
 
@@ -694,6 +616,7 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
     };
   }, [isOpen, platform, selectedFormat, showYoutubePreviewUnavailable]);
 
+  // HLS paired audio sync
   useEffect(() => {
     const videoElement = videoRef.current;
     const audioElement = hlsCompanionAudioRef.current;
@@ -713,15 +636,8 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
           reject(new Error('audio buffer timeout'));
         }, 6000);
 
-        const onReady = () => {
-          cleanup();
-          resolve();
-        };
-
-        const onError = () => {
-          cleanup();
-          reject(new Error('audio stream error'));
-        };
+        const onReady = () => { cleanup(); resolve(); };
+        const onError = () => { cleanup(); reject(new Error('audio stream error')); };
 
         const cleanup = () => {
           window.clearTimeout(timeoutId);
@@ -856,15 +772,14 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
 
   const content = (
     <>
-      {/* Media Preview - max height to prevent overflow */}
-      <div 
+      {/* Media Preview */}
+      <div
         className="relative w-full aspect-video max-h-[45vh] bg-black rounded-lg overflow-hidden"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
         {selectedFormat?.type === 'video' ? (
-          // YouTube video preview gate: allow direct playback for 360p/progressive
           showYoutubePreviewUnavailable || showHlsPreviewUnavailable ? (
             <div className="w-full h-full relative flex items-center justify-center bg-gradient-to-b from-[var(--bg-secondary)] to-black">
               {currentThumbnail && (
@@ -906,7 +821,6 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
               </div>
             </div>
           ) : (
-            // Non-YouTube or combined format - show video player
             <>
               <video
                 ref={videoRef}
@@ -929,7 +843,6 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
             </>
           )
         ) : selectedFormat?.type === 'audio' ? (
-          // Audio Player with thumbnail background
           <div className="w-full h-full flex flex-col items-center justify-center p-4 bg-gradient-to-b from-purple-900/50 to-black">
             {currentThumbnail && (
               <Image
@@ -941,7 +854,6 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
               />
             )}
             <div className="relative z-10 flex flex-col items-center gap-4 w-full max-w-sm">
-              {/* Album Art */}
               <div className="w-24 h-24 rounded-xl overflow-hidden shadow-2xl bg-[var(--bg-secondary)]">
                 {currentThumbnail ? (
                   <Image
@@ -958,7 +870,6 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
                   </div>
                 )}
               </div>
-              {/* Audio Element - All platforms proxied */}
               <audio
                 src={getProxyUrl(selectedFormat.url, { platform })}
                 className="w-full"
@@ -969,7 +880,6 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
             </div>
           </div>
         ) : selectedFormat?.type === 'image' ? (
-          // Image - use full resolution from format URL, fallback to thumbnail
           <Image
             src={getProxyUrl(selectedFormat.url, { platform })}
             alt={data.title || 'Image'}
@@ -978,7 +888,6 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
             unoptimized
           />
         ) : currentThumbnail ? (
-          // Fallback to thumbnail if no format selected
           <Image
             src={getProxiedThumbnail(currentThumbnail, platform)}
             alt={data.title || 'Media'}
@@ -995,14 +904,14 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
         {/* Carousel Navigation */}
         {isCarousel && (
           <>
-            <button 
-              onClick={(e) => { e.stopPropagation(); goToPrev(); }} 
+            <button
+              onClick={(e) => { e.stopPropagation(); goToPrev(); }}
               className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors z-20 touch-manipulation"
             >
               <ChevronLeft className="w-6 h-6" />
             </button>
-            <button 
-              onClick={(e) => { e.stopPropagation(); goToNext(); }} 
+            <button
+              onClick={(e) => { e.stopPropagation(); goToNext(); }}
               className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors z-20 touch-manipulation"
             >
               <ChevronRight className="w-6 h-6" />
@@ -1016,7 +925,6 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
         <div className="flex gap-2 px-4 py-2 overflow-x-auto scrollbar-hide">
           {itemIds.map((itemId, idx) => {
             const itemFormats = groupedItems[itemId];
-            // Use item-specific thumbnail from getItemThumbnails, fallback chain
             const thumb = itemThumbnails[itemId] || itemFormats[0]?.thumbnail || data.thumbnail;
             const isVideo = itemFormats[0]?.type === 'video';
             const qualityBadge = getQualityBadge(itemFormats);
@@ -1025,8 +933,8 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
                 key={itemId}
                 onClick={() => setCurrentIndex(idx)}
                 className={`relative flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden transition-all ${
-                  idx === currentIndex 
-                    ? 'ring-2 ring-[var(--accent-primary)] ring-offset-2 ring-offset-[var(--bg-card)]' 
+                  idx === currentIndex
+                    ? 'ring-2 ring-[var(--accent-primary)] ring-offset-2 ring-offset-[var(--bg-card)]'
                     : 'opacity-60 hover:opacity-100'
                 }`}
               >
@@ -1043,23 +951,20 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
                     <span className="text-xs text-[var(--text-muted)]">{idx + 1}</span>
                   </div>
                 )}
-                {/* Index number badge - top left */}
                 <div className="absolute top-0.5 left-0.5 px-1 py-0.5 rounded bg-black/70 text-white text-[10px] font-bold">
                   {idx + 1}
                 </div>
-                {/* Quality badge - top right (only for video) */}
                 {qualityBadge && (
                   <div className={`absolute top-0.5 right-0.5 px-1 py-0.5 rounded text-[8px] font-bold ${
-                    qualityBadge === '4K' || qualityBadge === 'FHD' 
-                      ? 'bg-purple-500/90 text-white' 
-                      : qualityBadge === 'HD' 
-                        ? 'bg-blue-500/90 text-white' 
+                    qualityBadge === '4K' || qualityBadge === 'FHD'
+                      ? 'bg-purple-500/90 text-white'
+                      : qualityBadge === 'HD'
+                        ? 'bg-blue-500/90 text-white'
                         : 'bg-gray-500/90 text-white'
                   }`}>
                     {qualityBadge}
                   </div>
                 )}
-                {/* Video play icon - only show if no quality badge */}
                 {isVideo && !qualityBadge && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                     <Play className="w-4 h-4 text-white" />
@@ -1073,7 +978,6 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
 
       {/* Info Section */}
       <div className="p-4 space-y-3">
-        {/* Author & Platform + Badges */}
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-[var(--bg-secondary)] flex items-center justify-center">
             <User className="w-5 h-5 text-[var(--text-muted)]" />
@@ -1085,7 +989,6 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
             )}
             <p className="text-xs text-[var(--text-muted)]">{platform.charAt(0).toUpperCase() + platform.slice(1)}</p>
           </div>
-          {/* Response time badge */}
           {data.responseTime && (
             <button
               type="button"
@@ -1096,27 +999,24 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
               ⚡ {data.responseTime}ms
             </button>
           )}
-          {/* Public/Private badge */}
           <span className={`px-2 py-1 text-[10px] rounded-full ${
-            data.usedCookie 
-              ? 'bg-amber-500/20 text-amber-400' 
+            data.usedCookie
+              ? 'bg-amber-500/20 text-amber-400'
               : 'bg-green-500/20 text-green-400'
           }`}>
             {data.usedCookie ? '🔒 Private' : '🌐 Public'}
           </span>
         </div>
 
-        {/* Engagement - right after author */}
         {data.engagement && <EngagementDisplay engagement={data.engagement} className="text-[11px] text-[var(--text-muted)]" />}
 
-        {/* Caption/Description - with show more/less */}
         {data.description && (
           <div className="text-sm text-[var(--text-secondary)]">
             <span className={!captionExpanded ? 'line-clamp-2' : ''}>
               <RichText text={data.description} platform={platform} />
             </span>
             {data.description.length > 150 && (
-              <button 
+              <button
                 onClick={() => setCaptionExpanded(!captionExpanded)}
                 className="text-[var(--accent-primary)] hover:underline text-xs mt-1 block"
               >
@@ -1126,7 +1026,6 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
           </div>
         )}
 
-        {/* Quality Selector - Pills with size */}
         <FormatSelector
           formats={selectorFormats}
           selected={selectedFormat}
@@ -1135,7 +1034,6 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
           platform={platform}
         />
 
-        {/* YouTube size estimation notice */}
         {platform === 'youtube' && (
           <p className="text-[10px] text-[var(--text-muted)] text-center mt-1">
             ⚠️ File sizes are estimated and may differ from actual download
@@ -1146,18 +1044,16 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
     </>
   );
 
-  // Action buttons - rendered in sticky footer
+  // Action buttons
   const actionButtons = (
     <div className="p-4 space-y-3 border-t border-[var(--border-color)]/50 bg-[var(--bg-card)]">
-      {/* Size Limit Warning */}
       {isOverSizeLimit(selectedFormat) && (
         <div className="px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs flex items-center gap-2">
           <span>🚫</span>
-          <span>File terlalu besar (max {MAX_FILESIZE_LABEL} / {MAX_FILESIZE_MB}MB). Pilih kualitas yang lebih rendah.</span>
+          <span>File too large (max {MAX_FILESIZE_LABEL} / {MAX_FILESIZE_MB}MB). Choose a lower quality.</span>
         </div>
       )}
-      
-      {/* Actions */}
+
       <div className="flex gap-2">
         {downloadState.status === 'downloading' ? (
           <div className="downaria-downloading-row flex-1">
@@ -1168,7 +1064,7 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
               disabled
               leftIcon={<Loader2 className="w-4 h-4 animate-spin" />}
             >
-              {activeDownloadLabel}
+              Downloading...
             </Button>
             <Button
               size="sm"
@@ -1242,9 +1138,8 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
         />
       </div>
 
-      {/* Download Progress Bar - Real-time */}
       {downloadState.status === 'downloading' && (
-        <DownloadProgress 
+        <DownloadProgress
           progress={{
             percent: downloadState.progress,
             loaded: downloadState.loaded,
@@ -1286,7 +1181,7 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
                 onClick={() => setShowResponseJsonModal(false)}
                 className="absolute right-4 top-1/2 -translate-y-1/2 inline-flex items-center gap-1.5 text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
               >
-                <span>Sembunyikan</span>
+                <span>Hide</span>
                 <ChevronDown className="w-4 h-4" />
               </button>
             </div>
@@ -1340,38 +1235,24 @@ function ModalWrapper({ children, isOpen, onClose, footer }: { children: React.R
             className="relative w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden bg-[var(--bg-card)] rounded-2xl shadow-2xl border border-[var(--border-color)]"
             onClick={e => e.stopPropagation()}
           >
-            {/* Frosted Glass Title Bar with Traffic Lights */}
+            {/* Title Bar with Traffic Lights */}
             <div className="modal-theme-titlebar flex-shrink-0 px-3 py-2.5">
               <div className="flex items-center gap-2">
-                <button
-                  onClick={onClose}
-                  className="w-3 h-3 rounded-full bg-[#FF5F57] hover:brightness-90 transition-all flex items-center justify-center group"
-                  title="Close"
-                >
+                <button onClick={onClose} className="w-3 h-3 rounded-full bg-[#FF5F57] hover:brightness-90 transition-all flex items-center justify-center group" title="Close">
                   <X className="w-2 h-2 text-[#990000] opacity-0 group-hover:opacity-100 transition-opacity" />
                 </button>
-                <button
-                  onClick={onClose}
-                  className="w-3 h-3 rounded-full bg-[#FEBC2E] hover:brightness-90 transition-all flex items-center justify-center group"
-                  title="Minimize"
-                >
+                <button onClick={onClose} className="w-3 h-3 rounded-full bg-[#FEBC2E] hover:brightness-90 transition-all flex items-center justify-center group" title="Minimize">
                   <span className="w-1.5 h-0.5 bg-[#995700] opacity-0 group-hover:opacity-100 transition-opacity rounded-full" />
                 </button>
-                <button
-                  onClick={onClose}
-                  className="w-3 h-3 rounded-full bg-[#28C840] hover:brightness-90 transition-all flex items-center justify-center group"
-                  title="Expand"
-                >
+                <button onClick={onClose} className="w-3 h-3 rounded-full bg-[#28C840] hover:brightness-90 transition-all flex items-center justify-center group" title="Expand">
                   <span className="w-1.5 h-1.5 border border-[#006500] opacity-0 group-hover:opacity-100 transition-opacity rounded-sm" />
                 </button>
                 <span className="ml-2 text-xs text-[var(--text-muted)] font-medium">Preview</span>
               </div>
             </div>
-            {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto min-h-0">
               {children}
             </div>
-            {/* Sticky Footer */}
             {footer && (
               <div className="flex-shrink-0">
                 {footer}
@@ -1388,18 +1269,15 @@ function FullscreenWrapper({ children, isOpen, onClose, footer }: { children: Re
   const sheetRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
-  
-  // Use refs instead of state for performance (no re-renders during drag)
+
   const touchStartY = useRef(0);
   const currentDragY = useRef(0);
   const isDragging = useRef(false);
   const isAtTop = useRef(true);
   const wasPlaying = useRef(false);
-  
-  // Track swipe close state - use state to trigger re-render and hide immediately
+
   const [isClosingBySwipe, setIsClosingBySwipe] = useState(false);
 
-  // Pause all media when dragging starts
   const pauseMedia = useCallback(() => {
     const videos = sheetRef.current?.querySelectorAll('video');
     const audios = sheetRef.current?.querySelectorAll('audio');
@@ -1411,7 +1289,6 @@ function FullscreenWrapper({ children, isOpen, onClose, footer }: { children: Re
     });
   }, []);
 
-  // Resume media if it was playing
   const resumeMedia = useCallback(() => {
     if (wasPlaying.current) {
       const videos = sheetRef.current?.querySelectorAll('video');
@@ -1430,18 +1307,16 @@ function FullscreenWrapper({ children, isOpen, onClose, footer }: { children: Re
 
   const handleTouchMove = useCallback((e: TouchEvent) => {
     const deltaY = e.touches[0].clientY - touchStartY.current;
-    
-    // Only drag when at top and pulling down
+
     if (isAtTop.current && deltaY > 10) {
       if (!isDragging.current) {
         isDragging.current = true;
         pauseMedia();
       }
-      
+
       e.preventDefault();
       currentDragY.current = Math.min(deltaY * 0.5, 250);
-      
-      // Direct DOM manipulation - no React re-render = smooth 60fps
+
       if (sheetRef.current) {
         sheetRef.current.style.transform = `translateY(${currentDragY.current}px)`;
         sheetRef.current.style.opacity = `${1 - currentDragY.current / 400}`;
@@ -1455,9 +1330,8 @@ function FullscreenWrapper({ children, isOpen, onClose, footer }: { children: Re
   const handleTouchEnd = useCallback(() => {
     if (isDragging.current) {
       const shouldClose = currentDragY.current > 80;
-      
+
       if (shouldClose) {
-        // Animate out via DOM (smooth, no blink)
         if (sheetRef.current) {
           sheetRef.current.style.transition = 'transform 0.25s ease-out, opacity 0.25s ease-out';
           sheetRef.current.style.transform = 'translateY(100%)';
@@ -1467,12 +1341,9 @@ function FullscreenWrapper({ children, isOpen, onClose, footer }: { children: Re
           backdropRef.current.style.transition = 'opacity 0.25s ease-out';
           backdropRef.current.style.opacity = '0';
         }
-        // Set closing state immediately to hide framer-motion wrapper
         setIsClosingBySwipe(true);
-        // Call onClose after animation completes
         setTimeout(onClose, 250);
       } else {
-        // Snap back - use requestAnimationFrame for smoother animation
         requestAnimationFrame(() => {
           if (sheetRef.current) {
             sheetRef.current.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.3s ease-out';
@@ -1486,8 +1357,7 @@ function FullscreenWrapper({ children, isOpen, onClose, footer }: { children: Re
         });
         resumeMedia();
       }
-      
-      // Clear transition after animation completes
+
       setTimeout(() => {
         if (sheetRef.current && !isDragging.current) {
           sheetRef.current.style.transition = '';
@@ -1496,13 +1366,12 @@ function FullscreenWrapper({ children, isOpen, onClose, footer }: { children: Re
           backdropRef.current.style.transition = '';
         }
       }, 350);
-      
+
       isDragging.current = false;
       currentDragY.current = 0;
     }
   }, [onClose, resumeMedia]);
 
-  // Attach touch listeners with passive: false for preventDefault
   useEffect(() => {
     const sheet = sheetRef.current;
     if (!sheet || !isOpen) return;
@@ -1518,11 +1387,9 @@ function FullscreenWrapper({ children, isOpen, onClose, footer }: { children: Re
     };
   }, [isOpen, handleTouchStart, handleTouchMove, handleTouchEnd]);
 
-  // Reset state when opening
   useEffect(() => {
     if (isOpen) {
       setIsClosingBySwipe(false);
-      // Small delay to let framer-motion finish initial animation
       const timer = setTimeout(() => {
         if (sheetRef.current) {
           sheetRef.current.style.transform = '';
@@ -1537,7 +1404,6 @@ function FullscreenWrapper({ children, isOpen, onClose, footer }: { children: Re
     }
   }, [isOpen]);
 
-  // If closing by swipe, render nothing (skip framer-motion exit which causes blink)
   if (isClosingBySwipe) {
     return null;
   }
@@ -1546,7 +1412,6 @@ function FullscreenWrapper({ children, isOpen, onClose, footer }: { children: Re
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
           <motion.div
             ref={backdropRef}
             key="fullscreen-backdrop"
@@ -1557,8 +1422,7 @@ function FullscreenWrapper({ children, isOpen, onClose, footer }: { children: Re
             className="modal-theme-backdrop fixed inset-0 z-50"
             onClick={onClose}
           />
-          
-          {/* Sheet - use CSS animation for entry, manual DOM for drag */}
+
           <motion.div
             ref={sheetRef}
             key="fullscreen"
@@ -1567,64 +1431,47 @@ function FullscreenWrapper({ children, isOpen, onClose, footer }: { children: Re
             exit={{ y: '100%', opacity: 0 }}
             transition={{ type: 'spring', damping: 30, stiffness: 400 }}
             className="fixed inset-x-0 bottom-0 z-50 bg-[var(--bg-card)] rounded-t-3xl overflow-hidden max-h-[92vh] flex flex-col"
-            style={{ 
+            style={{
               boxShadow: '0 -8px 40px rgba(0,0,0,0.4)',
               willChange: 'transform, opacity',
               backfaceVisibility: 'hidden',
               WebkitBackfaceVisibility: 'hidden',
             }}
           >
-            {/* Header with traffic lights and hide panel */}
+            {/* Header */}
             <div className="modal-theme-titlebar sticky top-0 z-10">
-              {/* Single row: Traffic Lights + Preview + Hide Panel */}
               <div className="flex items-center justify-between px-4 py-3">
-                {/* Left: Traffic Lights + Preview */}
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={onClose}
-                    className="w-4 h-4 rounded-full bg-[#FF5F57] hover:bg-[#FF5F57]/80 transition-colors flex items-center justify-center group"
-                    title="Close"
-                  >
+                  <button onClick={onClose} className="w-4 h-4 rounded-full bg-[#FF5F57] hover:bg-[#FF5F57]/80 transition-colors flex items-center justify-center group" title="Close">
                     <X className="w-2.5 h-2.5 text-[#990000] opacity-0 group-hover:opacity-100 transition-opacity" />
                   </button>
-                  <button
-                    onClick={onClose}
-                    className="w-4 h-4 rounded-full bg-[#FEBC2E] hover:bg-[#FEBC2E]/80 transition-colors flex items-center justify-center group"
-                    title="Minimize"
-                  >
+                  <button onClick={onClose} className="w-4 h-4 rounded-full bg-[#FEBC2E] hover:bg-[#FEBC2E]/80 transition-colors flex items-center justify-center group" title="Minimize">
                     <ChevronLeft className="w-2.5 h-2.5 text-[#995700] opacity-0 group-hover:opacity-100 transition-opacity -rotate-90" />
                   </button>
-                  <button
-                    onClick={onClose}
-                    className="w-4 h-4 rounded-full bg-[#28C840] hover:bg-[#28C840]/80 transition-colors flex items-center justify-center group"
-                    title="Expand"
-                  >
+                  <button onClick={onClose} className="w-4 h-4 rounded-full bg-[#28C840] hover:bg-[#28C840]/80 transition-colors flex items-center justify-center group" title="Expand">
                     <ChevronRight className="w-2.5 h-2.5 text-[#006500] opacity-0 group-hover:opacity-100 transition-opacity rotate-45" />
                   </button>
                   <span className="ml-3 text-sm font-medium text-[var(--text-secondary)]">Preview</span>
                 </div>
-                
-                {/* Right: Hide Panel Button */}
-                <button 
+
+                <button
                   onClick={onClose}
                   className="flex items-center gap-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
                 >
-                  <span className="text-xs font-medium">Sembunyikan</span>
+                  <span className="text-xs font-medium">Hide</span>
                   <ChevronDown className="w-4 h-4" />
                 </button>
               </div>
             </div>
-            
-            {/* Scrollable Content - hide scrollbar on mobile */}
-            <div 
+
+            <div
               ref={contentRef}
               className="overflow-y-auto flex-1 min-h-0 pb-safe overscroll-contain scrollbar-hide"
               style={{ maxHeight: footer ? 'calc(92vh - 70px - 120px)' : 'calc(92vh - 70px)' }}
             >
               {children}
             </div>
-            
-            {/* Sticky Footer */}
+
             {footer && (
               <div className="flex-shrink-0">
                 {footer}
