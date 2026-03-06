@@ -190,9 +190,15 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
   const isCarousel = itemIds.length > 1;
   const currentItemId = itemIds[currentIndex] || 'main';
   const currentFormats = groupedItems[currentItemId] || [];
+  const disableAudioConvertForFacebookStory =
+    platform === 'facebook' && (
+      (data.contentType || '').toLowerCase() === 'story' ||
+      /\/stories(?:\/|$)/i.test(data.url || '')
+    );
+  const includeSyntheticAudio = !disableAudioConvertForFacebookStory;
   const selectorFormats = useMemo(() => {
-    return buildSelectorFormats(currentFormats, platform, true);
-  }, [currentFormats, platform]);
+    return buildSelectorFormats(currentFormats, platform, includeSyntheticAudio);
+  }, [currentFormats, includeSyntheticAudio, platform]);
   const currentThumbnail = itemThumbnails[currentItemId] || currentFormats[0]?.thumbnail || data.thumbnail;
   const authorHandle = data.authorUsername;
   const normalizedAuthorHandle = authorHandle
@@ -273,7 +279,7 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
     if (prevIndex.current !== currentIndex) {
       const newItemId = itemIds[currentIndex] || 'main';
       const newFormats = groupedItems[newItemId] || [];
-      const selectorFormatsForItem = buildSelectorFormats(newFormats, platform, true);
+      const selectorFormatsForItem = buildSelectorFormats(newFormats, platform, includeSyntheticAudio);
       const preferred = findPreferredFormat(selectorFormatsForItem);
       setSelectedFormat(preferred || null);
       setDownloadState({ status: 'idle', progress: 0, speed: 0, loaded: 0, total: 0 });
@@ -284,7 +290,7 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
       }
     }
     prevIndex.current = currentIndex;
-  }, [currentIndex, itemIds, groupedItems, platform]);
+  }, [currentIndex, itemIds, groupedItems, includeSyntheticAudio, platform]);
 
   // Reset loop counter when format changes
   useEffect(() => {

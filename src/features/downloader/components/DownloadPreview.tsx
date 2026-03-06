@@ -96,17 +96,23 @@ export function DownloadPreview({ data, platform, responseJson, onDownloadComple
         : null;
     const displayAuthor = data.author || data.authorAlias || normalizedAuthorHandle;
     const hasAuthorMeta = Boolean(displayAuthor || normalizedAuthorHandle);
+    const disableAudioConvertForFacebookStory =
+        platform === 'facebook' && (
+            (data.contentType || '').toLowerCase() === 'story' ||
+            /\/stories(?:\/|$)/i.test(data.url || '')
+        );
+    const includeSyntheticAudio = !disableAudioConvertForFacebookStory;
 
     // State for selected format per item
     const getSelectorFormatsForItem = useCallback((itemId: string): MediaFormat[] => {
         const itemFormats = groupedItems[itemId] || [];
-        return buildSelectorFormats(itemFormats, platform, true);
-    }, [groupedItems, platform]);
+        return buildSelectorFormats(itemFormats, platform, includeSyntheticAudio);
+    }, [groupedItems, includeSyntheticAudio, platform]);
 
     const [selectedFormats, setSelectedFormats] = useState<Record<string, MediaFormat>>(() => {
         const initial: Record<string, MediaFormat> = {};
         itemIds.forEach(id => {
-            const preferred = findPreferredFormat(buildSelectorFormats(groupedItems[id] || [], platform, true));
+            const preferred = findPreferredFormat(buildSelectorFormats(groupedItems[id] || [], platform, includeSyntheticAudio));
             if (preferred) initial[id] = preferred;
         });
         return initial;
@@ -289,7 +295,7 @@ export function DownloadPreview({ data, platform, responseJson, onDownloadComple
     const renderFormatButtons = (itemFormats: MediaFormat[], itemId: string) => (
         <div className="flex flex-col gap-2">
             {(() => {
-                const selectorFormats = buildSelectorFormats(itemFormats, platform, true);
+                const selectorFormats = buildSelectorFormats(itemFormats, platform, includeSyntheticAudio);
                 return (
                     <FormatSelector
                         formats={selectorFormats}
