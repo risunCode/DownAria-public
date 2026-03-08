@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { getUpdateDismissed, setUpdateDismissed } from '@/lib/storage/settings';
 import { IS_DEV } from '@/lib/config';
 
@@ -65,6 +65,15 @@ export function ServiceWorkerRegister() {
   const [showPrompt, setShowPrompt] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
   const [settings, setSettings] = useState<UpdatePromptSettings>(DEFAULT_SETTINGS);
+  const waitingWorkerRef = useRef<ServiceWorker | null>(null);
+  const isReloadingRef = useRef(false);
+
+  const markUpdateAvailable = useCallback((worker: ServiceWorker | null | undefined) => {
+    if (!worker) return;
+    waitingWorkerRef.current = worker;
+    setUpdateAvailable(true);
+    if (IS_DEV) console.log('[PWA] New version available');
+  }, []);
 
   // Check if prompt should be shown based on mode
   const shouldShowPrompt = useCallback((mode: UpdatePromptSettings['mode']): boolean => {
@@ -111,17 +120,29 @@ export function ServiceWorkerRegister() {
     window.addEventListener('offline', handleOffline);
     setIsOffline(!navigator.onLine);
 
+    const handleControllerChange = () => {
+      if (isReloadingRef.current) return;
+      isReloadingRef.current = true;
+      window.location.reload();
+    };
+
     // Register service worker
     let updateInterval: NodeJS.Timeout | null = null;
 
     if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
+
       navigator.serviceWorker
         .register('/sw.js', { updateViaCache: 'none' }) // Always check for SW updates
         .then((registration) => {
           if (IS_DEV) console.log('[PWA] Service Worker registered');
 
+          if (registration.waiting) {
+            markUpdateAvailable(registration.waiting);
+          }
+
           // Force check for updates immediately on page load
-          registration.update();
+          void registration.update();
 
           // Check for updates
           registration.addEventListener('updatefound', () => {
@@ -129,9 +150,7 @@ export function ServiceWorkerRegister() {
             if (newWorker) {
               newWorker.addEventListener('statechange', () => {
                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  // New version available
-                  setUpdateAvailable(true);
-                  if (IS_DEV) console.log('[PWA] New version available');
+                  markUpdateAvailable(newWorker);
                 }
               });
             }
@@ -139,38 +158,34 @@ export function ServiceWorkerRegister() {
 
           // Check for updates periodically (every 5 min instead of 30)
           updateInterval = setInterval(() => {
-            registration.update();
+            void registration.update();
           }, 5 * 60 * 1000);
         })
         .catch((error) => {
           console.error('[PWA] SW registration failed:', error);
         });
-
-      // Handle controller change (new SW activated)
-      // NOTE: Don't auto-reload here - let user click "Update Now" button first
-      // The reload happens in handleUpdate() after user confirms
     }
 
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
+      }
       if (updateInterval) clearInterval(updateInterval);
     };
-  }, []);
+  }, [markUpdateAvailable]);
 
   // Update prompt - user must click to reload
   const handleUpdate = () => {
-    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-      // Send skipWaiting to activate new SW
-      navigator.serviceWorker.controller.postMessage('skipWaiting');
-      // Reload after a short delay to let SW activate
-      setTimeout(() => {
-        window.location.reload();
-      }, 100);
-    } else {
-      // Fallback: just reload
-      window.location.reload();
+    const waitingWorker = waitingWorkerRef.current;
+    if (waitingWorker) {
+      setShowPrompt(false);
+      waitingWorker.postMessage('skipWaiting');
+      return;
     }
+
+    window.location.reload();
   };
 
   // Dismiss handler based on mode

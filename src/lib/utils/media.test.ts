@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { MediaData, MediaFormat } from '@/lib/types';
+import * as settings from '@/lib/storage/settings';
 import { downloadMergedByServer, generateFilename } from './media';
 
 const baseData: MediaData = {
@@ -88,5 +89,30 @@ describe('downloadMergedByServer filename fallback compatibility', () => {
 
     expect(result.success).toBe(true);
     expect(result.filename).toBe('clip_[DownAria].mp4');
+  });
+
+  it('forwards youtube cookie to merge endpoint when available', async () => {
+    vi.spyOn(settings, 'getPlatformCookie').mockReturnValue('SID=yt; SAPISID=yt2');
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(new Uint8Array([7, 7]), {
+        status: 200,
+        headers: {
+          'content-type': 'video/mp4',
+        },
+      }) as unknown as Response,
+    );
+
+    await downloadMergedByServer(
+      {
+        url: 'https://youtube.com/watch?v=dQw4w9WgXcQ',
+        quality: '720p',
+      },
+      () => undefined,
+    );
+
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    const [, requestInit] = fetchSpy.mock.calls[0];
+    const body = typeof requestInit?.body === 'string' ? JSON.parse(requestInit.body) as { cookie?: string } : {};
+    expect(body.cookie).toBe('SID=yt; SAPISID=yt2');
   });
 });

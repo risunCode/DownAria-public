@@ -11,6 +11,7 @@
 import { MediaData, MediaFormat, PlatformId } from '@/lib/types';
 import { formatBytes } from './format';
 import { getProtectedDownloadUrl, getProtectedProxyUrl } from '@/lib/api/proxy';
+import { getPlatformCookie } from '@/lib/storage/settings';
 
 function getMergeEndpoint(): string {
     return '/api/web/merge';
@@ -1026,6 +1027,28 @@ interface ServerMergeRequestPayload {
     format?: string;
     videoUrl?: string;
     audioUrl?: string;
+    cookie?: string;
+}
+
+function withMergeCookie(payload: ServerMergeRequestPayload): ServerMergeRequestPayload {
+    if (payload.cookie?.trim()) {
+        return payload;
+    }
+
+    const targetUrl = typeof payload.url === 'string' ? payload.url.trim() : '';
+    if (!targetUrl || !isYouTubeUrl(targetUrl)) {
+        return payload;
+    }
+
+    const cookie = getPlatformCookie('youtube')?.trim();
+    if (!cookie) {
+        return payload;
+    }
+
+    return {
+        ...payload,
+        cookie,
+    };
 }
 
 async function extractMergeError(response: Response): Promise<string> {
@@ -1254,6 +1277,8 @@ export async function downloadMergedByServer(
     abortSignal?: AbortSignal,
 ): Promise<YouTubeMergeResult> {
     try {
+        const requestPayload = withMergeCookie(payload);
+
         // Check if already aborted
         if (abortSignal?.aborted) {
             return { success: false, error: 'Download cancelled' };
@@ -1268,7 +1293,7 @@ export async function downloadMergedByServer(
             response = await fetch(getMergeEndpoint(), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
+                body: JSON.stringify(requestPayload),
                 signal: abortSignal
             });
         } catch (fetchError) {
@@ -1288,7 +1313,7 @@ export async function downloadMergedByServer(
         const contentLength = response.headers.get('content-length');
 
         // Extract filename from Content-Disposition
-        let finalFilename = payload.filename || '';
+        let finalFilename = requestPayload.filename || '';
         if (disposition) {
             // Try RFC 5987 filename*=UTF-8''... (most reliable)
             const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
@@ -1305,7 +1330,7 @@ export async function downloadMergedByServer(
 
         // Final fallback: usage of 'filename' parameter if extraction fails
         if (!finalFilename || finalFilename.trim() === '') {
-            finalFilename = payload.filename || 'downaria_output.mp4';
+            finalFilename = requestPayload.filename || 'downaria_output.mp4';
         }
 
         // Get actual file size from Content-Length header
