@@ -104,7 +104,9 @@ function toActionModel(action: ErrorActionType, metadata?: Record<string, unknow
 export function createErrorDisplayModel(payload: FrontendErrorPayload): ErrorDisplayModel {
   const category = payload.category || getErrorCategory(payload.code);
   const title = CATEGORY_TITLES[category];
-  const message = getErrorMessage(payload.code, payload.message);
+  const message = typeof payload.message === 'string' && payload.message.trim()
+    ? payload.message.trim()
+    : getErrorMessage(payload.code);
   const actions = CATEGORY_ACTIONS[category].map((action) => toActionModel(action, payload.metadata));
 
   return {

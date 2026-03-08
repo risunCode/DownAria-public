@@ -38,6 +38,16 @@ describe('createErrorDisplayModel', () => {
       retryAfterSeconds: 12,
     });
   });
+
+  it('prefers backend error detail over generic code message', () => {
+    const model = createErrorDisplayModel({
+      code: 'EXTRACTION_FAILED',
+      message: 'yt-dlp execution failed: Sign in to confirm you are not a bot.',
+    });
+
+    expect(model.title).toBe('Extraction Failed');
+    expect(model.message).toBe('yt-dlp execution failed: Sign in to confirm you are not a bot.');
+  });
 });
 
 describe('executeErrorAction', () => {
