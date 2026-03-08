@@ -333,6 +333,19 @@ function getApiErrorMetadata(error: unknown): Record<string, unknown> | undefine
   return getRateLimitMetadataFromPayload(payload, status);
 }
 
+function getResponseMeta(raw: unknown): Record<string, unknown> {
+  if (!raw || typeof raw !== 'object') {
+    return {};
+  }
+
+  const meta = (raw as { meta?: unknown }).meta;
+  if (!meta || typeof meta !== 'object' || Array.isArray(meta)) {
+    return {};
+  }
+
+  return { ...(meta as Record<string, unknown>) };
+}
+
 function normalizeScraperResponse(raw: unknown, requestUrl: string, responseTimeMs?: number): ScraperResponse {
   if (!raw || typeof raw !== 'object') {
     return {
@@ -357,7 +370,10 @@ function normalizeScraperResponse(raw: unknown, requestUrl: string, responseTime
   if (!validated.success) {
     if (!envelope.success) {
       const errorObj = envelope.error as { code?: string; message?: string; metadata?: unknown } | undefined;
-      const metadata = getRateLimitMetadataFromPayload({ error: errorObj });
+      const metadata = {
+        ...getResponseMeta(raw),
+        ...getRateLimitMetadataFromPayload({ error: errorObj }),
+      };
       return {
         success: false,
         error: typeof errorObj?.message === 'string' ? errorObj.message : 'Request failed',
@@ -370,7 +386,10 @@ function normalizeScraperResponse(raw: unknown, requestUrl: string, responseTime
       success: false,
       error: validated.error.message,
       errorCode: validated.error.code,
-      errorMetadata: getRateLimitMetadataFromPayload(raw),
+      errorMetadata: {
+        ...getResponseMeta(raw),
+        ...getRateLimitMetadataFromPayload(raw),
+      },
     };
   }
 
@@ -492,13 +511,15 @@ export async function fetchMediaWithCache(
   skipCache = false
 ): Promise<ScraperResult> {
   const platform = platformDetect(url) as PlatformId | null;
+  const hasCookie = typeof cookie === 'string' && cookie.trim().length > 0;
+  const shouldSkipCache = skipCache || hasCookie;
 
   await ensureClientCacheReady();
 
   // Try cache first
-  if (!skipCache && platform) {
+  if (!shouldSkipCache && platform) {
     try {
-      const cached = await getCachedMediaByContentId(platform, url, skipCache);
+      const cached = await getCachedMediaByContentId(platform, url, shouldSkipCache);
       if (hasUsableFormats(cached)) {
         return {
           success: true,
@@ -513,12 +534,12 @@ export async function fetchMediaWithCache(
 
   // Fetch from API
   try {
-    const result = await requestScraper(url, cookie);
+      const result = await requestScraper(url, cookie);
 
-    // Cache successful result
-    if (result.success && result.data && platform) {
-      setCachedMediaByContentId(platform, url, result.data, skipCache);
-    }
+      // Cache successful result
+      if (result.success && result.data && platform) {
+        setCachedMediaByContentId(platform, url, result.data, shouldSkipCache);
+      }
 
     return {
       success: result.success,

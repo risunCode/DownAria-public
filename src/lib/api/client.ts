@@ -141,6 +141,7 @@ async function fetchWithRetry(
     timeout = DEFAULT_TIMEOUT
 ): Promise<Response> {
     let lastError: Error | null = null;
+    let lastResponse: Response | null = null;
     
     for (let attempt = 0; attempt <= retries; attempt++) {
         try {
@@ -157,6 +158,7 @@ async function fetchWithRetry(
             }
             
             // 5xx error: store for potential retry
+            lastResponse = response;
             lastError = new Error(`Server error: ${response.status}`);
         } catch (error) {
             // Don't retry if backend is offline
@@ -182,6 +184,10 @@ async function fetchWithRetry(
         if (attempt < retries && lastError) {
             continue;
         }
+    }
+
+    if (lastResponse) {
+        return lastResponse;
     }
     
     throw lastError || new Error('Request failed');

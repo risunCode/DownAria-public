@@ -6,6 +6,7 @@ import {
   mediaExtractionReducer,
   retryLastExtraction,
 } from './useMediaExtraction';
+import { parseCookieInputToFlat } from '@/lib/utils/cookie-parser';
 
 const mediaFixture: MediaData = {
   title: 'Sample',
@@ -163,5 +164,19 @@ describe('defaultCookieResolver', () => {
 
     expect(cookie).toBeUndefined();
     expect(resolver).not.toHaveBeenCalled();
+  });
+});
+
+describe('youtube cookie conversion', () => {
+  it('converts exported JSON cookies into a flat cookie header', () => {
+    const flat = parseCookieInputToFlat(JSON.stringify([
+      { domain: '.youtube.com', name: 'SID', value: 'sid-value' },
+      { domain: '.youtube.com', name: 'SAPISID', value: 'sapisid-value' },
+      { domain: '.youtube.com', name: 'LOGIN_INFO', value: 'login-info' },
+    ]), 'youtube');
+
+    expect(flat).toContain('SID=sid-value');
+    expect(flat).toContain('SAPISID=sapisid-value');
+    expect(flat).toContain('LOGIN_INFO=login-info');
   });
 });

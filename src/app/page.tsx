@@ -303,6 +303,11 @@ function HomeContent() {
               {extractionError.code && (
                 <p className="text-[11px] text-[var(--text-muted)] mt-2">Code: {extractionError.code}</p>
               )}
+              {typeof extractionError.metadata?.cookieSource === 'string' && extractionError.metadata.cookieSource.trim() && (
+                <p className="text-[11px] text-[var(--text-muted)] mt-1">
+                  Cookie lane: {extractionError.metadata.cookieSource}
+                </p>
+              )}
               <div className="mt-3 flex flex-wrap gap-2">
                 {extractionError.actions.map((action) => (
                   <button
