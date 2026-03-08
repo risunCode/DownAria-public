@@ -9,7 +9,7 @@
 
 import { useCallback, useState } from 'react';
 import { Minus, Plus } from 'lucide-react';
-import { cn } from '@/lib/utils/helpers';
+import { cn } from '@/lib/utils/cn';
 
 interface SliderProps {
   value: number;

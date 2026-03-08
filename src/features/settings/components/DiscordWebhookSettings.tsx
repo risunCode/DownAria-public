@@ -3,16 +3,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { AlertCircle, Bell, BellOff, Clock3, Info, Loader2, Send } from 'lucide-react';
 import {
-    UserDiscordSettings,
-    DEFAULT_USER_DISCORD,
+    type DiscordSettings as UserDiscordSettings,
+    DEFAULT_DISCORD,
     getUserDiscordSettings,
     saveUserDiscordSettings,
-} from '@/lib/utils/discord-webhook';
+} from '@/lib/storage/settings';
 import { useTranslations } from 'next-intl';
 
 export function DiscordWebhookSettings() {
     const t = useTranslations('settingsDiscord');
-    const [settings, setSettings] = useState<UserDiscordSettings>(DEFAULT_USER_DISCORD);
+    const [settings, setSettings] = useState<UserDiscordSettings>(DEFAULT_DISCORD);
     const [webhookUrlInput, setWebhookUrlInput] = useState('');
     const [isSending, setIsSending] = useState(false);
     const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
@@ -23,7 +23,7 @@ export function DiscordWebhookSettings() {
         const saved = getUserDiscordSettings();
         if (saved) {
             const normalized = {
-                ...DEFAULT_USER_DISCORD,
+                ...DEFAULT_DISCORD,
                 ...saved,
                 sendMethod: saved.sendMethod === 'smart' ? 'double' : saved.sendMethod,
             };

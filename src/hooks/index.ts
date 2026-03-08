@@ -8,7 +8,7 @@
 export { useDownloadSync } from './useDownloadSync';
 
 // Scraper Cache (client-side IndexedDB caching)
-export { useScraperCache, fetchMediaWithCache } from './useScraperCache';
+export { fetchMediaWithCache } from './useScraperCache';
 
 // Media Extraction state orchestration
 export { useMediaExtraction } from './useMediaExtraction';

@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Check, ChevronDown, Cookie, ExternalLink, Info, KeyRound, Loader2, ShieldCheck, Trash2, X } from 'lucide-react';
 import { FacebookIcon, InstagramIcon, XTwitterIcon, YoutubeIcon } from '@/components/ui/Icons';
 import { Button } from '@/components/ui/Button';
-import { cn } from '@/lib/utils/helpers';
+import { cn } from '@/lib/utils/cn';
 import { type CookiePlatform } from '@/lib/storage';
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';

@@ -22,7 +22,7 @@ import {
   ArrowUpDown,
   AlertTriangle,
 } from 'lucide-react';
-import { cn } from '@/lib/utils/helpers';
+import { cn } from '@/lib/utils/cn';
 import { Button } from '@/components/ui/Button';
 import { Slider } from '@/components/ui/Slider';
 import {

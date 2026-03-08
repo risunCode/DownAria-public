@@ -1,4 +1,15 @@
 import { NextResponse } from 'next/server';
+import { rejectUntrustedRequest } from '../_internal/request-guard';
+
+const FEEDBACK_WINDOW_MS = 10 * 60 * 1000;
+const FEEDBACK_LIMIT = 5;
+
+type FeedbackRateEntry = {
+  count: number;
+  resetAt: number;
+};
+
+const feedbackRateStore = new Map<string, FeedbackRateEntry>();
 
 type FeedbackPayload = {
   name?: string;
@@ -14,7 +25,53 @@ function containsDisallowedContent(input: string): boolean {
   return /(https?:\/\/|www\.|discord\.gg|@everyone|@here)/i.test(input);
 }
 
+function getClientAddress(request: Request): string {
+  const forwardedFor = (request.headers.get('x-forwarded-for') || '').split(',')[0]?.trim();
+  const realIp = (request.headers.get('x-real-ip') || '').trim();
+  return forwardedFor || realIp || 'unknown';
+}
+
+function applyFeedbackRateLimit(request: Request): Response | null {
+  const now = Date.now();
+  const client = getClientAddress(request);
+
+  for (const [key, value] of feedbackRateStore.entries()) {
+    if (now >= value.resetAt) {
+      feedbackRateStore.delete(key);
+    }
+  }
+
+  const current = feedbackRateStore.get(client);
+  if (!current || now >= current.resetAt) {
+    feedbackRateStore.set(client, { count: 1, resetAt: now + FEEDBACK_WINDOW_MS });
+    return null;
+  }
+
+  if (current.count >= FEEDBACK_LIMIT) {
+    const retryAfter = Math.max(1, Math.ceil((current.resetAt - now) / 1000));
+    return NextResponse.json(
+      { error: 'Too many feedback requests. Please try again later.' },
+      {
+        status: 429,
+        headers: {
+          'Retry-After': retryAfter.toString(),
+        },
+      },
+    );
+  }
+
+  current.count += 1;
+  feedbackRateStore.set(client, current);
+  return null;
+}
+
 export async function POST(request: Request) {
+  const rejected = rejectUntrustedRequest(request, 'feedback endpoint');
+  if (rejected) return rejected;
+
+  const rateLimited = applyFeedbackRateLimit(request);
+  if (rateLimited) return rateLimited;
+
   const webhookUrl = (process.env.FEEDBACK_DISCORD_WEBHOOK_URL || '').trim();
   if (!webhookUrl) {
     return NextResponse.json({ error: 'Feedback webhook is not configured.' }, { status: 503 });

@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { buildWebSignatureHeaders, resolveGatewayOrigin } from '../_internal/signature';
+import { readWebSessionToken, verifyWebAccessToken } from '../../_internal/access-session';
+import { rejectUntrustedRequest } from '../../_internal/request-guard';
 
 function buildLocalProxyURL(target: string, platform?: string): string {
   const params = new URLSearchParams();
@@ -38,6 +40,9 @@ function rewriteM3U8Body(body: string, sourceURL: string, platform?: string): st
 }
 
 export async function GET(request: Request) {
+  const rejected = rejectUntrustedRequest(request, 'web proxy gateway');
+  if (rejected) return rejected;
+
   const backendBase = (process.env.NEXT_PUBLIC_API_URL || '').trim();
   const sharedSecret = (process.env.WEB_INTERNAL_SHARED_SECRET || '').trim();
   const origin = resolveGatewayOrigin(request);
@@ -50,6 +55,18 @@ export async function GET(request: Request) {
   }
 
   const inputUrl = new URL(request.url);
+  const sourceURL = inputUrl.searchParams.get('url') || '';
+  const platform = inputUrl.searchParams.get('platform') || undefined;
+  const accessToken = inputUrl.searchParams.get('access_token') || '';
+  const session = readWebSessionToken(request);
+
+  if (accessToken && !verifyWebAccessToken({ token: accessToken, session, action: 'proxy', url: sourceURL, platform })) {
+    return NextResponse.json(
+      { success: false, error: { code: 'ACCESS_DENIED', message: 'invalid proxy access token' } },
+      { status: 403 },
+    );
+  }
+
   const path = '/api/web/proxy';
   const query = inputUrl.searchParams.toString();
   const upstreamUrl = `${backendBase}${path}${query ? `?${query}` : ''}`;
@@ -90,9 +107,6 @@ export async function GET(request: Request) {
     }
 
     const contentType = (upstream.headers.get('content-type') || '').toLowerCase();
-    const sourceURL = inputUrl.searchParams.get('url') || '';
-    const platform = inputUrl.searchParams.get('platform') || undefined;
-
     if (sourceURL && (contentType.includes('application/vnd.apple.mpegurl') || contentType.includes('application/x-mpegurl'))) {
       const text = await upstream.text();
       const rewritten = rewriteM3U8Body(text, sourceURL, platform);

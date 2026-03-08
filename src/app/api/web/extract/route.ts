@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { buildWebSignatureHeaders, resolveGatewayOrigin } from '../_internal/signature';
+import { ensureWebSessionCookie } from '../../_internal/access-session';
+import { rejectUntrustedRequest } from '../../_internal/request-guard';
 
 type ExtractPayload = {
   url?: string;
@@ -7,6 +9,9 @@ type ExtractPayload = {
 };
 
 export async function POST(request: Request) {
+  const rejected = rejectUntrustedRequest(request, 'web extract gateway');
+  if (rejected) return rejected;
+
   const backendBase = (process.env.NEXT_PUBLIC_API_URL || '').trim();
   const sharedSecret = (process.env.WEB_INTERNAL_SHARED_SECRET || '').trim();
   const origin = resolveGatewayOrigin(request);
@@ -53,11 +58,15 @@ export async function POST(request: Request) {
     });
 
     const data = await res.json().catch(() => ({ success: false, error: { code: 'UPSTREAM_ERROR', message: 'invalid upstream response' } }));
-    return NextResponse.json(data, { status: res.status });
+    const response = NextResponse.json(data, { status: res.status });
+    ensureWebSessionCookie(response, request);
+    return response;
   } catch {
-    return NextResponse.json(
+    const response = NextResponse.json(
       { success: false, error: { code: 'UPSTREAM_ERROR', message: 'failed to reach backend extract service' } },
       { status: 502 },
     );
+    ensureWebSessionCookie(response, request);
+    return response;
   }
 }

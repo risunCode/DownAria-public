@@ -64,15 +64,10 @@ export interface DownloadResponse {
     platform: PlatformId;
     data?: MediaData;
     error?: string;
-    errorCode?: string; // Changed from ScraperErrorCode to string for compatibility
-    // Flattened structure support (used by some route handlers)
-    title?: string;
-    thumbnail?: string;
-    author?: string;
-    formats?: MediaFormat[];
+    errorCode?: string;
 }
 
-// Media data extracted from URL (Legacy/UI compatibility layer)
+// Media data extracted from URL
 export interface MediaData {
     title: string;
     thumbnail: string;
@@ -144,12 +139,6 @@ export interface ExtractResult {
         used: boolean;
         source: 'none' | 'server' | 'client';
     };
-}
-
-// Legacy wrapper format (deprecated - now backend returns ExtractResult directly)
-export interface BackendPublicServicesResponse {
-    platform: string;
-    result: ExtractResult;
 }
 
 // History item stored in localStorage

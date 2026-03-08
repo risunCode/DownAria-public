@@ -361,7 +361,7 @@ export function setUpdateDismissed(status: 'forever' | 'session' | null): void {
 // DISCORD (with encrypted webhook URL)
 // ═══════════════════════════════════════════════════════════════
 
-import { setEncrypted, getEncrypted } from './crypto';
+import { setEncrypted, getEncrypted, removeEncrypted } from './crypto';
 
 const DISCORD_WEBHOOK_KEY = 'downaria_discord_webhook';
 
@@ -396,10 +396,7 @@ export function saveUserDiscordSettings(settings: DiscordSettings): void {
   if (settings.webhookUrl) {
     setEncrypted(DISCORD_WEBHOOK_KEY, settings.webhookUrl);
   } else {
-    // Remove encrypted webhook if empty
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem(DISCORD_WEBHOOK_KEY);
-    }
+    removeEncrypted(DISCORD_WEBHOOK_KEY);
   }
   
   // Store settings without the webhook URL in plain storage

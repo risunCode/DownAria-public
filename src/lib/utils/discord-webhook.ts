@@ -17,7 +17,6 @@ import { BASE_URL, IS_DEV } from '@/lib/config';
 import { getProxyUrl as buildProxyUrl } from '@/lib/api/proxy';
 import { 
   getUserDiscordSettings, 
-  saveUserDiscordSettings, 
   DEFAULT_DISCORD,
   type DiscordSettings 
 } from '@/lib/storage/settings';
@@ -40,15 +39,6 @@ const getAppIcon = () => {
     }
     return BASE_URL ? `${BASE_URL}/icon.png` : '/icon.png';
 };
-
-// Re-export types and functions from settings for backward compatibility
-export type { DiscordSettings as UserDiscordSettings };
-export type DiscordSendMethod = 'smart' | 'single' | 'double';
-export { getUserDiscordSettings, saveUserDiscordSettings };
-export const DEFAULT_USER_DISCORD = DEFAULT_DISCORD;
-
-// Legacy storage key export (for reference only, not used)
-export const DISCORD_STORAGE_KEY = 'downaria_settings';
 
 // Duplicate prevention
 const recentMessages = new Map<string, number>(); // key -> timestamp
@@ -404,7 +394,7 @@ export async function sendDiscordBatch(
     }
 
     const result = { sent: 0, failed: 0 };
-    const batchDelay = settings.batchDelay || DEFAULT_USER_DISCORD.batchDelay;
+    const batchDelay = settings.batchDelay || DEFAULT_DISCORD.batchDelay;
     
     // If sendAllOnBatch is false, only send the first item
     const itemsToSend = settings.sendAllOnBatch ? items : [items[0]];

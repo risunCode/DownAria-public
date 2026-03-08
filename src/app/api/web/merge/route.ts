@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
 import { buildWebSignatureHeaders, resolveGatewayOrigin } from '../_internal/signature';
+import { rejectUntrustedRequest } from '../../_internal/request-guard';
 
 export async function POST(request: Request) {
+  const rejected = rejectUntrustedRequest(request, 'web merge gateway');
+  if (rejected) return rejected;
+
   const backendBase = (process.env.NEXT_PUBLIC_API_URL || '').trim();
   const sharedSecret = (process.env.WEB_INTERNAL_SHARED_SECRET || '').trim();
   const origin = resolveGatewayOrigin(request);

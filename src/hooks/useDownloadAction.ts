@@ -3,15 +3,14 @@
 import { useState, useCallback, useRef } from 'react';
 import { MediaData, MediaFormat, PlatformId } from '@/lib/types';
 import { type HistoryEntry } from '@/lib/storage';
-import { sendDiscordNotification, getUserDiscordSettings } from '@/lib/utils/discord-webhook';
+import { sendDiscordNotification } from '@/lib/utils/discord-webhook';
+import { getUserDiscordSettings } from '@/lib/storage/settings';
 import { formatBytes } from '@/lib/utils/format';
-import { getProxyUrl } from '@/lib/api/proxy';
+import { getProtectedProxyUrl } from '@/lib/api/proxy';
 import { lazySwal, getCachedSwal } from '@/lib/utils/lazy-swal';
 import { toast } from 'sonner';
 import { MAX_FILESIZE_BYTES, MAX_FILESIZE_LABEL } from '@/lib/constants/download-limits';
-import {
-    setDownloadProgress as setGlobalDownloadProgress,
-} from '@/lib/stores/download-store';
+import { useDownloadSync } from '@/hooks/useDownloadSync';
 
 // ═══════════════════════════════════════════════════════════════
 // TYPES
@@ -81,6 +80,7 @@ export function useDownloadAction({
     const [globalStatus, setGlobalStatus] = useState<DownloadStatus>('idle');
     const [zipProgress, setZipProgress] = useState<ZipProgress | null>(null);
     const [sentToWebhook, setSentToWebhook] = useState<Record<string, boolean>>({});
+    const { updateProgress, resetProgress } = useDownloadSync(data.url);
 
     const abortControllersRef = useRef<Record<string, AbortController>>({});
 
@@ -137,7 +137,7 @@ export function useDownloadAction({
 
         setDownloadStatus(prev => ({ ...prev, [itemId]: 'downloading' }));
         setDownloadProgress(prev => ({ ...prev, [itemId]: { loaded: 0, total: 0, percent: 0, speed: 0 } }));
-        setGlobalDownloadProgress(data.url, { status: 'downloading', percent: 0, loaded: 0, total: 0, speed: 0 });
+        updateProgress({ status: 'downloading', percent: 0, loaded: 0, total: 0, speed: 0 });
 
         try {
             const { downloadMedia, triggerBlobDownload } = await import('@/lib/utils/media');
@@ -154,7 +154,7 @@ export function useDownloadAction({
                         message: progress.message,
                     }
                 }));
-                setGlobalDownloadProgress(data.url, {
+                updateProgress({
                     status: progress.status === 'done' ? 'done' : progress.status === 'error' ? 'error' : 'downloading',
                     percent: progress.percent,
                     loaded: progress.loaded,
@@ -204,13 +204,13 @@ export function useDownloadAction({
             }
 
             setDownloadStatus(prev => ({ ...prev, [itemId]: 'success' }));
-            setGlobalDownloadProgress(data.url, { status: 'done', percent: 100, loaded: 0, total: 0, speed: 0 });
+            updateProgress({ status: 'done', percent: 100, loaded: 0, total: 0, speed: 0 });
 
             delete abortControllersRef.current[itemId];
 
             setTimeout(() => {
                 setDownloadStatus(prev => ({ ...prev, [itemId]: 'idle' }));
-                setGlobalDownloadProgress(data.url, { status: 'idle', percent: 0, loaded: 0, total: 0, speed: 0 });
+                resetProgress();
             }, 5000);
         } catch (e) {
             const errorMessage = e instanceof Error ? e.message : 'Download failed';
@@ -219,16 +219,16 @@ export function useDownloadAction({
             }
 
             setDownloadStatus(prev => ({ ...prev, [itemId]: 'error' }));
-            setGlobalDownloadProgress(data.url, { status: 'error', percent: 0, loaded: 0, total: 0, speed: 0 });
+            updateProgress({ status: 'error', percent: 0, loaded: 0, total: 0, speed: 0 });
 
             delete abortControllersRef.current[itemId];
 
             setTimeout(() => {
                 setDownloadStatus(prev => ({ ...prev, [itemId]: 'idle' }));
-                setGlobalDownloadProgress(data.url, { status: 'idle', percent: 0, loaded: 0, total: 0, speed: 0 });
+                resetProgress();
             }, 5000);
         }
-    }, [data, platform, itemIds, isMultiItem, itemThumbnails, displayAuthor, onDownloadComplete, sentToWebhook]);
+    }, [data, platform, itemIds, isMultiItem, itemThumbnails, displayAuthor, onDownloadComplete, sentToWebhook, updateProgress, resetProgress]);
 
     // Download all items sequentially
     const handleDownloadAll = useCallback(async () => {
@@ -309,7 +309,7 @@ export function useDownloadAction({
                 setZipProgress({ current: idx, total: itemIds.length, status: `Downloading ${idx}/${itemIds.length}...` });
 
                 try {
-                    const proxyUrl = getProxyUrl(format.url, { platform });
+                    const proxyUrl = await getProtectedProxyUrl(format.url, { platform });
                     const response = await fetch(proxyUrl);
 
                     if (!response.ok) throw new Error(`HTTP ${response.status}`);

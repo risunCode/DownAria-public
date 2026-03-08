@@ -10,7 +10,7 @@
 
 import { MediaData, MediaFormat, PlatformId } from '@/lib/types';
 import { formatBytes } from './format';
-import { getDownloadUrl, getProxyUrl } from '@/lib/api/proxy';
+import { getProtectedDownloadUrl, getProtectedProxyUrl } from '@/lib/api/proxy';
 
 function getMergeEndpoint(): string {
     return '/api/web/merge';
@@ -740,7 +740,7 @@ export type ProgressCallback = (progress: HLSDownloadProgress) => void;
  */
 async function parseM3U8(m3u8Url: string): Promise<string[]> {
     // Fetch via proxy to bypass CORS
-    const proxyUrl = getProxyUrl(m3u8Url);
+    const proxyUrl = await getProtectedProxyUrl(m3u8Url);
     const res = await fetch(proxyUrl);
 
     if (!res.ok) {
@@ -778,10 +778,9 @@ async function parseM3U8(m3u8Url: string): Promise<string[]> {
  * Download a single segment with retry
  */
 async function downloadSegment(url: string, retries = 3): Promise<ArrayBuffer> {
-    const proxyUrl = getProxyUrl(url);
-
     for (let attempt = 1; attempt <= retries; attempt++) {
         try {
+            const proxyUrl = await getProtectedProxyUrl(url);
             const res = await fetch(proxyUrl);
             if (!res.ok) {
                 throw new Error(`HTTP ${res.status}`);
@@ -1602,7 +1601,7 @@ export async function downloadMedia(
         }
 
         // Case 4: Regular direct download
-        const downloadUrl = getDownloadUrl(format.url, { filename, platform });
+        const downloadUrl = await getProtectedDownloadUrl(format.url, { filename, platform });
         const response = await fetch(downloadUrl, { signal: abortSignal });
         if (!response.ok) throw new Error(`Download failed: ${response.status}`);
 

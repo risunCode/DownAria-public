@@ -1,5 +1,5 @@
 /**
- * useScraperCache Hook
+ * Scraper cache helpers
  * ====================
  * Wraps scraper API calls with client-side IndexedDB caching.
  * 
@@ -15,7 +15,6 @@
  * - Reduces Redis usage on backend
  */
 
-import { useCallback, useEffect, useRef } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { validateExtractResponse } from '@/lib/api/schemas';
 import {
@@ -354,117 +353,36 @@ function normalizeScraperResponse(raw: unknown, requestUrl: string, responseTime
   const apiResponseTime = typeof meta?.responseTime === 'number' ? meta.responseTime : undefined;
   const finalResponseTime = apiResponseTime ?? responseTimeMs;
 
-  try {
-    const validated = validateExtractResponse(raw);
-    if (!validated.success) {
+  const validated = validateExtractResponse(raw);
+  if (!validated.success) {
+    if (!envelope.success) {
+      const errorObj = envelope.error as { code?: string; message?: string; metadata?: unknown } | undefined;
+      const metadata = getRateLimitMetadataFromPayload({ error: errorObj });
       return {
         success: false,
-        error: validated.error.message,
-        errorCode: validated.error.code,
-        errorMetadata: getRateLimitMetadataFromPayload(raw),
+        error: typeof errorObj?.message === 'string' ? errorObj.message : 'Request failed',
+        errorCode: typeof errorObj?.code === 'string' ? errorObj.code : validated.error.code,
+        errorMetadata: metadata,
       };
     }
 
-    const mapped = mapBackendResultToMediaData(validated.data as unknown as ExtractResult, requestUrl);
-    return {
-      success: true,
-      data: {
-        ...mapped,
-        responseTime: typeof finalResponseTime === 'number' ? finalResponseTime : undefined,
-      },
-      responseJson: raw,
-      platform: validated.data.platform,
-    };
-  } catch {
-    // Continue with legacy format fallbacks
-  }
-
-  if (!envelope.success) {
-    const errorObj = envelope.error as { code?: string; message?: string; metadata?: unknown } | undefined;
-    const metadata = getRateLimitMetadataFromPayload({ error: errorObj });
     return {
       success: false,
-      error: typeof errorObj?.message === 'string' ? errorObj.message : 'Request failed',
-      errorCode: typeof errorObj?.code === 'string' ? errorObj.code : undefined,
-      errorMetadata: metadata,
+      error: validated.error.message,
+      errorCode: validated.error.code,
+      errorMetadata: getRateLimitMetadataFromPayload(raw),
     };
   }
 
-  const payload = envelope.data;
-  if (isMediaData(payload)) {
-    return {
-      success: true,
-      data: {
-        ...payload,
-        responseTime: typeof finalResponseTime === 'number' ? finalResponseTime : payload.responseTime,
-      },
-      responseJson: raw,
-    };
-  }
-
-  const backendPayload = payload as { platform?: string; result?: unknown } | undefined;
-  const backendResultRecord = asRecord(backendPayload?.result);
-  if (backendResultRecord && Array.isArray(backendResultRecord.media)) {
-    try {
-      const validated = validateExtractResponse({
-        success: true,
-        data: backendResultRecord,
-        meta: envelope.meta,
-      });
-      if (validated.success) {
-        const mapped = mapBackendResultToMediaData(validated.data as unknown as ExtractResult, requestUrl);
-        return {
-          success: true,
-          data: {
-            ...mapped,
-            responseTime: finalResponseTime,
-          },
-          responseJson: raw,
-          platform: validated.data.platform,
-        };
-      }
-    } catch {
-      return {
-        success: false,
-        error: 'Invalid extract response payload',
-        errorCode: ErrorCodes.INVALID_JSON,
-      };
-    }
-  }
-
-  const directBackendResult = payload as ExtractResult | undefined;
-  if (directBackendResult?.platform && Array.isArray(directBackendResult.media)) {
-    try {
-      const validated = validateExtractResponse({
-        success: true,
-        data: directBackendResult,
-        meta: envelope.meta,
-      });
-      if (validated.success) {
-        const mapped = mapBackendResultToMediaData(validated.data as unknown as ExtractResult, requestUrl);
-        return {
-          success: true,
-          data: {
-            ...mapped,
-            responseTime: finalResponseTime,
-          },
-          responseJson: raw,
-          platform: validated.data.platform,
-        };
-      }
-    } catch {
-      return {
-        success: false,
-        error: 'Invalid extract response payload',
-        errorCode: ErrorCodes.INVALID_JSON,
-      };
-    }
-  }
-
+  const mapped = mapBackendResultToMediaData(validated.data as unknown as ExtractResult, requestUrl);
   return {
-    success: false,
-    error: 'Unsupported API response shape',
-    errorCode: ErrorCodes.UNKNOWN,
+    success: true,
+    data: {
+      ...mapped,
+      responseTime: typeof finalResponseTime === 'number' ? finalResponseTime : undefined,
+    },
+    responseJson: raw,
+    platform: validated.data.platform,
   };
 }
 
@@ -485,11 +403,6 @@ async function requestScraper(url: string, cookie?: string): Promise<ScraperResp
 
   const end = typeof performance !== 'undefined' ? performance.now() : Date.now();
   return normalizeScraperResponse(raw, url, Math.round(end - start));
-}
-
-interface UseScraperCacheOptions {
-  /** Skip cache and always fetch fresh (default: false) */
-  skipCache?: boolean;
 }
 
 interface ScraperResult {
@@ -550,91 +463,28 @@ function setCachedMediaByContentId(
   });
 }
 
-// ═══════════════════════════════════════════════════════════════
-// HOOK
-// ═══════════════════════════════════════════════════════════════
+let clientCacheInitPromise: Promise<void> | null = null;
 
-export function useScraperCache(options: UseScraperCacheOptions = {}) {
-  const initialized = useRef(false);
+async function ensureClientCacheReady(): Promise<void> {
+  if (typeof window === 'undefined') {
+    return;
+  }
 
-  // Initialize cache on mount
-  useEffect(() => {
-    if (!initialized.current && typeof window !== 'undefined') {
-      initialized.current = true;
-      initCache().then(() => {
-        // Cleanup old entries periodically
-        cleanupClientCache();
+  if (!clientCacheInitPromise) {
+    clientCacheInitPromise = initCache()
+      .then(async () => {
+        await cleanupClientCache();
+      })
+      .catch(() => {
+        clientCacheInitPromise = null;
       });
-    }
-  }, []);
+  }
 
-  /**
-   * Fetch media with caching
-   */
-  const fetchWithCache = useCallback(async (
-    url: string,
-    cookie?: string,
-    forceSkipCache = false
-  ): Promise<ScraperResult> => {
-    const platform = platformDetect(url) as PlatformId | null;
-    const skipCache = options.skipCache || forceSkipCache;
-
-    // Try cache first (if not skipping)
-    if (!skipCache && platform) {
-      try {
-        const cached = await getCachedMediaByContentId(platform, url, skipCache);
-        if (hasUsableFormats(cached)) {
-          return {
-            success: true,
-            data: cached,
-            fromCache: true,
-          };
-        }
-      } catch {
-        // Cache error - continue to API
-      }
-    }
-
-    // Fetch from API
-    try {
-      const result = await requestScraper(url, cookie);
-
-      // Cache successful result
-      if (result.success && result.data && platform) {
-        setCachedMediaByContentId(platform, url, result.data, skipCache);
-      }
-
-      return {
-        success: result.success,
-        data: result.data,
-        responseJson: result.responseJson,
-        error: result.error,
-        errorCode: result.errorCode,
-        errorMetadata: result.errorMetadata,
-        fromCache: false,
-      };
-    } catch (error) {
-      const baseError = error instanceof RetryExhaustedError ? error.metadata.lastError : error;
-      return {
-        success: false,
-        error: baseError instanceof Error ? baseError.message : 'Request failed',
-        errorCode: getApiErrorCode(baseError),
-        errorMetadata: getApiErrorMetadata(error),
-        fromCache: false,
-      };
-    }
-  }, [options.skipCache]);
-
-  return { fetchWithCache };
+  await clientCacheInitPromise;
 }
-
-// ═══════════════════════════════════════════════════════════════
-// STANDALONE FUNCTION (for non-hook usage)
-// ═══════════════════════════════════════════════════════════════
 
 /**
  * Fetch media with caching (standalone function)
- * Use this when you can't use hooks (e.g., in event handlers)
  */
 export async function fetchMediaWithCache(
   url: string,
@@ -642,6 +492,8 @@ export async function fetchMediaWithCache(
   skipCache = false
 ): Promise<ScraperResult> {
   const platform = platformDetect(url) as PlatformId | null;
+
+  await ensureClientCacheReady();
 
   // Try cache first
   if (!skipCache && platform) {

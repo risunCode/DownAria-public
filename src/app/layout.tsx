@@ -4,7 +4,6 @@ import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { ServiceWorkerRegister } from "@/components/core/ServiceWorkerRegister";
-import { PendingDownloadProvider } from "@/lib/contexts/PendingDownloadContext";
 import { IntlProvider } from "@/components/core/IntlProvider";
 import { StructuredData } from "@/components/core/StructuredData";
 import { SkipToContent } from "@/components/ui/Accessibility";
@@ -12,7 +11,6 @@ import { SeasonalEffects } from "@/components/core/SeasonalEffects";
 import { ScreenSizeGuard } from "@/components/core/ScreenSizeGuard";
 import { AdaptText } from "@/components/core/AdaptText";
 import { ThemeColorMeta } from "@/components/core/ThemeColorMeta";
-import { CacheInitializer } from "@/components/core/CacheInitializer";
 import { Toaster } from "sonner";
 import { BASE_URL_WITH_FALLBACK, IS_PROD, IS_VERCEL } from "@/lib/config";
 
@@ -104,11 +102,8 @@ export default function RootLayout({
           <SeasonalEffects />
           <ScreenSizeGuard />
           <AdaptText />
-          <CacheInitializer />
-          <PendingDownloadProvider>
-            <ServiceWorkerRegister />
-            {children}
-          </PendingDownloadProvider>
+          <ServiceWorkerRegister />
+          {children}
           <Toaster
             position="bottom-right"
             toastOptions={{

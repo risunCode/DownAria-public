@@ -1,7 +1,12 @@
 import { NextResponse } from 'next/server';
 import { buildWebSignatureHeaders, resolveGatewayOrigin } from '../_internal/signature';
+import { readWebSessionToken, verifyWebAccessToken } from '../../_internal/access-session';
+import { rejectUntrustedRequest } from '../../_internal/request-guard';
 
 export async function GET(request: Request) {
+  const rejected = rejectUntrustedRequest(request, 'web download gateway');
+  if (rejected) return rejected;
+
   const backendBase = (process.env.NEXT_PUBLIC_API_URL || '').trim();
   const sharedSecret = (process.env.WEB_INTERNAL_SHARED_SECRET || '').trim();
   const origin = resolveGatewayOrigin(request);
@@ -14,6 +19,19 @@ export async function GET(request: Request) {
   }
 
   const inputUrl = new URL(request.url);
+  const sourceURL = inputUrl.searchParams.get('url') || '';
+  const filename = inputUrl.searchParams.get('filename') || '';
+  const platform = inputUrl.searchParams.get('platform') || '';
+  const accessToken = inputUrl.searchParams.get('access_token') || '';
+  const session = readWebSessionToken(request);
+
+  if (!verifyWebAccessToken({ token: accessToken, session, action: 'download', url: sourceURL, filename, platform })) {
+    return NextResponse.json(
+      { success: false, error: { code: 'ACCESS_DENIED', message: 'valid download access token is required' } },
+      { status: 403 },
+    );
+  }
+
   const path = '/api/web/download';
   const query = inputUrl.searchParams.toString();
   const upstreamUrl = `${backendBase}${path}${query ? `?${query}` : ''}`;

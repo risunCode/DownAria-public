@@ -9,7 +9,8 @@ import { formatBytes } from '@/lib/utils/format';
 import { getProxiedThumbnail } from '@/lib/api/proxy';
 import { getProxyUrl } from '@/lib/api/proxy';
 import { RichText } from '@/lib/utils/text-parser';
-import { sendDiscordNotification, getUserDiscordSettings } from '@/lib/utils/discord-webhook';
+import { sendDiscordNotification } from '@/lib/utils/discord-webhook';
+import { getUserDiscordSettings } from '@/lib/storage/settings';
 import { lazySwal } from '@/lib/utils/lazy-swal';
 import { toast } from 'sonner';
 import { SplitButton } from '@/components/ui/SplitButton';
@@ -27,9 +28,6 @@ import {
   getQualityBadge,
   isHlsFormat,
 } from '@/lib/utils/media';
-import {
-  setDownloadProgress as setGlobalDownloadProgress,
-} from '@/lib/stores/download-store';
 import { useDownloadSync } from '@/hooks/useDownloadSync';
 import { useNavigationGuard } from '@/hooks/useNavigationGuard';
 import { EngagementDisplay } from './EngagementDisplay';
@@ -48,15 +46,6 @@ interface MediaGalleryProps {
   onClose: () => void;
   initialIndex?: number;
   initialFormat?: MediaFormat | null;
-}
-
-interface DownloadState {
-  status: 'idle' | 'downloading' | 'done' | 'error';
-  progress: number;
-  speed: number;
-  loaded: number;
-  total: number;
-  message?: string;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -158,7 +147,6 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
   const mode = useMediaGalleryMode();
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [selectedFormat, setSelectedFormat] = useState<MediaFormat | null>(initialFormat);
-  const [downloadState, setDownloadState] = useState<DownloadState>({ status: 'idle', progress: 0, speed: 0, loaded: 0, total: 0 });
   const [fileSizes, setFileSizes] = useState<Record<string, string>>({});
   const [discordSent, setDiscordSent] = useState<Record<string, boolean>>({});
   const [captionExpanded, setCaptionExpanded] = useState(false);
@@ -219,23 +207,7 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
     }
   }, [isOpen, initialFormat, itemIds]);
 
-  // Download sync via hook
-  const { progress: syncProgress } = useDownloadSync(data.url);
-
-  // Sync download state from global store
-  useEffect(() => {
-    if (!isOpen) return;
-    if (syncProgress.status !== 'idle') {
-      setDownloadState({
-        status: syncProgress.status,
-        progress: syncProgress.percent,
-        speed: syncProgress.speed,
-        loaded: syncProgress.loaded,
-        total: syncProgress.total,
-        message: syncProgress.message,
-      });
-    }
-  }, [isOpen, syncProgress]);
+  const { progress: downloadState, updateProgress, resetProgress } = useDownloadSync(data.url);
 
   // Auto-select format when switching items
   useEffect(() => {
@@ -282,7 +254,7 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
       const selectorFormatsForItem = buildSelectorFormats(newFormats, platform, includeSyntheticAudio);
       const preferred = findPreferredFormat(selectorFormatsForItem);
       setSelectedFormat(preferred || null);
-      setDownloadState({ status: 'idle', progress: 0, speed: 0, loaded: 0, total: 0 });
+      resetProgress();
       loopCountRef.current = 0;
 
       if (hasInitialFormat.current) {
@@ -290,7 +262,7 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
       }
     }
     prevIndex.current = currentIndex;
-  }, [currentIndex, itemIds, groupedItems, includeSyntheticAudio, platform]);
+  }, [currentIndex, groupedItems, includeSyntheticAudio, itemIds, platform, resetProgress]);
 
   // Reset loop counter when format changes
   useEffect(() => {
@@ -368,36 +340,26 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
 
-    setDownloadState({ status: 'downloading', progress: 0, speed: 0, loaded: 0, total: 0 });
-    setGlobalDownloadProgress(data.url, { status: 'downloading', percent: 0, loaded: 0, total: 0, speed: 0 });
+    updateProgress({ status: 'downloading', percent: 0, loaded: 0, total: 0, speed: 0 });
 
     try {
       const { downloadMedia, triggerBlobDownload } = await import('@/lib/utils/media');
       const carouselIndex = isCarousel ? currentIndex + 1 : undefined;
 
       const result = await downloadMedia(selectedFormat, data, platform, carouselIndex, (progress) => {
-        setDownloadState({
-          status: progress.status === 'done' ? 'done' : progress.status === 'error' ? 'error' : 'downloading',
-          progress: progress.percent,
-          speed: progress.speed,
-          loaded: progress.loaded,
-          total: progress.total,
-          message: progress.message,
-        });
-        setGlobalDownloadProgress(data.url, {
+        updateProgress({
           status: progress.status === 'done' ? 'done' : progress.status === 'error' ? 'error' : 'downloading',
           percent: progress.percent,
+          speed: progress.speed,
           loaded: progress.loaded,
           total: progress.total,
-          speed: progress.speed,
           message: progress.message,
         });
       }, abortController.signal);
 
       if (!result.success) {
         if (result.error === 'Download cancelled') {
-          setDownloadState({ status: 'idle', progress: 0, speed: 0, loaded: 0, total: 0 });
-          setGlobalDownloadProgress(data.url, { status: 'idle', percent: 0, loaded: 0, total: 0, speed: 0 });
+          resetProgress();
           return;
         }
         throw new Error(result.error || 'Download failed');
@@ -407,31 +369,26 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
         triggerBlobDownload(result.blob, result.filename);
       }
 
-      setDownloadState({ status: 'done', progress: 100, speed: 0, loaded: result.blob?.size || 0, total: result.blob?.size || 0 });
-      setGlobalDownloadProgress(data.url, { status: 'done', percent: 100, loaded: 0, total: 0, speed: 0 });
+      updateProgress({ status: 'done', percent: 100, loaded: result.blob?.size || 0, total: result.blob?.size || 0, speed: 0 });
 
       setTimeout(() => {
-        setDownloadState(prev => ({ ...prev, status: 'idle' }));
-        setGlobalDownloadProgress(data.url, { status: 'idle', percent: 0, loaded: 0, total: 0, speed: 0 });
+        resetProgress();
       }, 3000);
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
-        setDownloadState({ status: 'idle', progress: 0, speed: 0, loaded: 0, total: 0 });
-        setGlobalDownloadProgress(data.url, { status: 'idle', percent: 0, loaded: 0, total: 0, speed: 0 });
+        resetProgress();
         return;
       }
 
       console.error('Download error:', err);
-      setDownloadState({ status: 'error', progress: 0, speed: 0, loaded: 0, total: 0 });
-      setGlobalDownloadProgress(data.url, { status: 'error', percent: 0, loaded: 0, total: 0, speed: 0 });
+      updateProgress({ status: 'error', percent: 0, loaded: 0, total: 0, speed: 0 });
       setTimeout(() => {
-        setDownloadState(prev => ({ ...prev, status: 'idle' }));
-        setGlobalDownloadProgress(data.url, { status: 'idle', percent: 0, loaded: 0, total: 0, speed: 0 });
+        resetProgress();
       }, 3000);
     } finally {
       abortControllerRef.current = null;
     }
-  }, [selectedFormat, data, platform, isCarousel, currentIndex]);
+  }, [selectedFormat, updateProgress, data, platform, isCarousel, currentIndex, resetProgress]);
 
   const cancelDownload = useCallback(() => {
     if (abortControllerRef.current) {
@@ -439,9 +396,8 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
       abortControllerRef.current = null;
     }
 
-    setDownloadState({ status: 'idle', progress: 0, speed: 0, loaded: 0, total: 0 });
-    setGlobalDownloadProgress(data.url, { status: 'idle', percent: 0, loaded: 0, total: 0, speed: 0 });
-  }, [data.url]);
+    resetProgress();
+  }, [resetProgress]);
 
   // Discord handler
   const handleDiscord = useCallback(async () => {
@@ -888,7 +844,7 @@ export function MediaGallery({ data, platform, responseJson, isOpen, onClose, in
       {downloadState.status === 'downloading' && (
         <DownloadProgress
           progress={{
-            percent: downloadState.progress,
+            percent: downloadState.percent,
             loaded: downloadState.loaded,
             total: downloadState.total,
             speed: downloadState.speed,

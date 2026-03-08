@@ -2,6 +2,27 @@
 
 All notable changes to DownAria will be documented in this file.
 
+## [2.4.0] - 2026-03-08
+
+### Security
+- Hardened public `web/*` gateway routes with stricter same-origin request checks for browser-initiated access.
+- Added short-lived access-token flow for `web/download` and token-aware `web/proxy` usage to reduce URL replay and relay abuse.
+- Added lightweight abuse protection for the feedback webhook route.
+- Tightened the same-origin guard so spoofable fetch-site headers are no longer accepted as sufficient trust signals.
+
+### Changed
+- Removed unused pending-download context wiring from the root layout to reduce global app complexity.
+- Removed duplicate cache bootstrapping and consolidated client cache initialization into the real extraction/cache path.
+- Simplified media gallery and download action progress synchronization so shared download state has fewer competing update paths.
+- Restored persistent encrypted browser storage for platform cookies and Discord webhook settings after the temporary session-only experiment.
+- Kept the new web-session issuance path on extract so download/proxy actions can stay protected without breaking normal frontend flows.
+- Removed the frontend-host `/api/v1/hls-stream` compatibility shim and standardized HLS access on the signed `/api/web/hls-stream` path.
+- Removed the remaining frontend `/api/web/hls-stream` route and folded all proxy traffic back into the single `/api/web/proxy` path.
+- Removed legacy extract-response fallback parsing and now require the canonical backend extract envelope.
+- Removed duplicate class-name helper and legacy Discord settings compatibility re-exports so callers use the current utility and storage modules directly.
+- Unified content-id/cache helpers so client cache logic no longer maintains a second extractor implementation.
+- Stopped reusing proxy access tokens across rewritten playlist child URLs so token validation no longer breaks on rewritten downstream requests.
+
 ## [2.3.1] - 2026-03-06
 
 ### 🔧 Improvements

@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { SidebarLayout } from '@/components/layout/Sidebar';
 import { useTranslations } from 'next-intl';
 import { useLocaleRefresh } from '@/components/core/IntlProvider';
-import { getUserDiscordSettings } from '@/lib/utils/discord-webhook';
+import { getUserDiscordSettings } from '@/lib/storage/settings';
 import {
   clearAllClientCache,
   clearAllCookies,
