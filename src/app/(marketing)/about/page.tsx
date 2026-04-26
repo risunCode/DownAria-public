@@ -207,7 +207,7 @@ export default function AboutPage() {
               </h2>
               <div className="space-y-2">
                 <a
-                  href="https://github.com/risunCode/DownAria"
+                  href="https://github.com/risunCode/DownAria-public"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="nested-hover-card settings-surface-card settings-surface-card-hover flex items-center gap-3 p-3 rounded-xl transition-colors group"
@@ -224,7 +224,7 @@ export default function AboutPage() {
                   <ExternalLink className="w-4 h-4 text-[var(--text-muted)] opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
                 </a>
                 <a
-                  href="https://github.com/risunCode/SurfManagerPublic"
+                  href="https://github.com/risunCode/SurfManager"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="nested-hover-card settings-surface-card settings-surface-card-hover flex items-center gap-3 p-3 rounded-xl transition-colors group"
