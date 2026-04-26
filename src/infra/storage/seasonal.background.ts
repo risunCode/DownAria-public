@@ -134,13 +134,12 @@ export async function processBackgroundFile(file: File): Promise<CustomBackgroun
 
   await saveBackgroundBlob(file);
 
-  const blobUrl = URL.createObjectURL(file);
   const isVideo = file.type.startsWith('video/');
   const isGif = file.type === 'image/gif';
 
   return {
     type: isVideo || isGif ? 'video' : 'image',
-    data: blobUrl,
+    data: '', // Don't store blob URLs in settings/localStorage
     mimeType: file.type,
     size: file.size,
     position: { ...DEFAULT_BACKGROUND_POSITION },

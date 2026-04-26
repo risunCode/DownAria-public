@@ -20,10 +20,11 @@ export interface BackgroundPosition {
 
 export interface CustomBackground {
   type: BackgroundType;
-  data: string;
+  data?: string; // Legacy field, kept for compatibility but should be ignored
   mimeType: string;
   size: number;
   position: BackgroundPosition;
+  version?: number; // Added to force updates when file changes
 }
 
 export interface SeasonalSettings {

@@ -249,16 +249,48 @@ export function SeasonalEffects() {
   const [experimentalEnabled, setExperimentalEnabled] = useState(true);
   const [backgroundUrl, setBackgroundUrl] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const previousUrlRef = useRef<string | null>(null);
+  const currentUrlRef = useRef<string | null>(null);
+  const loadingRef = useRef<boolean>(false);
 
   // Cleanup blob URLs to prevent memory leaks
+  const cleanupUrl = (url: string | null) => {
+    if (url && url.startsWith('blob:')) {
+      try {
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        seasonalLogger.error('Failed to revoke object URL', err, { devOnly: true });
+      }
+    }
+  };
+
   useEffect(() => {
     return () => {
-      if (previousUrlRef.current) {
-        URL.revokeObjectURL(previousUrlRef.current);
-      }
+      cleanupUrl(currentUrlRef.current);
     };
   }, []);
+
+  const loadBackgroundFromIndexedDB = async () => {
+    if (loadingRef.current) return;
+    loadingRef.current = true;
+
+    try {
+      const url = await loadBackgroundFromDB();
+      
+      // Update state and ref, cleaning up the OLD url
+      setBackgroundUrl((prev) => {
+        if (prev && prev !== url) {
+          cleanupUrl(prev);
+        }
+        return url;
+      });
+      currentUrlRef.current = url;
+    } catch (err) {
+      seasonalLogger.error('Failed to load background from DB', err, { devOnly: true });
+      setBackgroundUrl(null);
+    } finally {
+      loadingRef.current = false;
+    }
+  };
 
   // Detect modal/sheet open state by watching DOM
   useEffect(() => {
@@ -331,31 +363,15 @@ export function SeasonalEffects() {
         startRandomRotation(s.randomInterval);
       }
       
-      // Always try to load background from IndexedDB
+      // Always try to load background from IndexedDB if metadata exists
       if (s.customBackground) {
-        try {
-          const url = await loadBackgroundFromDB();
-          if (url) {
-            // Revoke previous URL to free memory
-            if (previousUrlRef.current && previousUrlRef.current !== url) {
-              URL.revokeObjectURL(previousUrlRef.current);
-            }
-            previousUrlRef.current = url;
-            setBackgroundUrl(url);
-          } else {
-            setBackgroundUrl(null);
-          }
-        } catch (err) {
-          seasonalLogger.error('Failed to load background', err, { devOnly: true });
-          setBackgroundUrl(null);
-        }
+        await loadBackgroundFromIndexedDB();
       } else {
-        // Clear background and revoke URL
-        if (previousUrlRef.current) {
-          URL.revokeObjectURL(previousUrlRef.current);
-          previousUrlRef.current = null;
-        }
-        setBackgroundUrl(null);
+        setBackgroundUrl((prev) => {
+          cleanupUrl(prev);
+          return null;
+        });
+        currentUrlRef.current = null;
       }
     };
     load();
@@ -378,7 +394,7 @@ export function SeasonalEffects() {
     };
   }, []);
 
-  // Listen for settings changes
+  // Listen for settings changes (cross-tab)
   useEffect(() => {
     const handleStorage = async (e: StorageEvent) => {
       if (e.key === 'downaria_seasonal') {
@@ -386,10 +402,13 @@ export function SeasonalEffects() {
         setSettings(s);
         
         if (s.customBackground) {
-          const url = await loadBackgroundFromDB();
-          setBackgroundUrl(url);
+          await loadBackgroundFromIndexedDB();
         } else {
-          setBackgroundUrl(null);
+          setBackgroundUrl((prev) => {
+            cleanupUrl(prev);
+            return null;
+          });
+          currentUrlRef.current = null;
         }
       }
     };

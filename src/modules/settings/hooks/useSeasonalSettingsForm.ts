@@ -171,6 +171,10 @@ export function useSeasonalSettingsForm(t: SeasonalTranslations) {
     setIsUploading(true);
     try {
       const background = await processBackgroundFile(file);
+      // Add a timestamp version to force listeners to reload from DB
+      if (background) {
+        background.version = Date.now();
+      }
       saveSeasonalSettings({ customBackground: background });
       setHasBackground(true);
       setBackgroundInfo({ type: background.type, size: background.size });
