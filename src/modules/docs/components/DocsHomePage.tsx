@@ -5,7 +5,6 @@ import { motion } from 'framer-motion';
 import { AlertCircle, ArrowRight, Code2, Download, FileText, Handshake, HelpCircle, Info, Settings, ShieldCheck, Sparkles, Workflow } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
-import { PopularDownloadersSection } from '@/modules/seo';
 import { SidebarLayout } from '@/shared/layout/Sidebar';
 import { DocsNavbar } from './DocsNavbar';
 
@@ -92,13 +91,6 @@ export function DocsHomePage() {
                   </Link>
                 ))}
               </div>
-            </motion.div>
-
-               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }} className="max-w-full overflow-hidden">
-              <PopularDownloadersSection
-                title={t('home.popularDownloaders.title')}
-                description={t('home.popularDownloaders.description')}
-              />
             </motion.div>
           </div>
         </div>

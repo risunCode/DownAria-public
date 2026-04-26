@@ -28,7 +28,6 @@ import {
 import { SidebarLayout } from '@/shared/layout/Sidebar';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { PopularDownloadersSection } from '@/modules/seo';
 
 export default function AboutPage() {
   const t = useTranslations('about');
@@ -260,18 +259,6 @@ export default function AboutPage() {
               </div>
             </motion.div>
           </div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.28 }}
-            className="glass-card border border-[var(--border-color)] rounded-2xl p-5 mt-6"
-          >
-            <PopularDownloadersSection
-              title="Popular Downloader Pages"
-              description="Platform-focused landing pages that guide search visitors into the main DownAria dashboard."
-            />
-          </motion.div>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}

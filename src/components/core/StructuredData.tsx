@@ -1,5 +1,4 @@
 import { BASE_URL_WITH_FALLBACK } from '@/shared/config';
-import { DOWNLOADER_LANDING_PAGES } from '@/modules/seo';
 import { APP_SEO_DESCRIPTION } from '@/shared/seo/metadata';
 
 // Structured Data (JSON-LD) for SEO
@@ -8,10 +7,6 @@ export function StructuredData() {
         { name: 'Home', url: BASE_URL_WITH_FALLBACK },
         { name: 'About', url: `${BASE_URL_WITH_FALLBACK}/about` },
         { name: 'Documentation', url: `${BASE_URL_WITH_FALLBACK}/docs` },
-        ...DOWNLOADER_LANDING_PAGES.map((page) => ({
-            name: page.title,
-            url: `${BASE_URL_WITH_FALLBACK}/${page.slug}`,
-        })),
     ];
 
     const jsonLd = {
