@@ -311,37 +311,42 @@ export function HistoryList({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-row justify-between items-center gap-3">
-        <h2 className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
-          <Clock className="w-5 h-5 text-[var(--accent-primary)]" />
-          {t('title')}
-          {!compact && <span className="text-sm font-normal text-[var(--text-muted)]">({totalFiltered})</span>}
-        </h2>
+      <div className="flex flex-col gap-4">
+        {/* Row 1: Title and Clear All */}
+        <div className="flex flex-row justify-between items-center gap-3">
+          <h2 className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
+            <Clock className="w-5 h-5 text-[var(--accent-primary)]" />
+            {t('title')}
+            {!compact && <span className="text-sm font-normal text-[var(--text-muted)]">({totalFiltered})</span>}
+          </h2>
 
-        <div className="flex gap-2 flex-shrink-0">
-           {compact && compactHeaderRight}
-                    {!compact && (
-            <>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
-              <input
-                type="text"
-                placeholder={t('searchPlaceholder')}
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  if (!compact && currentPage !== 1) updatePaginationParams(1, currentLimit, true);
-                }}
-               className="w-48 pl-9 pr-3 py-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)]"
-               />
-                      </div>
-                        <Button variant="danger" size="sm" onClick={handleClearAll}>
+          <div className="flex gap-2 flex-shrink-0">
+            {compact && compactHeaderRight}
+            {!compact && (
+              <Button variant="danger" size="sm" onClick={handleClearAll}>
                 <Trash2 className="w-4 h-4" />
-                          {tCommon('clear')}
-                      </Button>
-                    </>
-                      )}
+                {tCommon('clear')}
+              </Button>
+            )}
+          </div>
         </div>
+
+        {/* Row 2: Search Bar (Full Width) */}
+        {!compact && (
+          <div className="relative w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
+            <input
+              type="text"
+              placeholder={t('searchPlaceholder')}
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                if (!compact && currentPage !== 1) updatePaginationParams(1, currentLimit, true);
+              }}
+              className="w-full pl-9 pr-3 py-2.5 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)] transition-colors"
+            />
+          </div>
+        )}
       </div>
 
       {!compact && (
