@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getSeasonalSettings } from '@/lib/storage/seasonal';
-import { getResolvedTheme } from '@/lib/storage/settings';
+import { getSeasonalSettings, getResolvedTheme } from '@/shared/storage';
+import { APP_EVENTS, dispatchAppEvent } from '@/shared/runtime';
 
 const ADAPT_TEXT_KEY = 'downaria_adapt_text';
 
@@ -20,7 +20,7 @@ export function getAdaptText(): boolean {
 export function setAdaptText(enabled: boolean): void {
   if (typeof window === 'undefined') return;
   localStorage.setItem(ADAPT_TEXT_KEY, enabled ? 'true' : 'false');
-  window.dispatchEvent(new CustomEvent('adapt-text-changed'));
+  dispatchAppEvent(APP_EVENTS.adaptTextChanged);
 }
 
 /**
@@ -49,16 +49,16 @@ export function AdaptText() {
 
     // Listen for changes
     const handleChange = () => load();
-    window.addEventListener('adapt-text-changed', handleChange);
-    window.addEventListener('seasonal-settings-changed', handleChange);
+    window.addEventListener(APP_EVENTS.adaptTextChanged, handleChange);
+    window.addEventListener(APP_EVENTS.seasonalSettingsChanged, handleChange);
     window.addEventListener('storage', handleChange);
-    window.addEventListener('theme-changed', handleChange);
+    window.addEventListener(APP_EVENTS.themeChanged, handleChange);
     
     return () => {
-      window.removeEventListener('adapt-text-changed', handleChange);
-      window.removeEventListener('seasonal-settings-changed', handleChange);
+      window.removeEventListener(APP_EVENTS.adaptTextChanged, handleChange);
+      window.removeEventListener(APP_EVENTS.seasonalSettingsChanged, handleChange);
       window.removeEventListener('storage', handleChange);
-      window.removeEventListener('theme-changed', handleChange);
+      window.removeEventListener(APP_EVENTS.themeChanged, handleChange);
     };
   }, []);
 

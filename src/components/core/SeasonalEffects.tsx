@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useState, useMemo, useRef } from 'react';
-import { getSeasonalSettings, loadBackgroundFromDB, SeasonType, SeasonalSettings, startRandomRotation, stopRandomRotation } from '@/lib/storage/seasonal';
-import { getUnifiedSettings } from '@/lib/storage/settings';
+import { getSeasonalSettings, loadBackgroundFromDB, SeasonType, SeasonalSettings, startRandomRotation, stopRandomRotation, getUnifiedSettings } from '@/shared/storage';
+import { APP_EVENTS, createLogger } from '@/shared/runtime';
+
+const seasonalLogger = createLogger('SeasonalEffects');
 
 // ═══════════════════════════════════════════════════════════════
 // PARTICLE CONFIGURATIONS - OPTIMIZED & CHILL
@@ -44,6 +46,15 @@ const PARTICLE_CONFIGS: Record<SeasonType, ParticleConfig> = {
     size: { min: 16, max: 30 },
     opacity: { min: 0.6, max: 0.95 },
     swing: 80,
+    rotate: true,
+  },
+  locks: {
+    count: 22,
+    emoji: ['/custom_seasonal/worldlock_PngItem_1106058.png', '/custom_seasonal/diamondlock_kindpng_4497640.png'],
+    duration: { min: 9, max: 16 },
+    size: { min: 14, max: 20 },
+    opacity: { min: 0.5, max: 0.9 },
+    swing: 45,
     rotate: true,
   },
   off: {
@@ -101,6 +112,10 @@ function generateParticles(config: ParticleConfig, intensity: number, speed: num
     swing: rand(-config.swing * swingBoost, config.swing * swingBoost),
     rotate: config.rotate,
   }));
+}
+
+function isImageParticle(value: string): boolean {
+  return value.startsWith('/custom_seasonal/');
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -331,7 +346,7 @@ export function SeasonalEffects() {
             setBackgroundUrl(null);
           }
         } catch (err) {
-          console.error('Failed to load background:', err);
+          seasonalLogger.error('Failed to load background', err, { devOnly: true });
           setBackgroundUrl(null);
         }
       } else {
@@ -347,17 +362,17 @@ export function SeasonalEffects() {
     
     // Also reload when seasonal settings change (same tab)
     const handleSeasonalChange = () => load();
-    window.addEventListener('seasonal-settings-changed', handleSeasonalChange);
+    window.addEventListener(APP_EVENTS.seasonalSettingsChanged, handleSeasonalChange);
     
     // Listen for random season changes
     const handleRandomChange = (e: CustomEvent<{ season: SeasonType }>) => {
       setSettings(prev => prev ? { ...prev, season: e.detail.season } : null);
     };
-    window.addEventListener('seasonal-random-change', handleRandomChange as EventListener);
+    window.addEventListener(APP_EVENTS.seasonalRandomChanged, handleRandomChange as EventListener);
     
     return () => {
-      window.removeEventListener('seasonal-settings-changed', handleSeasonalChange);
-      window.removeEventListener('seasonal-random-change', handleRandomChange as EventListener);
+      window.removeEventListener(APP_EVENTS.seasonalSettingsChanged, handleSeasonalChange);
+      window.removeEventListener(APP_EVENTS.seasonalRandomChanged, handleRandomChange as EventListener);
       // Stop random rotation on unmount
       stopRandomRotation();
     };
@@ -399,11 +414,11 @@ export function SeasonalEffects() {
     const handleSettingsChanged = () => syncExperimental();
 
     syncExperimental();
-    window.addEventListener('settings-changed', handleSettingsChanged as EventListener);
+    window.addEventListener(APP_EVENTS.settingsChanged, handleSettingsChanged as EventListener);
     window.addEventListener('storage', handleStorage);
 
     return () => {
-      window.removeEventListener('settings-changed', handleSettingsChanged as EventListener);
+      window.removeEventListener(APP_EVENTS.settingsChanged, handleSettingsChanged as EventListener);
       window.removeEventListener('storage', handleStorage);
     };
   }, []);
@@ -447,7 +462,16 @@ export function SeasonalEffects() {
                 '--rotate': p.rotate ? '360deg' : '0deg',
               } as React.CSSProperties}
             >
-              {p.emoji}
+              {isImageParticle(p.emoji) ? (
+                <img
+                  src={p.emoji}
+                  alt=""
+                  className="w-full h-full object-contain"
+                  style={{ width: `${p.size}px`, height: `${p.size}px` }}
+                />
+              ) : (
+                p.emoji
+              )}
             </div>
           ))}
           

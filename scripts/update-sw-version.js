@@ -7,6 +7,8 @@ const fs = require('fs');
 const path = require('path');
 
 const SW_PATH = path.join(__dirname, '../public/sw.js');
+const CHANGELOG_SOURCE_PATH = path.join(__dirname, '../CHANGELOG.md');
+const CHANGELOG_PUBLIC_PATH = path.join(__dirname, '../public/Changelog.md');
 
 // Generate timestamp: YYYYMMDD-HHmmss
 const now = new Date();
@@ -29,3 +31,8 @@ content = content.replace(
 fs.writeFileSync(SW_PATH, content, 'utf8');
 
 console.log(`[SW Version] Updated public/sw.js`);
+
+if (fs.existsSync(CHANGELOG_SOURCE_PATH)) {
+  fs.copyFileSync(CHANGELOG_SOURCE_PATH, CHANGELOG_PUBLIC_PATH);
+  console.log('[SW Version] Updated public/Changelog.md');
+}

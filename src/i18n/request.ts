@@ -8,8 +8,6 @@ import { getRequestConfig } from 'next-intl/server';
 import { defaultLocale, locales, type Locale } from './config';
 
 export default getRequestConfig(async () => {
-  // For now, use default locale
-  // In production, this would detect from cookies/headers
   const locale: Locale = defaultLocale;
 
   return {

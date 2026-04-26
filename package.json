@@ -1,10 +1,10 @@
 {
   "name": "downaria",
-  "version": "2.4.0",
+  "version": "2.6.1",
   "private": true,
   "scripts": {
     "dev": "next dev -p 3001",
-    "prebuild": "node scripts/update-sw-version.js && node scripts/copy-changelog.js",
+    "prebuild": "node scripts/update-sw-version.js",
     "build": "next build",
     "start": "next start -p 3001",
     "lint": "eslint",

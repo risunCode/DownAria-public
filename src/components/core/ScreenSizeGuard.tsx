@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { lazySwal, getCachedSwal } from '@/lib/utils/lazy-swal';
 import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
 
 const WIDTH_SHRINK_DELTA_PX = 24;
 const OVERFLOW_TOLERANCE_PX = 6;
@@ -23,7 +23,6 @@ function getViewportSize(): { width: number; height: number } {
 
 export function ScreenSizeGuard() {
   const t = useTranslations('screenSizeGuard');
-  const isShowingRef = useRef(false);
   const prevSizeRef = useRef<{ width: number; height: number } | null>(null);
   const lastWarningAtRef = useRef(0);
 
@@ -45,26 +44,13 @@ export function ScreenSizeGuard() {
     };
 
     const showWarning = () => {
-      if (isShowingRef.current || getCachedSwal()?.isVisible()) return;
       const now = Date.now();
       if (now - lastWarningAtRef.current < WARNING_COOLDOWN_MS) return;
-
-      isShowingRef.current = true;
       lastWarningAtRef.current = now;
-
-      void lazySwal.fire({
-        icon: 'warning',
-        title: t('title'),
-        html: t('message'),
-        confirmButtonText: t('confirm'),
-        allowOutsideClick: true,
-        allowEscapeKey: true,
-        showCloseButton: true,
-        background: 'var(--bg-card)',
-        color: 'var(--text-primary)',
-        confirmButtonColor: 'var(--accent-primary)',
-      }).finally(() => {
-        isShowingRef.current = false;
+      toast.warning(t('title'), {
+        description: t('message'),
+        duration: 5000,
+        id: 'screen-size-warning',
       });
     };
 

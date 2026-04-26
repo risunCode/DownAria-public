@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect } from 'react';
-import { getResolvedTheme, type ResolvedTheme } from '@/lib/storage/settings';
+import { getResolvedTheme, type ResolvedTheme } from '@/shared/storage';
+import { APP_EVENTS } from '@/shared/runtime';
 
 const THEME_COLORS: Record<ResolvedTheme, string> = {
   dark: '#0d1117',
@@ -35,10 +36,10 @@ export function ThemeColorMeta() {
       updateThemeColorMeta(resolved);
     };
 
-    window.addEventListener('theme-changed', handleThemeChange as EventListener);
+    window.addEventListener(APP_EVENTS.themeChanged, handleThemeChange as EventListener);
 
     return () => {
-      window.removeEventListener('theme-changed', handleThemeChange as EventListener);
+      window.removeEventListener(APP_EVENTS.themeChanged, handleThemeChange as EventListener);
     };
   }, []);
 

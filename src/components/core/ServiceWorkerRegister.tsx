@@ -1,8 +1,11 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { getUpdateDismissed, setUpdateDismissed } from '@/lib/storage/settings';
-import { IS_DEV } from '@/lib/config';
+import { getUpdateDismissed, setUpdateDismissed } from '@/shared/storage';
+import { createLogger } from '@/shared/runtime';
+
+const pwaLogger = createLogger('PWA');
+const IS_DEV = process.env.NODE_ENV !== 'production';
 
 interface UpdatePromptSettings {
   enabled: boolean;
@@ -28,20 +31,20 @@ const SESSION_STORAGE_KEY = 'downaria_update_dismissed_session';
  * Can be called from console: window.forceRefresh()
  */
 export async function forceRefresh(): Promise<void> {
-  if (IS_DEV) console.log('[PWA] Force refreshing...');
+  pwaLogger.debug('Force refreshing...');
 
   // 1. Clear all caches
   if ('caches' in window) {
     const cacheNames = await caches.keys();
     await Promise.all(cacheNames.map(name => caches.delete(name)));
-    if (IS_DEV) console.log('[PWA] Cleared caches:', cacheNames);
+    pwaLogger.debug('Cleared caches', cacheNames);
   }
 
   // 2. Unregister service worker
   if ('serviceWorker' in navigator) {
     const registrations = await navigator.serviceWorker.getRegistrations();
     await Promise.all(registrations.map(reg => reg.unregister()));
-    if (IS_DEV) console.log('[PWA] Unregistered service workers');
+    pwaLogger.debug('Unregistered service workers');
   }
 
   // 3. Clear localStorage cache keys (keep user settings)
@@ -72,7 +75,7 @@ export function ServiceWorkerRegister() {
     if (!worker) return;
     waitingWorkerRef.current = worker;
     setUpdateAvailable(true);
-    if (IS_DEV) console.log('[PWA] New version available');
+    pwaLogger.debug('New version available');
   }, []);
 
   // Check if prompt should be shown based on mode
@@ -99,7 +102,7 @@ export function ServiceWorkerRegister() {
     if (!updateAvailable || !settings.enabled) return;
 
     if (!shouldShowPrompt(settings.mode)) {
-      if (IS_DEV) console.log('[PWA] Update prompt dismissed by user preference');
+      pwaLogger.debug('Update prompt dismissed by user preference');
       return;
     }
 
@@ -112,6 +115,20 @@ export function ServiceWorkerRegister() {
   }, [updateAvailable, settings, shouldShowPrompt]);
 
   useEffect(() => {
+    if (IS_DEV) {
+      if ('serviceWorker' in navigator) {
+        void navigator.serviceWorker.getRegistrations().then((registrations) => {
+          void Promise.all(registrations.map((registration) => registration.unregister()));
+        });
+      }
+
+      if ('caches' in window) {
+        void caches.keys().then((names) => Promise.all(names.map((name) => caches.delete(name))));
+      }
+
+      return;
+    }
+
     // Track online/offline status
     const handleOnline = () => setIsOffline(false);
     const handleOffline = () => setIsOffline(true);
@@ -135,7 +152,7 @@ export function ServiceWorkerRegister() {
       navigator.serviceWorker
         .register('/sw.js', { updateViaCache: 'none' }) // Always check for SW updates
         .then((registration) => {
-          if (IS_DEV) console.log('[PWA] Service Worker registered');
+          pwaLogger.debug('Service Worker registered');
 
           if (registration.waiting) {
             markUpdateAvailable(registration.waiting);
@@ -162,7 +179,7 @@ export function ServiceWorkerRegister() {
           }, 5 * 60 * 1000);
         })
         .catch((error) => {
-          console.error('[PWA] SW registration failed:', error);
+          pwaLogger.error('SW registration failed', error);
         });
     }
 

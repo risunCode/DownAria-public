@@ -1,13 +1,26 @@
-import { BASE_URL } from '@/lib/config';
+import { BASE_URL_WITH_FALLBACK } from '@/shared/config';
+import { DOWNLOADER_LANDING_PAGES } from '@/modules/seo';
+import { APP_SEO_DESCRIPTION } from '@/shared/seo/metadata';
 
 // Structured Data (JSON-LD) for SEO
 export function StructuredData() {
+    const navigationLinks = [
+        { name: 'Home', url: BASE_URL_WITH_FALLBACK },
+        { name: 'About', url: `${BASE_URL_WITH_FALLBACK}/about` },
+        { name: 'Documentation', url: `${BASE_URL_WITH_FALLBACK}/docs` },
+        ...DOWNLOADER_LANDING_PAGES.map((page) => ({
+            name: page.title,
+            url: `${BASE_URL_WITH_FALLBACK}/${page.slug}`,
+        })),
+    ];
+
     const jsonLd = {
         '@context': 'https://schema.org',
         '@type': 'WebApplication',
         name: 'DownAria',
-        description: 'Free social media video downloader for Facebook, Instagram, TikTok, Twitter/X, and Weibo. No watermark, no registration required.',
-        url: BASE_URL,
+        alternateName: ['Down Aria', 'DownAria Downloader'],
+        description: APP_SEO_DESCRIPTION,
+        url: BASE_URL_WITH_FALLBACK,
         applicationCategory: 'MultimediaApplication',
         operatingSystem: 'Any',
         creator: {
@@ -19,6 +32,10 @@ export function StructuredData() {
         author: {
             '@type': 'Person',
             name: 'risunCode'
+        },
+        brand: {
+            '@type': 'Brand',
+            name: 'DownAria'
         },
         offers: {
             '@type': 'Offer',
@@ -33,6 +50,7 @@ export function StructuredData() {
             worstRating: '1',
         },
         featureList: [
+            'DownAria social media downloader',
             'Download Facebook videos',
             'Download Instagram reels and stories',
             'Download TikTok videos without watermark',
@@ -46,10 +64,39 @@ export function StructuredData() {
     };
 
     return (
-        <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
+        <>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+            />
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify({
+                        '@context': 'https://schema.org',
+                        '@type': 'WebSite',
+                        name: 'DownAria',
+                        url: BASE_URL_WITH_FALLBACK,
+                    }),
+                }}
+            />
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify({
+                        '@context': 'https://schema.org',
+                        '@type': 'ItemList',
+                        name: 'DownAria Site Navigation',
+                        itemListElement: navigationLinks.map((item, index) => ({
+                            '@type': 'SiteNavigationElement',
+                            position: index + 1,
+                            name: item.name,
+                            url: item.url,
+                        })),
+                    }),
+                }}
+            />
+        </>
     );
 }
 

@@ -1,38 +1,9 @@
 import type { NextConfig } from "next";
 
-// CSP Whitelist for external resources
-// API URL from env (supports both local dev and production)
-const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-
-const CSP_DIRECTIVES = {
-  'default-src': ["'self'"],
-  // Next.js requires unsafe-inline for hydration scripts
-  'script-src': ["'self'", "'unsafe-inline'", "https://va.vercel-scripts.com"],
-  'style-src': ["'self'", "'unsafe-inline'"], // unsafe-inline kept for styles as it's lower risk
-  // Restricted img-src: allow http localhost for dev, https for prod
-  'img-src': ["'self'", "data:", "blob:", "https:", "http://localhost:*"],
-  'font-src': ["'self'", "data:"],
-  'connect-src': [
-    "'self'",
-    "https://*.railway.app",
-    "https://*.vercel.app",
-    "https://va.vercel-scripts.com",
-    "https://discord.com",
-    // API URL from environment variable
-    ...(apiUrl ? [apiUrl] : []),
-  ],
-  // Restricted media-src: allow http localhost for dev proxy
-  'media-src': ["'self'", "blob:", "https:", "http://localhost:*"],
-  'frame-ancestors': ["'none'"],
-  'base-uri': ["'self'"],
-  'form-action': ["'self'"],
-};
-
-const cspString = Object.entries(CSP_DIRECTIVES)
-  .map(([key, values]) => `${key} ${values.join(' ')}`)
-  .join('; ');
+const isDevelopment = process.env.NODE_ENV !== 'production';
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ['127.0.0.1', 'localhost'],
   // Security Headers
   async headers() {
     return [
@@ -44,8 +15,7 @@ const nextConfig: NextConfig = {
           { key: 'X-XSS-Protection', value: '1; mode=block' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
-          { key: 'Content-Security-Policy', value: cspString },
-          { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains; preload' },
+          ...(isDevelopment ? [] : [{ key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains; preload' }]),
         ],
       },
     ];

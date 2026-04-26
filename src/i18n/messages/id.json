@@ -23,9 +23,9 @@
     "retry": "Coba Lagi",
     "ok": "OK",
     "yes": "Ya",
-    "no": "Tidak"
+    "no": "Tidak",
+    "copy": "Salin"
   },
-
   "nav": {
     "home": "Beranda",
     "history": "Riwayat",
@@ -36,7 +36,6 @@
     "navigation": "Navigasi",
     "supportedPlatforms": "Platform Didukung"
   },
-
   "home": {
     "titlePrefix": "Download",
     "titleSuffix": "Gratis",
@@ -56,9 +55,28 @@
       "fastFree": "Cepat & Gratis",
       "multiQuality": "Berbagai Kualitas",
       "noLogin": "Tanpa Login"
+    },
+    "result": "Hasil",
+    "stats": {
+      "visitorsToday": "Pengunjung Hari Ini",
+      "todayExtraction": "Ekstraksi Hari Ini",
+      "downloadsToday": "Unduhan Hari Ini",
+      "visitorsCompact": "Pengunjung",
+      "extractsCompact": "Ekstrak",
+      "downloadsCompact": "Unduhan",
+      "total": "Total",
+      "serviceOffline": "Layanan offline",
+      "lastUpdated": "Pembaruan"
+    },
+    "share": {
+      "title": "Bagikan DownAria",
+      "subtitle": "Bagikan DownAria ke teman di platform favoritmu.",
+      "hint": "Link referensi membantu kami melihat asal traffic.",
+      "badge": "Bagikan",
+      "copied": "Tersalin",
+      "copiedToClipboard": "Link berhasil disalin"
     }
   },
-
   "download": {
     "pasteUrl": "Tempel URL video...",
     "paste": "Tempel",
@@ -84,6 +102,7 @@
       "tip6": "Berfungsi untuk Reels, Stories & Posts"
     },
     "preview": {
+      "resultTitle": "Hasil Ekstraksi",
       "download": "Download",
       "downloadSelected": "Download terpilih",
       "downloadAll": "Download Semua",
@@ -105,10 +124,37 @@
       "withCookie": "🔒 Private",
       "guest": "🌐 Public",
       "sent": "Terkirim",
-      "discord": "Discord"
+      "discord": "Discord",
+      "openGallery": "Buka Galeri",
+      "closeGallery": "Tutup Galeri",
+      "openSource": "Buka Sumber",
+      "viewSource": "Lihat Sumber",
+      "downloadStatus": "Status download",
+      "idle": "Idle",
+      "galleryTitle": "Galeri Media",
+      "itemLabel": "Item {index} dari {total}",
+      "cancel": "Batal",
+      "cached": "CACHE",
+      "previous": "Sebelumnya",
+      "next": "Berikutnya",
+      "audioOnly": "Hanya Audio",
+      "previewUnavailableTitle": "Preview tidak tersedia untuk format ini",
+      "hlsPreviewUnavailableBody": "Pratinjau langsung HLS dinonaktifkan. Gunakan Unduh/Gabung untuk mendapatkan file media akhir.",
+      "youtubePreviewUnavailableBody": "Format 360p dan audio dapat diputar secara langsung. Kualitas video YouTube lainnya tetap dapat diunduh.",
+      "genericPreviewUnavailableBody": "Format ini tidak dapat dipratinjau secara langsung. Gunakan Unduh untuk mendapatkan file media akhir.",
+      "downloadLimitNotice": "Saat ini kami mendukung unduhan hingga 892MB per file. Untuk pengalaman paling lancar, file di bawah 600MB biasanya paling stabil, dan proses merge YouTube mungkin butuh waktu lebih lama.",
+      "facebookCarouselNotice": "Galeri Facebook: maksimal 5 gambar dapat diambil. Kunjungi postingan asli untuk album lengkap.",
+      "retryDownload": "Coba Download Lagi"
+    },
+    "clearInput": "Bersihkan input",
+    "batch": {
+      "startingDownloads": "Memulai unduhan...",
+      "creatingZip": "Membuat arsip ZIP...",
+      "preparingZip": "Mempersiapkan ZIP...",
+      "zipGenerationFailed": "Gagal membuat arsip ZIP",
+      "noFilesDownloaded": "Tidak ada file yang diunduh"
     }
   },
-
   "history": {
     "title": "Riwayat Download",
     "subtitle": "Lihat dan kelola download sebelumnya",
@@ -124,12 +170,10 @@
     },
     "item": {
       "downloaded": "Didownload",
-      "redownload": "Download ulang",
       "copyUrl": "Salin URL",
       "delete": "Hapus"
     }
   },
-
   "settings": {
     "title": "Pengaturan",
     "subtitle": "Atur pengalaman DownAria Anda dengan kontrol tema dan bahasa, cookies platform, alat backup dan penyimpanan, serta pengaturan integrasi Discord.",
@@ -247,7 +291,6 @@
       "comingSoon": "Integrasi lainnya segera hadir..."
     }
   },
-
   "settingsPage": {
     "badge": "Preferensi",
     "tabs": {
@@ -276,9 +319,9 @@
       "unknownError": "Error tidak dikenal",
       "cleared": "Berhasil dihapus",
       "scraperCacheClear": {
-        "title": "Hapus Cache Scraper?",
-        "text": "Ini akan menghapus hasil scraper yang tersimpan. Permintaan berikutnya akan mengambil data baru.",
-        "success": "Cache Scraper Dihapus"
+        "title": "Hapus Cache Ekstraksi?",
+        "text": "Ini akan menghapus semua hasil ekstraksi yang tersimpan secara lokal.",
+        "success": "Cache dihapus!"
       },
       "indexedDbClear": {
         "title": "Hapus IndexedDB?",
@@ -311,7 +354,6 @@
       "invalidBackupFile": "File backup tidak valid"
     }
   },
-
   "settingsTabs": {
     "basic": {
       "language": {
@@ -409,9 +451,8 @@
           "subtitle": "Riwayat IndexedDB"
         },
         "scraperCache": {
-          "title": "Cache Scraper",
-          "subtitle": "Cache lokal",
-          "withStats": "{count} item • {hitRate} rasio hit"
+          "title": "Cache Ekstraksi",
+          "subtitle": "Metadata & hasil tersimpan"
         },
         "localStorage": {
           "title": "LocalStorage",
@@ -456,7 +497,6 @@
       "comingSoon": "Integrasi lainnya segera hadir..."
     }
   },
-
   "settingsDiscord": {
     "header": {
       "title": "Discord Webhook",
@@ -530,7 +570,6 @@
       "testFailed": "Gagal mengirim pesan tes."
     }
   },
-
   "settingsSeasonal": {
     "seasonOptions": {
       "auto": "Otomatis",
@@ -538,6 +577,7 @@
       "winter": "Musim Dingin",
       "spring": "Musim Semi",
       "autumn": "Musim Gugur",
+      "locks": "Locks",
       "off": "Nonaktif"
     },
     "actions": {
@@ -597,7 +637,6 @@
       "enabledHint": "Nonaktifkan tanpa menghapus"
     }
   },
-
   "privacyPage": {
     "titlePrefix": "Kebijakan",
     "titleHighlight": "Privasi",
@@ -651,10 +690,6 @@
         "title": "Dokumentasi",
         "description": "Cara ekstraksi dan download bekerja"
       },
-      "changelog": {
-        "title": "Changelog",
-        "description": "Pembaruan produk dan kebijakan"
-      },
       "about": {
         "title": "Tentang DownAria",
         "description": "Gambaran proyek dan ekosistem"
@@ -664,7 +699,6 @@
       "prefix": "Pertanyaan atau kekhawatiran privasi? Buka issue di"
     }
   },
-
   "creditsPage": {
     "titleHighlight": "Credits",
     "titleSuffix": "& Ucapan Terima Kasih",
@@ -719,7 +753,7 @@
       },
       "documentation": {
         "title": "Dokumentasi",
-        "description": "Panduan, alur API, dan troubleshooting"
+        "description": "Panduan, perilaku aplikasi, dan troubleshooting"
       },
       "privacy": {
         "title": "Privasi",
@@ -727,7 +761,6 @@
       }
     }
   },
-
   "aboutPage": {
     "sections": {
       "features": "Fitur",
@@ -735,18 +768,44 @@
       "moreProjects": "Proyek Lainnya"
     },
     "features": {
-      "video": { "title": "Video", "description": "Kualitas hingga 4K" },
-      "audio": { "title": "Audio", "description": "MP3, M4A, FLAC" },
-      "stories": { "title": "Stories & Reels", "description": "Semua platform" },
-      "noWatermark": { "title": "Tanpa Watermark", "description": "Download bersih" },
-      "fastServers": { "title": "Server Cepat", "description": "CDN teroptimasi" },
-      "api": { "title": "REST API", "description": "Untuk developer" }
+      "video": {
+        "title": "Video",
+        "description": "Kualitas hingga 4K"
+      },
+      "audio": {
+        "title": "Audio",
+        "description": "MP3, M4A, FLAC"
+      },
+      "stories": {
+        "title": "Stories & Reels",
+        "description": "Semua platform"
+      },
+      "noWatermark": {
+        "title": "Tanpa Watermark",
+        "description": "Download bersih"
+      },
+      "fastServers": {
+        "title": "Server Cepat",
+        "description": "CDN teroptimasi"
+      },
+      "api": {
+        "title": "Web App",
+        "description": "Berjalan langsung di browser"
+      }
     },
     "quickLinks": {
-      "documentation": { "title": "Dokumentasi", "description": "Panduan, referensi API, dan alur integrasi" },
-      "changelog": { "title": "Changelog", "description": "Lacak pembaruan dan peningkatan" },
-      "privacy": { "title": "Privasi", "description": "Baca kebijakan data dan keamanan" },
-      "credits": { "title": "Credits", "description": "Ucapan terima kasih open-source dan stack" }
+      "documentation": {
+        "title": "Dokumentasi",
+        "description": "Panduan, perilaku aplikasi, dan troubleshooting"
+      },
+      "privacy": {
+        "title": "Privasi",
+        "description": "Baca kebijakan data dan keamanan"
+      },
+      "credits": {
+        "title": "Credits",
+        "description": "Ucapan terima kasih open-source dan stack"
+      }
     },
     "projects": {
       "downaria": {
@@ -789,7 +848,6 @@
       "middle": "- Berlisensi GPL-3 - ©"
     }
   },
-
   "historyList": {
     "title": "Riwayat",
     "unknownPlatform": "Tidak diketahui",
@@ -820,7 +878,6 @@
       "clearAllText": "Tindakan ini tidak dapat dibatalkan."
     }
   },
-
   "publicStats": {
     "freshness": {
       "waiting": "Menunggu data",
@@ -844,7 +901,6 @@
       }
     }
   },
-
   "sidebar": {
     "tagline": "Downloader Media Sosial",
     "theme": "Tema",
@@ -862,6 +918,9 @@
     },
     "on": "ON",
     "off": "OFF",
+    "openMenu": "Buka menu",
+    "closeMenu": "Tutup menu",
+    "themeMenuAria": "Menu tema",
     "profileMenuAria": "Menu profil",
     "guest": "Tamu",
     "notLoggedIn": "Belum login",
@@ -872,7 +931,6 @@
       "title": "+1000 platform via yt-dlp"
     }
   },
-
   "rateLimit": {
     "title": "Batas Permintaan",
     "reachedTitle": "Batas Permintaan Tercapai",
@@ -890,18 +948,15 @@
       "resetsIn": "Reset dalam"
     }
   },
-
   "accessibility": {
     "skipToMainContent": "Lewati ke konten utama",
     "loading": "Memuat..."
   },
-
   "screenSizeGuard": {
     "title": "Perubahan ukuran layar terdeteksi",
     "message": "Viewport Anda menyempit. Beberapa elemen mungkin kurang nyaman dilihat. Coba putar perangkat atau lebarkan jendela.",
     "confirm": "OK"
   },
-
   "about": {
     "title": "Tentang",
     "subtitle": "Downloader media sosial tanpa batas, tanpa ribet.",
@@ -910,7 +965,7 @@
       "p1": "Dulu, aku sering banget pake bot Telegram buat download video dari sosmed. Praktis sih, tinggal kirim link, tunggu bentar, selesai.",
       "p2": "Tapi lama-lama mulai kesel... 😤",
       "p3": "Akhirnya kepikiran: \"Kenapa gak bikin sendiri aja?\"",
-      "p4": "Dan lahirlah DownAria — downloader yang sama fungsinya, tapi tanpa limit, tanpa antri, dan ramah privasi. 🚀"
+      "p4": "Dan lahirlah DownAria — downloader yang sama fungsinya, tapi tanpa limit, tanpa antri, dan jauh lebih gampang dipakai. 🚀"
     },
     "painPoints": {
       "title": "Kenapa aku bikin ini",
@@ -942,15 +997,15 @@
     },
     "startDownloading": "Mulai Download"
   },
-
   "maintenance": {
     "title": "Sedang Maintenance",
-    "defaultMessage": "🔧 DownAria sedang dalam maintenance. Silakan coba lagi nanti.",
+    "defaultMessage": "DownAria sedang maintenance untuk sementara. Silakan coba lagi sebentar lagi.",
+    "alternateSiteMessage": "Butuh akses sekarang? Kamu bisa pakai website alternatif kami dengan fitur yang lebih terbatas selama maintenance berlangsung.",
+    "alternateSiteButton": "Pakai Website Alternatif",
     "checkStatus": "Cek Status",
     "adminPanel": "Panel Admin",
     "footer": "Kami sedang bekerja keras untuk meningkatkan pengalaman Anda. Terima kasih atas kesabarannya!"
   },
-
   "install": {
     "title": "Install DownAria",
     "subtitle": "Dapatkan pengalaman aplikasi lengkap di perangkat Anda",
@@ -999,7 +1054,6 @@
     "gotIt": "Mengerti!",
     "backToApp": "← Kembali ke DownAria"
   },
-
   "notFound": {
     "title": "Halaman Tidak Ditemukan",
     "message": "Oops! Halaman yang Anda cari tidak ada atau telah dipindahkan.",
@@ -1007,7 +1061,6 @@
     "goBack": "Kembali",
     "suggestion": "Coba download video dari halaman utama"
   },
-
   "share": {
     "title": "Konten Dibagikan",
     "processing": "Memproses URL yang dibagikan...",
@@ -1023,7 +1076,6 @@
       "openCookieSettings": "Buka Pengaturan Cookie"
     }
   },
-
   "errors": {
     "invalidUrl": "URL tidak valid",
     "enterUrl": "Masukkan URL",
@@ -1034,6 +1086,7 @@
     "maintenance": "Sedang maintenance",
     "rateLimit": "Terlalu banyak permintaan",
     "noValidUrl": "Tidak ada URL valid di clipboard",
+    "unsupportedProtocol": "Hanya URL http dan https yang didukung",
     "pasteHint": "Ketuk di sini dan tekan Ctrl+V (atau tahan lama → Paste)",
     "checkpointRequired": {
       "title": "🚫 Cookie Diblokir",
@@ -1066,10 +1119,45 @@
     },
     "botDetected": {
       "title": "🤖 Bot Terdeteksi",
-      "message": "Akses langsung diblokir. Silakan gunakan endpoint /api/v1/ jika Anda adalah developer."
+      "message": "Permintaan ini diblokir. Silakan lanjutkan memakai aplikasi web DownAria seperti biasa."
+    },
+    "notice": {
+      "codeLabel": "Kode",
+      "detailsLabel": "Detail",
+      "openCookies": "Buka Cookies",
+      "openSettings": "Buka Pengaturan",
+      "history": "Riwayat",
+      "presentations": {
+        "authenticationRequiredTitle": "Autentikasi Diperlukan",
+        "instagramAuthRequiredDescription": "Instagram meminta autentikasi untuk konten ini. Tambahkan cookie yang valid atau coba konten publik lain.",
+        "mediaUnavailableTitle": "Media Tidak Tersedia",
+        "instagramMediaNotFoundDescription": "Postingan ini tidak tersedia, sudah dihapus, atau tidak bisa diakses dari server saat ini.",
+        "temporarilyRateLimitedTitle": "Sementara Terbatas",
+        "instagramRateLimitedDescription": "Instagram sedang membatasi request sementara. Tunggu sebentar lalu coba lagi.",
+        "authRequiredDescription": "Konten ini memerlukan akses tambahan. Buka tab cookies dan tambahkan cookie platform yang valid.",
+        "requestFailedTitle": "Permintaan Gagal",
+        "requestFailedDescription": "DownAria gagal mengambil data dari sumber untuk permintaan ini. Coba ulang, atau buka settings jika kontennya private."
+      }
     }
   },
-
+  "offlinePage": {
+    "badge": "Mode Offline",
+    "status": "TIDAK TERHUBUNG",
+    "title": "Koneksi terputus",
+    "description": "DownAria tidak bisa terhubung ke jaringan saat ini. Kamu masih bisa buka Riwayat dan halaman yang tersimpan.",
+    "previewHint": "Preview video/unduhan akan muncul lagi setelah koneksi kembali normal.",
+    "tip": "Tips: cek Wi‑Fi, matikan VPN/proxy, atau refresh setelah koneksi stabil.",
+    "actions": {
+      "tryAgain": "Coba lagi",
+      "openHistory": "Buka Riwayat",
+      "openDocs": "Lihat Panduan"
+    }
+  },
+  "seoLanding": {
+    "validUrlError": "Harap tempel URL publik yang valid.",
+    "openDashboard": "Buka Dashboard",
+    "whyTitle": "Kenapa halaman ini ada"
+  },
   "platforms": {
     "facebook": "Facebook",
     "instagram": "Instagram",
@@ -1090,44 +1178,230 @@
       "weibo": "Wajib"
     }
   },
-
   "footer": {
     "copyright": "© 2025 risunCode",
     "personalUse": "Gunakan dengan bijak ✨"
   },
-
-  "advanced": {
-    "title": "Alat Lanjutan",
-    "subtitle": "Fitur untuk pengguna tingkat lanjut - ekstraktor dan alat",
-    "warning": {
-      "title": "Eksperimental:",
-      "message": "Alat ini untuk pengguna tingkat lanjut. Gunakan dengan bijak."
+  "docs": {
+    "title": "Dokumentasi",
+    "subtitle": "Dokumentasi resmi DownAria untuk perilaku runtime, status cleanup, dan FAQ.",
+    "nav": {
+      "overview": "Gambaran Umum",
+      "apiUsage": "Penggunaan API",
+      "errors": "Error",
+      "faq": "FAQ"
     },
-    "tabs": {
-      "fbHtml": "FB HTML Extractor"
+    "home": {
+      "title": "Dokumentasi DownAria",
+      "description": "DownAria adalah antarmuka platform downloader untuk konten media sosial. Area docs ini menjelaskan apa yang dilakukan platform, bagaimana alur ekstraksi bekerja, dan cara mengintegrasikan jalur penggunaan API aktif.",
+      "highlights": {
+        "socialMedia": {
+          "title": "Downloader media sosial",
+          "desc": "DownAria membantu pengguna mengekstrak dan mendownload media dari banyak platform sosial melalui satu antarmuka sederhana."
+        },
+        "fastExtraction": {
+          "title": "Alur ekstraksi cepat",
+          "desc": "Tempel URL, baca sumber dan opsi kualitas yang tersedia, lalu download format yang Anda pilih."
+        },
+        "localFirst": {
+          "title": "Pengalaman local-first",
+          "desc": "Pengaturan, riwayat, dan sebagian besar preferensi tetap di perangkat sementara ekstraksi backend menangani pemrosesan media."
+        }
+      },
+      "howItWorks": {
+        "title": "Cara kerja DownAria",
+        "step1": "Tempel URL post yang didukung ke input downloader.",
+        "step2": "DownAria meminta metadata ekstraksi dan format sumber dari backend.",
+        "step3": "Pengguna memilih kualitas, container, dan tipe media berdasarkan sumber yang tersedia.",
+        "step4": "Download dapat mengembalikan streaming file langsung atau mode job async untuk pemrosesan yang lebih berat.",
+        "step5": "Video kualitas tinggi dapat menggabungkan track video dan audio terpisah secara otomatis."
+      },
+      "platformOverview": {
+        "title": "Gambaran platform",
+        "input": {
+          "label": "Input",
+          "desc": "Ekstraksi berbasis URL untuk post, reel, clip, video, dan halaman media multi-item."
+        },
+        "output": {
+          "label": "Output",
+          "desc": "Artefak video, audio, dan gambar dengan label kualitas dan nama file yang disediakan backend."
+        },
+        "control": {
+          "label": "Kontrol",
+          "desc": "Pengaturan local-first untuk tema, efek musiman, cookie, alat penyimpanan, dan riwayat."
+        }
+      },
+      "explore": {
+        "title": "Jelajahi",
+        "apiUsage": {
+          "title": "Penggunaan API",
+          "desc": "Contoh ekstraksi, download, dan polling job async"
+        },
+        "errorHandling": {
+          "title": "Penanganan Error",
+          "desc": "Envelope error, retryability, dan kode kegagalan umum"
+        },
+        "faq": {
+          "title": "FAQ",
+          "desc": "Jawaban untuk perilaku produk, privasi, dan troubleshooting"
+        },
+        "settings": {
+          "title": "Pengaturan",
+          "desc": "Kelola preferensi lokal, cookie, penyimpanan, dan integrasi"
+        },
+        "about": {
+          "title": "Tentang DownAria",
+          "desc": "Cerita proyek, gambaran fitur, dan tautan ekosistem"
+        },
+        "credits": {
+          "title": "Credits",
+          "desc": "Ucapan terima kasih dan kredit teknologi"
+        }
+      },
+      "popularDownloaders": {
+        "title": "Halaman Downloader Populer",
+        "description": "Halaman DownAria yang berfokus pada platform untuk membantu orang menemukan dashboard utama lebih cepat."
+      }
     },
-    "fbHtml": {
-      "title": "Facebook HTML Extractor",
-      "description": "Ekstrak video dari post privat via page source",
-      "step1": "URL Facebook",
-      "step2": "URL View Source",
-      "step3": "Tempel HTML Source",
-      "paste": "Tempel",
-      "clear": "Hapus",
-      "copy": "Salin",
-      "copied": "Tersalin!",
-      "copyHint": "Tempel di tab baru",
-      "sourceHint": "Buka di tab baru → Ctrl+A → Ctrl+C",
-      "extracting": "Mengekstrak URL media...",
-      "found": "Ditemukan {count} media",
-      "extractNew": "Ekstrak Baru",
-      "extractMedia": "Ekstrak Media",
-      "pasteFromClipboard": "Tempel dari Clipboard",
-      "pasteHint": "Tips: Jika tombol tempel tidak berfungsi, tempel manual (Ctrl+V) ke kotak di atas",
-      "noMediaFound": "Media tidak ditemukan",
-      "parseError": "Error parsing",
-      "htmlPlaceholder": "Tempel seluruh kode HTML source di sini (Ctrl+V)...",
-      "pasteFailed": "Gagal menempel"
+    "api": {
+      "title": "Penggunaan API",
+      "description": "Referensi lengkap untuk mengintegrasikan API publik Backend (`/api/v1/*`) yang digunakan oleh klien DownAria dan aplikasi eksternal.",
+      "mainSurface": {
+        "title": "Surface Utama",
+        "desc": "/api/v1/extract, /api/v1/download, dan /api/v1/jobs/{id} mendorong sebagian besar integrasi klien."
+      },
+      "downloadModes": {
+        "title": "Mode Download",
+        "desc": "Respons dapat berupa stream file sync atau job async tergantung beban merge/convert."
+      },
+      "clientRule": {
+        "title": "Aturan Klien",
+        "desc": "Ekstrak dulu, pilih sumber kedua, lalu download dengan URL media atau pasangan merge yang tepat."
+      },
+      "baseUrl": {
+        "title": "Base URL",
+        "note": "Deployment produksi harus menggunakan domain Backend Anda sendiri."
+      },
+      "requestHeader": {
+        "title": "Request Header",
+        "note": "Tidak memerlukan header autentikasi."
+      },
+      "flowOverview": {
+        "title": "Gambaran Alur",
+        "step1": "Panggil `POST /api/v1/extract` dengan URL konten.",
+        "step2": "Baca `media[].sources[]` dan pilih sumber atau pasangan merge yang tepat.",
+        "step3": "Panggil `POST /api/v1/download` untuk pengiriman artefak langsung atau async.",
+        "step4": "Saat respons adalah `202`, polling `GET /api/v1/jobs/{id}` sampai artefak selesai."
+      },
+      "endpoints": {
+        "title": "Endpoint yang Tersedia",
+        "extract": {
+          "note": "Ekstrak metadata media, item sumber, dan opsi kualitas yang tersedia."
+        },
+        "download": {
+          "note": "Download sumber yang dipilih langsung atau buat job async untuk pemrosesan yang lebih berat."
+        },
+        "merge": {
+          "note": "Gabungkan URL video dan audio terpisah menjadi satu artefak final."
+        },
+        "convert": {
+          "note": "Konversi media yang didownload ke format output lain seperti MP3."
+        },
+        "jobStatus": {
+          "note": "Polling status job async sampai artefak tersedia."
+        },
+        "jobArtifact": {
+          "note": "Stream artefak async yang selesai setelah job selesai."
+        },
+        "proxy": {
+          "note": "Proxy stream media dari CDN eksternal langsung ke browser (mendukung Range request)."
+        },
+        "request": "Request",
+        "response": "Response",
+        "binaryNote": "Endpoint ini mengembalikan stream file biner, bukan JSON."
+      }
+    },
+    "errors": {
+      "title": "Penanganan Error",
+      "description": "DownAria dan Backend mengembalikan error terstruktur sehingga klien dapat memutuskan logika retry dan pesan yang ditampilkan ke pengguna.",
+      "envelope": {
+        "title": "Envelope Error"
+      },
+      "commonCodes": {
+        "title": "Kode Error Umum",
+        "code": "Kode",
+        "kind": "Jenis",
+        "http": "HTTP",
+        "retryable": "Dapat Dicoba Lagi"
+      },
+      "retryRule": {
+        "title": "Aturan Retry",
+        "desc": "Retry hanya saat `error.retryable` adalah `true`, atau saat error timeout/upstream secara eksplisit ditandai sebagai sementara."
+      },
+      "supportRule": {
+        "title": "Aturan Support",
+        "desc": "Selalu log `request_id` di telemetri klien atau laporan bug agar log backend dapat menghubungkan kegagalan dengan cepat."
+      }
+    },
+    "faq": {
+      "title": "Pertanyaan yang Sering Diajukan",
+      "description": "Pertanyaan umum tentang penggunaan DownAria, perilaku download, dan batasan platform.",
+      "categories": {
+        "productBasics": "Dasar Produk",
+        "downloadBehavior": "Perilaku Download",
+        "privacyLocalData": "Privasi & Data Lokal",
+        "troubleshooting": "Troubleshooting"
+      },
+      "questions": {
+        "whatIsDownAria": {
+          "q": "Apa itu DownAria?",
+          "a": "DownAria adalah antarmuka downloader media sosial yang mengekstrak metadata media platform, menyajikan opsi kualitas yang tersedia, dan memungkinkan pengguna mendownload artefak yang dipilih."
+        },
+        "whatLinks": {
+          "q": "Link apa yang bisa saya gunakan?",
+          "a": "Gunakan URL post/reel/video langsung dari platform yang didukung. Ekstraktor membaca sumber dan mengembalikan format video, audio, dan gambar yang tersedia jika memungkinkan."
+        },
+        "needAccount": {
+          "q": "Apakah saya perlu akun untuk download?",
+          "a": "Sebagian besar konten publik berfungsi tanpa login. Konten privat atau terbatas mungkin memerlukan cookie yang valid atau hak akses dari sisi platform."
+        },
+        "why1080pNoAudio": {
+          "q": "Mengapa 1080p bisa download tanpa audio dalam beberapa kasus?",
+          "a": "Beberapa platform mengekspos video dan audio sebagai stream terpisah pada kualitas lebih tinggi. DownAria akan menggabungkannya saat diperlukan dan didukung oleh metadata sumber yang dipilih."
+        },
+        "whyDifferentQuality": {
+          "q": "Mengapa opsi kualitas berbeda untuk setiap URL?",
+          "a": "Kualitas tergantung pada apa yang saat ini diekspos oleh platform sumber untuk post tersebut. Beberapa post hanya memiliki SD, yang lain termasuk beberapa level HD."
+        },
+        "asyncMode": {
+          "q": "Apa yang terjadi saat download mengembalikan mode async?",
+          "a": "Jika pemrosesan backend memerlukan waktu ekstra, download mengembalikan respons job. Aplikasi kemudian melakukan polling endpoint job sampai artefak selesai."
+        },
+        "cookiesStored": {
+          "q": "Apakah cookie disimpan secara lokal?",
+          "a": "Ya. Manajemen cookie bersifat local-first di penyimpanan browser Anda."
+        },
+        "historyLocal": {
+          "q": "Apakah riwayat download lokal?",
+          "a": "Ya. Riwayat dan alat penyimpanan dikelola di perangkat Anda kecuali Anda secara eksplisit menghapusnya."
+        },
+        "controlThemes": {
+          "q": "Bisakah saya mengontrol tema dan efek visual?",
+          "a": "Ya. Tema, bahasa, aksen, efek musiman, dan preferensi lainnya dapat disesuaikan dari pengaturan."
+        },
+        "extractionFails": {
+          "q": "Mengapa ekstraksi gagal untuk URL yang valid?",
+          "a": "Sumber mungkin dibatasi wilayah, kedaluwarsa, privat, atau diblokir sementara. Coba lagi dengan URL baru dan periksa visibilitas platform."
+        },
+        "qualityDuplicated": {
+          "q": "Mengapa daftar kualitas terlihat duplikat atau hilang?",
+          "a": "DownAria mendeduplikasi sumber berdasarkan metadata backend. Jika sumber hilang, biasanya berarti platform tidak mengekspos varian yang dapat didownload yang valid."
+        },
+        "downloadStalls": {
+          "q": "Apa yang harus saya lakukan jika download macet?",
+          "a": "Coba ekstraksi ulang untuk me-refresh URL sumber, lalu download lagi. Link media yang ditandatangani dapat kedaluwarsa dengan cepat, terutama di platform dengan traffic tinggi."
+        }
+      }
     }
   }
 }

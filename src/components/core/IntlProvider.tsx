@@ -2,7 +2,7 @@
 
 import { NextIntlClientProvider, AbstractIntlMessages } from 'next-intl';
 import { useState, useEffect, ReactNode } from 'react';
-import { getResolvedLocale } from '@/lib/storage';
+import { getResolvedLocale } from '@/shared/storage';
 import { type Locale, defaultLocale } from '@/i18n/config';
 
 // Import messages statically
@@ -60,7 +60,7 @@ export function IntlProvider({ children }: IntlProviderProps) {
  * Call this after setLanguagePreference() to update UI
  */
 export function useLocaleRefresh() {
-  const refresh = () => {
+    const refresh = () => {
     // Trigger storage event for other tabs
     window.dispatchEvent(new StorageEvent('storage', {
       key: 'lang_v1_pref',

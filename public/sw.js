@@ -1,6 +1,6 @@
 // DownAria Service Worker - Offline First PWA
 // Cache version - update this on each deploy or use build timestamp
-const BUILD_TIME = '20260308093127'; // YYYYMMDD format - UPDATE ON DEPLOY
+const BUILD_TIME = '20260426073932'; // YYYYMMDD format - UPDATE ON DEPLOY
 const CACHE_VERSION = `v6-${BUILD_TIME}`;
 const STATIC_CACHE = `downaria-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `downaria-dynamic-${CACHE_VERSION}`;
@@ -10,15 +10,18 @@ const API_CACHE = `downaria-api-${CACHE_VERSION}`;
 const APP_SHELL = [
   '/',
   '/about',
+  '/offline',
   '/icon.png',
   '/icon-512.png',
   '/manifest.json'
 ];
 
-// API endpoints to cache (status data)
-const CACHEABLE_API = [
-  '/api/v1/status'
-];
+// API endpoints to cache
+const CACHEABLE_API = [];
+
+// Long-lived cache for proxied media (30 days)
+const MEDIA_CACHE = `downaria-media-${CACHE_VERSION}`;
+const MEDIA_CACHE_TTL = 30 * 24 * 60 * 60 * 1000;
 
 // Cache duration for API responses (5 minutes)
 const API_CACHE_TTL = 5 * 60 * 1000;
@@ -55,7 +58,8 @@ self.addEventListener('activate', (event) => {
               return name.startsWith('downaria-') && 
                      name !== STATIC_CACHE && 
                      name !== DYNAMIC_CACHE &&
-                     name !== API_CACHE;
+                     name !== API_CACHE &&
+                     name !== MEDIA_CACHE;
             })
             .map((name) => {
               console.log('[SW] Deleting old cache:', name);
@@ -100,8 +104,8 @@ function isStatefulPage(pathname) {
   return STATEFUL_PAGES.some((page) => pathname === page || pathname.startsWith(`${page}/`));
 }
 
-async function cacheApiResponseWithTimestamp(request, response) {
-  const cache = await caches.open(API_CACHE);
+async function cacheApiResponseWithTimestamp(request, response, cacheName = API_CACHE) {
+  const cache = await caches.open(cacheName);
   const cloned = response.clone();
   const body = await cloned.blob();
   const headers = new Headers(cloned.headers);
@@ -133,6 +137,32 @@ async function getFreshCachedApiResponse(request) {
 async function handleApiRequest(request) {
   const url = new URL(request.url);
   
+  // Special handling for proxied media (Cache first)
+  // Support both old local /api/proxy and new backend /api/v1/proxy
+  if (url.pathname === '/api/proxy' || url.pathname.endsWith('/v1/proxy')) {
+    const mediaCache = await caches.open(MEDIA_CACHE);
+    const cached = await mediaCache.match(request);
+    if (cached) {
+      // Check TTL for media
+      const cachedAt = Number(cached.headers.get(API_CACHE_TIME_HEADER) || 0);
+      if (cachedAt && (Date.now() - cachedAt < MEDIA_CACHE_TTL)) {
+        return cached;
+      }
+      await mediaCache.delete(request);
+    }
+
+    try {
+      const response = await fetch(request);
+      if (response.ok && response.headers.get('Content-Type')?.startsWith('image/')) {
+        await cacheApiResponseWithTimestamp(request, response, MEDIA_CACHE);
+      }
+      return response;
+    } catch (error) {
+      if (cached) return cached;
+      throw error;
+    }
+  }
+
   // Only cache specific API endpoints
   const shouldCache = CACHEABLE_API.some(api => url.pathname.startsWith(api));
   
@@ -152,17 +182,6 @@ async function handleApiRequest(request) {
         console.log('[SW] Serving cached API:', url.pathname);
         return cached;
       }
-    }
-    
-    // Return offline response for status API
-    if (url.pathname === '/api/v1/status') {
-      return new Response(JSON.stringify({
-        success: true,
-        offline: true,
-        message: 'Offline mode - using cached data'
-      }), {
-        headers: { 'Content-Type': 'application/json' }
-      });
     }
     
     throw error;
@@ -213,8 +232,8 @@ async function handlePageRequest(request) {
         return cached;
       }
     }
-    // No cache - return home page as fallback
-    return caches.match('/');
+    // No cache - return offline fallback
+    return caches.match('/offline');
   }
 }
 

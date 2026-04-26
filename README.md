@@ -6,7 +6,7 @@
 # This Development Version
 - https://down-aria.vercel.app
 
-Modern web frontend for DownAria media extraction and download flow. Built with **Next.js**, **TypeScript**, and **Tailwind CSS**.
+Modern web frontend for DownAria. Built with **Next.js**, **TypeScript**, and **Tailwind CSS**.
 
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)](https://www.typescriptlang.org/)
@@ -41,15 +41,14 @@ Modern web frontend for DownAria media extraction and download flow. Built with 
 |---------|-------------|
 | 🌐 **Multi-Platform Support** | YouTube, Instagram, Twitter/X, Facebook, TikTok, Pixiv |
 | 🎯 **Auto-Detect Platform** | URL platform detection on submit |
-| 📦 **BFF Runtime Flow** | Frontend runtime uses signed `/api/web/*` gateway routes |
-| 🎬 **Preview + Download** | Preview/stream via `/api/web/proxy`, file download via `/api/web/download` |
-| 🎞️ **Paired Stream Merge** | Supports direct pair merge (`videoUrl + audioUrl`) and YouTube URL mode |
-| 🔁 **History Refetch** | Re-run extraction from history item directly to home |
-| ⏱️ **Rate Limit UX** | Modal with reset-aware countdown and retry hints |
+| 🔐 **Backend Integration** | Public API integration with Backend backend |
+| 🛡️ **Reliability Features** | Request timeouts, circuit breaker, exponential backoff, request deduplication |
+| 🚀 **Performance Optimized** | Concurrent request limiting, connection pooling, memory-safe large file handling |
 | ⚙️ **Settings Tabs** | Basic, Cookies, Storage, Integrations |
 | 🧪 **Experimental Controls** | Seasonal effects + custom background controls (blur/zoom/move/sound) |
-| 📚 **Docs Hub** | Overview, API, FAQ, Changelog pages |
+| 📚 **Docs Hub** | Overview, cleanup notes, and FAQ pages |
 | 📦 **PWA Support** | Installable app flow |
+| 🎨 **Theme System** | Semantic surface/status tokens, gradient accents, and reduced-motion coverage |
 
 ---
 
@@ -65,25 +64,18 @@ Modern web frontend for DownAria media extraction and download flow. Built with 
 | **Client Storage** | IndexedDB + LocalStorage |
 | **Icons** | Lucide + FontAwesome |
 | **Alerts** | SweetAlert2 |
+| **Typography** | Outfit across the full app |
 
 ---
 
-## 🔌 API Integration
+## 🔌 Integration Status
 
-Frontend runtime uses local BFF routes (signed gateway):
+DownAria now uses a thin server-side bridge for Backend.
 
-- `POST /api/web/extract`
-- `GET /api/web/proxy`
-- `GET /api/web/download`
-- `POST /api/web/merge`
-
-Backend public routes are still available for direct integrations (`/api/v1/*`), including:
-
-- `POST /api/v1/extract`
-- `GET /api/v1/proxy`
-- `GET /api/v1/download`
-- `POST /api/v1/merge`
-- `GET /api/settings`
+- `src/app/api/*` proxies forward extract, download, and job polling requests to Backend.
+- Backend URL building is handled in `src/infra/api/session.ts`.
+- Shared proxy validation and retry logic live in `src/infra/api/proxy.ts`.
+- The old signed frontend gateway flow remains removed.
 
 ---
 
@@ -114,11 +106,7 @@ Defined in `.env.example`.
 
 | Variable | Purpose |
 |----------|---------|
-| `NEXT_PUBLIC_APP_URL` | Frontend origin used by web gateway signature/origin resolution |
 | `NEXT_PUBLIC_BASE_URL` | Canonical public app URL for metadata and links |
-| `NEXT_PUBLIC_API_URL` | Backend API URL |
-| `WEB_INTERNAL_SHARED_SECRET` | Shared secret for signed `/api/web/*` gateway calls |
-| `FEEDBACK_DISCORD_WEBHOOK_URL` | Server-side webhook for About feedback API |
 | `VERCEL` | Deployment/runtime indicator |
 | `LOG_LEVEL` | Runtime log level |
 | `NODE_ENV` | App environment |
@@ -127,10 +115,9 @@ Defined in `.env.example`.
 
 ## 🧠 Runtime Notes
 
-- `prebuild` updates service worker build timestamp.
-- `prebuild` copies root `CHANGELOG.md` into `public/Changelog.md` for docs changelog page.
-- Frontend runtime traffic uses `/api/web/*` BFF routes; `/proxy` is preview/stream and `/download` is the dedicated file route.
-- Environment values are read from both shared config and server route handlers (`process.env` in `src/app/api/**`).
+- `prebuild` updates the service worker build timestamp and mirrors `CHANGELOG.md` into `public/Changelog.md`.
+- Route groups are used to separate app, docs, and marketing surfaces without changing public URLs.
+- Shared UI/layout/config surfaces live under `src/shared/`, while feature-owned logic lives under `src/modules/`.
 - This project is frontend runtime; backend service is in sibling project `DownAria-API`.
 
 ---

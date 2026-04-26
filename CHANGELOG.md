@@ -1,298 +1,99 @@
 # Changelog
 
-All notable changes to DownAria will be documented in this file.
+All notable changes to this project will be documented in this file.
 
-## [2.4.0] - 2026-03-08
+## [2.5.0] - 2026-04-09
 
-### Security
-- Hardened public `web/*` gateway routes with stricter same-origin request checks for browser-initiated access.
-- Added short-lived access-token flow for `web/download` and token-aware `web/proxy` usage to reduce URL replay and relay abuse.
-- Added lightweight abuse protection for the feedback webhook route.
-- Tightened the same-origin guard so spoofable fetch-site headers are no longer accepted as sufficient trust signals.
+### 🧹 Frontend Cleanup Foundation
 
-### Changed
-- Removed unused pending-download context wiring from the root layout to reduce global app complexity.
-- Removed duplicate cache bootstrapping and consolidated client cache initialization into the real extraction/cache path.
-- Simplified media gallery and download action progress synchronization so shared download state has fewer competing update paths.
-- Restored persistent encrypted browser storage for platform cookies and Discord webhook settings after the temporary session-only experiment.
-- Kept the new web-session issuance path on extract so download/proxy actions can stay protected without breaking normal frontend flows.
-- Removed the frontend-host `/api/v1/hls-stream` compatibility shim and standardized HLS access on the signed `/api/web/hls-stream` path.
-- Removed the remaining frontend `/api/web/hls-stream` route and folded all proxy traffic back into the single `/api/web/proxy` path.
-- Removed legacy extract-response fallback parsing and now require the canonical backend extract envelope.
-- Removed duplicate class-name helper and legacy Discord settings compatibility re-exports so callers use the current utility and storage modules directly.
-- Unified content-id/cache helpers so client cache logic no longer maintains a second extractor implementation.
-- Stopped reusing proxy access tokens across rewritten playlist child URLs so token validation no longer breaks on rewritten downstream requests.
+#### ✨ Improved
+- Reorganized the frontend into clearer `app`, `modules`, `shared`, and `infra` boundaries.
+- Simplified settings and seasonal controls into smaller owned surfaces with stronger module boundaries.
+- Improved homepage SEO and brand-first metadata for DownAria.
+- Switched the app-wide font system to Outfit for a more consistent visual identity.
+- Added platform-focused SEO landing pages for Facebook, Instagram, TikTok, Twitter, YouTube, and Pixiv with stronger internal linking and sitemap coverage.
+- Strengthened downloader input handling with a unified parser, stronger URL normalization, better bare-domain support, and more predictable paste behavior.
+- Added shared runtime, security, and SEO helpers while compacting small files to keep the codebase easier to manage.
 
-## [2.3.1] - 2026-03-06
+#### 🗑️ Removed
+- Removed the legacy frontend API and gateway layer from the web app.
+- Removed stale downloader/runtime leftovers, unused helpers, and old dead code paths.
+- Removed outdated references to legacy API routes, changelog drift, and inconsistent product copy.
 
-### 🔧 Improvements
-- Disabled live HLS preview playback in media gallery and replaced it with thumbnail fallback plus clear "HLS live preview disabled" guidance to use Download/Merge.
-- Removed frontend Weibo surface from platform selection/types/icons to align with currently supported backend platform set.
-- Cleaned leftover Weibo references that were causing frontend type/runtime mismatch in route/platform handling.
+#### 🔧 Fixed
+- Fixed stale UI copy and metadata that no longer matched the current frontend runtime.
+- Fixed logging behavior so recoverable client-side failures stay quieter outside development.
+- Fixed storage and seasonal correctness with additional targeted tests for settings and seasonal behavior.
+- Fixed downloader form error handling with more precise unsupported-protocol and invalid-input feedback.
+- Fixed failure handling around history, service worker, and seasonal runtime behavior to make the app more predictable under errors.
 
-### 🐛 Fixed
-- Fixed Turbopack/runtime failure path caused by partial Weibo type removal.
-- Prevented HLS preview path from initializing streaming playback logic in preview modal.
+#### 🧪 Tested
+- Added and expanded tests for downloader form behavior, maintenance UI, service worker refresh, history fallback, settings storage, and seasonal storage.
+- Verified the app with TypeScript checks, the full Vitest suite, and a production build after the stabilization work.
 
-## [2.3.0] - 2026-03-05
+#### 📦 Notes
+- This release focuses on frontend stabilization and SEO preparation before backend integration with Backend.
+- `public/Changelog.md` is generated from this file during prebuild.
+- Changelog formatting is preserved for renderer compatibility.
 
-### 🏗️ Architecture Overhaul
+## [2.6.0] - 2026-04-25
 
-#### 📦 Feature-Slice Architecture
-- Migrated from flat component structure to modular feature-slice organization
-- Created `src/features/` directory with domain-specific modules:
-  - `downloader/` - URL input, extraction flow, history, and public stats
-  - `media/` - Media viewing, format selection, and download management
-  - `settings/` - User-configurable settings panels
-- All feature modules export via barrel pattern (`index.ts`) for cleaner imports
-- Components now organized by business domain rather than technical type
+### 🚀 Backend Integration & API Modernization
 
-#### 🎨 Icon System Modernization
-- **Removed FontAwesome** - Eliminated all `@fortawesome/*` packages (~4 dependencies)
-- **Migrated to Lucide React** - Modern, tree-shakeable icon library for UI icons
-- **Custom SVG Brand Icons** - Hand-crafted minimal SVG components for social platforms:
-  - Facebook, Instagram, Twitter/X, TikTok, Weibo, YouTube
-  - All icons use `fill="currentColor"` for CSS color inheritance
-- Reduced bundle size and improved icon rendering performance
+#### ✨ Improved
+- **Backend Media Proxy**: Migrated media streaming and thumbnail proxying to the Backend backend. This resolves IP-binding issues for YouTube playback and ensures consistent streaming performance.
+- **Flattened JSON Schema**: Synchronized the frontend with Backend's new flat extraction schema, reducing nesting and improving response parsing efficiency.
+- **Stream Profile Support**: Implemented support for the new `stream_profile` enum for more accurate media type and capability detection.
+- **Enhanced Gallery Playback**: Improved YouTube 360p playback logic to match the public version, allowing direct playback for muxed progressive streams.
+- **Refined Player UX**: Added overlay notices for non-progressive or non-supported playback formats with context-specific explanations.
 
-#### 🔔 Toast Notification System
-- **Sonner** added as primary toast notification library
-- Single `<Toaster>` instance mounted in root layout with CSS variable theming
-- SweetAlert2 scope reduced to destructive confirmations only (via `lazy-swal.ts`)
-- Cleaner, more consistent notification UX across the app
+#### 🚀 Reliability & Performance Improvements
+- **Request Timeouts**: Added 30-second timeout to all fetch calls to prevent hanging requests.
+- **Request Cancellation**: Implemented AbortController support for user-initiated download cancellation.
+- **Concurrent Request Limiting**: Limited batch downloads to 5 concurrent requests to prevent browser overwhelm.
+- **Exponential Backoff**: Replaced fixed 1.2s job polling with smart exponential backoff (1s → 2s → 4s → 8s → 15s max).
+- **Circuit Breaker**: Added circuit breaker pattern for Backend API calls with CLOSED/OPEN/HALF_OPEN states (5 failure threshold, 30s timeout).
+- **Retry Jitter**: Added ±25% random jitter to retry delays to prevent thundering herd problem.
+- **Request Deduplication**: Implemented in-flight request tracking to prevent duplicate downloads.
+- **Memory Safety**: Added 100MB threshold for large file downloads using streaming approach instead of memory accumulation.
+- **Resource Cleanup**: Fixed timer leak in HomePage component and audited all useEffect cleanup handlers.
+- **Connection Pooling**: Enabled HTTP keep-alive on all fetch calls for better connection reuse.
 
-### 🚀 New Features
+#### 🛡️ Fixed
+- **Playback Sync**: Fixed a bug where switching resolutions in the Media Gallery wouldn't update the video source by adding unique keys to media elements.
+- **YouTube Playability**: Resolved issues with YouTube videos not playing in the gallery due to IP-binding mismatches by routing playback through the backend proxy.
 
-#### 📹 Video Player Integration
-- Added **Vidstack v1.12.13** player for direct video playback
-- `VideoPreview` component with poster support and proper cleanup
-- Separate handling for HLS streams (hls.js) vs direct MP4/WebM URLs
+#### 🗑️ Removed
+- **Legacy Frontend Proxy**: Removed the old frontend gateway layer while retaining a small same-origin `/api/proxy` media wrapper for browser playback compatibility.
 
-#### 🎬 HLS Streaming Support
-- Added HLS streaming proxy routes (`/api/web/hls-stream`, `/api/v1/hls-stream`)
-- Frontend now supports HLS playlist and segment proxying for seamless playback
-- Type system updated to support `filename` field in media variants
-- Enhanced media variant schema validation for HLS-specific metadata
-
-#### 🎯 Lazy Loading Improvements
-- **LazyMarkdown** component with dynamic import and skeleton placeholder
-- Markdown parser (`react-markdown` + `remark-gfm`) kept out of initial bundle
-- **Lazy SweetAlert2** - Confirmation dialogs loaded on-demand only
-
-#### 🛠️ Developer Experience
-- **cn() utility** - Combines `clsx` + `tailwind-merge` for smart className composition
-- Prevents Tailwind class conflicts and simplifies conditional styling
-- Used throughout components for cleaner, more maintainable code
-
-### 🔧 Improvements
-
-#### 🎨 CSS & Styling
-- Removed ~34 unnecessary `!important` declarations from `globals.css`
-- Improved specificity and cascade management
-- Better theming consistency with CSS custom properties
-- Cleaner, more maintainable stylesheet
-
-#### 📦 Dependencies
-- Added: `@vidstack/react`, `clsx`, `sonner`, `tailwind-merge`
-- Removed: `@fortawesome/fontawesome-svg-core`, `@fortawesome/free-brands-svg-icons`, `@fortawesome/free-solid-svg-icons`, `@fortawesome/react-fontawesome`
-- Net reduction in bundle size despite new features
-
-#### 🧩 Component Updates
-- Updated all page imports to use feature-slice barrel exports
-- Improved Card, Input, and other UI primitives
-- Better separation of concerns between shared UI and feature-specific components
-- Enhanced Header and Sidebar with updated icon system
-
-#### 📚 Documentation
-- Updated CLAUDE.md with comprehensive feature-slice architecture guide
-- Added Icon System section explaining Lucide + custom SVG approach
-- Documented Toast/Notification system usage patterns
-- Added LazyMarkdown and cn() utility documentation
-- Included Vidstack player integration notes
-
-### 🐛 Fixed
-- Icon rendering consistency across all platforms
-- Bundle size optimization through better code splitting
-- Improved tree-shaking with ES module dependencies
-- Better TypeScript types for icon components
-
-### ⚡ Performance
-- Reduced initial bundle size by removing FontAwesome
-- Improved code splitting with lazy-loaded markdown renderer
-- Better tree-shaking with Lucide React (only used icons bundled)
-- Faster icon rendering with native SVG vs font-based icons
+#### 🧪 Tested
+- Updated and verified the full Vitest suite, including `DownloadPreview` and `PreviewGallery` tests, to match the new API schema.
+- Verified end-to-end extraction and playback flow with the new backend proxy.
 
 ---
 
-## [2.2.1] - 2026-03-04
+## [2.5.1] - 2026-04-12
 
-#### 🔧 Improvements
-- Forwarded frontend proxy `Range` requests and now pass through backend `content-range` and `x-file-size` headers for partial-download correctness.
-- Synced frontend error taxonomy with backend canonical codes (`AUTH_REQUIRED`, `PLATFORM_NOT_FOUND`, `NETWORK_ERROR`, `EXTRACTION_FAILED`, `RATE_LIMITED_429`) and added fallback mapping tests.
-- Added live `PublicStats` polling behavior with resilient fallback handling when stats data is unavailable.
-- Aligned frontend docs/env guidance to signed `/api/web/*` runtime behavior and DownAria-API naming.
-- Synced local integration defaults in env/docs references to FE `3001` and BE `8081`.
+### 🧹 Frontend Cleanup Expansion (Stable)
 
-## [2.2.0] - 2026-03-03
+#### ✨ Improved
+- Refined downloader preview/gallery ownership by consolidating helpers, modals, and preview sections.
+- Added SEO landing input flows that sanitize URLs and auto-submit into the dashboard.
+- Clarified dashboard sections with lightweight headers and improved history access.
+- Consolidated storage modules into clearer settings, theme, user, and cookies surfaces.
+- Expanded docs with richer API usage guidance, dedicated error handling documentation, and more product-first overview copy.
+- Improved mobile homepage stats layout and tightened docs responsiveness across overview, FAQ, API, and error pages.
+- Added structured downloader error notice cards with action links into settings/cookies for private or auth-related failures.
 
-#### 📦 New Features
-- Added dedicated web download route integration (`/api/web/download`) so normal file downloads are separated from preview proxy flow.
-- Added automatic HLS video+audio pairing for playback, including companion-audio sync handling in media preview.
-- Added automatic merged-download path for paired streams by sending direct `videoUrl + audioUrl` merge requests.
-- Added synthetic audio option generation for HLS sources when extractor output does not expose a separate audio variant.
-- Added Discord manual-send confirmation dialog with compact send details (platform/type/size/method).
-- Added rich Discord embed format for feedback submissions (`DownAria Feedback`) with structured Name/Datetime/Comment fields.
+#### 🛡️ Fixed
+- Strengthened downloader error handling for non-JSON responses, network failures, and batch download progress.
+- Hardened download job polling with JSON parsing retries and better status messaging.
+- Improved backup/export error reporting and history import diagnostics.
+- Updated offline handling and seasonal storage correctness after storage refactors.
+- Hardened backend session bootstrap from the frontend bridge with a shared web bootstrap secret.
+- Fixed backend error presentation so stable Backend error codes surface correctly in the DownAria UI.
+- Improved mobile stats readability with denser cards and a persistent three-column layout.
 
-#### 🔧 Improvements
-- Hardened frontend JSON-LD rendering to prevent script-breakout injection in dynamic download pages.
-- Sanitized SweetAlert interpolated values in settings and webhook flows to reduce HTML injection risk.
-- Improved service-worker cache policy for API responses with TTL checks and stale eviction safeguards.
-- Added smoother auto-extract flow after paste with duplicate-submit guards and generic `Processing Link` status.
-- Improved mobile input row behavior (`URL + Paste + Go`) and overflow safety for long descriptions in preview cards.
-- Updated screen-size guard behavior to be resize-sensitive and show warnings on viewport shrink transitions.
-- Refined sidebar supported-platform block and added `+1000 platform via yt-dlp` quick link card.
-- Updated hero subtitle messaging to reflect broad extractor coverage and risunCode Native + yt-dlp engine.
-- Simplified quality button visuals (flat style) and aligned mobile/preview interactions.
-- Added accent color presets in Basic settings (`New Color`, `Old DownAria`, and preset variants) with runtime apply.
-- Merged Accent Color controls into the Theme section and reordered Language to appear first in Basic settings.
-- Added fast mobile header dropdown controls for Experimental settings: toggle Seasonal Effects, Custom Background, and Background Sound.
-- Expanded Seasonal Effects controls with sliders for particle intensity, fall speed, and particle opacity.
-- Updated placeholder public stats values to `999 999 999` display format.
-- Refined YouTube preview fallback panel to a split layout (thumbnail left, info right) for clearer context.
-- Reduced overly rounded controls and aligned action styles with current 2.1 visual direction.
-- Added reset action for Experimental values directly in the Experimental section header.
-
-### 🐛 Fixed
-- Fixed filename handoff and download naming flow from backend response to merge/proxy downloads.
-- Fixed YouTube preview behavior (360p/audio direct-play handling and clearer unavailable-preview state).
-- Fixed history platform row to display both icon and platform text label.
-- Fixed settings toggle geometry/alignment consistency across Integrations and Experimental controls.
-- Fixed Discord manual send dialog cleanup flow and added safer mention sanitization handling.
-- Fixed YouTube merge/download filename usage so frontend now forwards backend-provided filenames.
-- Fixed duplicate/awkward YouTube preview states by improving 360p direct-play handling and unavailable-preview messaging.
-- Fixed Accent Color legacy value handling by forcing invalid stored presets to fallback safely.
-- Synced markdown docs and in-app docs pages to current runtime behavior (`/api/web/*`, dedicated `/download`, proxy-vs-download split, direct pair merge mode, and env usage notes).
- 
- 
-
-## [2.1.0] - 2026-03-01
-
-### 🚀 Project Revived New DownAria 2.1 
-
-#### 📦 New Features
-- Full Documentation Hub at `/docs` with new pages: Overview, API, FAQ, and Changelog
-- New `/docs/api` reference page with:
-  - endpoint groups (GET/POST)
-  - canonical error categories and handling rules
-  - expandable Error Codes section
-  - request examples (cURL, PowerShell, JavaScript)
-  - response JSON examples (Success/Error)
-- New macOS-style documentation panels (traffic lights) for request/response examples
-- Convert to Audio now supported by default
-- Rate Limit UX flow added with dedicated modal + live countdown + reset-aware retry state
-- New `Credits` page with full acknowledgements and technology stack details
-- Added Credits cards/links into About and Docs quick links
-- Added **History Refetch** action (`RotateCcw`) so users can reopen any history item on Home and instantly re-extract it.
-- Added Home auto-refetch flow via query params (`refetch`, `refetchPlatform`, `refetchTs`) with automatic URL cleanup after extraction.
-- Added **ScreenSizeGuard** viewport warning modal for unsupported mobile overflow cases.
-
-#### 🔧 Improvements
-- Prebuild script now auto-copies `CHANGELOG.md` from root to `public/` for the changelog page
-- Settings page restructured into tabs: Basic, Cookies, Integrations, Storage
-- New reusable UI components: Accessibility, SplitButton, Slider, Skeleton
-- MediaGallery component for multi-image carousel display
-- DownloadProgress component with real-time progress tracking
-- CacheInitializer for faster repeated fetches
-- ThemeColorMeta auto-updates browser theme color based on active theme
-- Sidebar platform list now reflects real supported platforms (including Pixiv)
-- Sidebar cleanup: removed non-essential footer tagline for cleaner UI
-- About page refresh:
-  - improved quick links copy
-  - API Docs moved to quick links (`/docs`)
-  - More Projects cards updated and linked directly to repository pages
-  - footer branding updated to dynamic year + GPL-3 license text
-- Privacy page fully redesigned to match About style system:
-  - glass-card layout and responsive sections
-  - clearer cookie/privacy explanation
-  - retention/deletion, security, and FAQ sections
-  - quick links moved to bottom for better reading flow
-- Docs Overview and Docs API mobile UX overhaul:
-  - better spacing/typography on small screens
-  - responsive card grids
-  - horizontal-scroll docs navbar for compact devices
-  - improved checklist numbering and visual hierarchy
-- Facebook extraction logic improved:
-  - fallback parsing for views/likes from title patterns (e.g. `83K views`, `1.3K reactions`)
-  - title cleanup to remove noisy stats prefixes and trailing author suffixes
-  - unicode escape decoding for author/title/description text
-- Author mapping improved end-to-end:
-  - backend now emits cleaner author text
-  - frontend fallback chain avoids false `Unknown` when name exists
-- Cookie lane flow standardized and documented:
-  - `Guest -> Server -> UserProvided`
-  - lane escalation only on auth-related failures
-  - `meta.cookieSource` exposed as `guest | server | userProvided`
-- Error handling normalization improved:
-  - canonical error codes emphasized in API docs
-  - upstream-specific causes preserved through metadata (`causeCode`) when normalized
-- Response docs aligned with current v1 behavior only (no version split)
-- Improved docs/about/privacy/credits card contrast using `docs-surface` + nested hover card styling for better readability in light/solarized/custom backgrounds.
-- Improved modal theming consistency with new palette tokens and themed titlebar/backdrop behavior.
-- Improved format selection and audio conversion UX by moving conversion options into the selector and tightening synthetic audio-option rules.
-- Improved merge/download error handling so UI surfaces readable messages instead of raw object output.
-- Updated Settings wording from `Blur` to `Background Blur` for clearer controls.
-- Standardized media size source to backend JSON `filesize`; frontend HEAD probing removed from preview/gallery flows.
-- Updated merge request/response handling to align with current backend endpoint contract (`url + quality/format`).
-- Updated docs and implementation references so API usage reflects actual runtime behavior.
-- Improved merge pipeline with yt-dlp URL resolution + ffmpeg fast-path, replacing fragile manual split-URL merge behavior.
-- Improved extraction metadata by enriching backend-provided `filesize` across supported platforms.
-- Improved download stability by relying on finalized backend stream/spool behavior for more deterministic progress and content length.
-- History action buttons (Refetch/Copy/Open/Delete) now use clearer visual emphasis without changing overall card layout.
-- Experimental settings updated:
-  - `Zoom` label renamed to `Background Zoom`
-  - added `Move Background (Up/Down)` slider control
-  - fixed background sound sync to read from seasonal settings source of truth.
-- Docs breadcrumb (`Docs / ...`) restyled with adaptive surface for better visibility on custom backgrounds.
-- About/Privacy/Credits cards and About feedback form surfaces were re-adapted to reduce milky/washed appearance on dark custom backgrounds.
-- Error action navigation (`Open Settings`, `Go Home`) now uses client routing for smoother transitions.
-- Global IP rate limit standardized via `GLOBAL_RATE_LIMIT_WINDOW` (`<limit>/<window>` format, example `200/4min`).
-- Removed legacy/fallback rate-limit and guest-scoped env variants in active config flow.
-- Cache configuration simplified to global keys:
-  - `CACHE_EXTRACTION_TTL`
-  - `CACHE_PROXY_HEAD_TTL`
-  (platform-specific extraction TTL env keys removed).
-- Server-side optional cookie-lane env keys were removed from active configuration path.
-- Merge download filename normalization now strips trailing quality labels (`HD/SD/Audio/Original`) from attachment names.
-
-#### 🐛 Fixed
-- Service Worker cache invalidation now more reliable with timestamped `BUILD_TIME`
-- Duplicate key warning in `/docs/api` endpoint cards (`POST-/api/v1/merge`)
-- Multiple docs consistency issues (v1 naming, endpoint ordering, duplicate code entries)
-- Mobile layout issues across docs cards and checklist sections
-- Base URL display now reads `NEXT_PUBLIC_API_URL` and hides explicit port in UI presentation
-- Fixed docs changelog hydration mismatch caused by invalid/unpaired Unicode code points in parsed changelog text.
-- Fixed Next.js build prerender failure on `/` by wrapping `useSearchParams()` usage in a required `Suspense` boundary.
-- Fixed settings toggle mismatch: `backgroundEnabled` now correctly controls SeasonalEffects visibility.
-- Fixed over-bright changelog/docs interactive surfaces caused by overly broad selector targeting.
-- Fixed Twitter/X format classification edge cases that incorrectly pushed valid video options into audio-only behavior.
-- Fixed Home/History responsive overflow edge cases (history card layout + mobile spacing), reducing false viewport-warning triggers.
----
-
-## [0x1] - 2025-12-30 Project History
-
-### All changelog History can be found here > old_changelog.md
-
-## Version History
-- [2.0.0] - 2025-12-30 > New Platforms (yt-dlp + gallery-dl based)
-- [1.9.0] - 2025-12-28 > Performance Improvements 
-- [1.7.0] - 2025-12-25 > Telegram Bot Integration 
-- [1.6.0] - 2025-12-25 > Rebranding: XTFetch → DownAria 
-- [1.4.0] - December 23, 2025
-- [1.3.0_v0] - December 23, 2025  
-- [1.2.0] - December 21, 2025 
-- [1.0.5] - December 20, 2025 
-- [1.0.4] - December 15, 2025
-- [1.0.3] - December 10, 2025 
-- [1.0.2] - December 8, 2025 
-- [1.0.1] - December 5, 2025 
-- [1.0.0] - November 25, 2025 (Initial Release XTFetch)
+#### 🧪 Tested
+- Ran the full Vitest suite after the cleanup and storage restructuring.
+- Verified the updated docs, downloader bridge session handling, and production build after the latest frontend hardening pass.

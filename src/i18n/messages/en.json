@@ -23,9 +23,9 @@
     "retry": "Retry",
     "ok": "OK",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "copy": "Copy"
   },
-
   "nav": {
     "home": "Home",
     "history": "History",
@@ -36,7 +36,6 @@
     "navigation": "Navigation",
     "supportedPlatforms": "Supported Platforms"
   },
-
   "home": {
     "titlePrefix": "Free",
     "titleSuffix": "Downloader",
@@ -56,9 +55,28 @@
       "fastFree": "Fast & Free",
       "multiQuality": "Multiple Qualities",
       "noLogin": "No Login Required"
+    },
+    "result": "Result",
+    "stats": {
+      "visitorsToday": "Visitor Today",
+      "todayExtraction": "Today Extraction",
+      "downloadsToday": "Downloads Today",
+      "visitorsCompact": "Visitors",
+      "extractsCompact": "Extracts",
+      "downloadsCompact": "Downloads",
+      "total": "Total",
+      "serviceOffline": "Service offline",
+      "lastUpdated": "Last updated"
+    },
+    "share": {
+      "title": "Share DownAria",
+      "subtitle": "Share DownAria with friends on your favorite platforms.",
+      "hint": "Ref links help us see where the traffic comes from.",
+      "badge": "Share",
+      "copied": "Copied",
+      "copiedToClipboard": "Link copied to clipboard"
     }
   },
-
   "download": {
     "pasteUrl": "Paste video URL...",
     "paste": "Paste",
@@ -84,6 +102,7 @@
       "tip6": "Works with Reels, Stories & Posts"
     },
     "preview": {
+      "resultTitle": "Extraction Result",
       "download": "Download",
       "downloadSelected": "Download selected",
       "downloadAll": "Download All",
@@ -105,10 +124,37 @@
       "withCookie": "🔒 Private",
       "guest": "🌐 Public",
       "sent": "Sent",
-      "discord": "Discord"
+      "discord": "Discord",
+      "openGallery": "Open Gallery",
+      "closeGallery": "Close Gallery",
+      "openSource": "Open Source",
+      "viewSource": "View Source",
+      "downloadStatus": "Download status",
+      "idle": "Idle",
+      "galleryTitle": "Media Gallery",
+      "itemLabel": "Item {index} of {total}",
+      "cancel": "Cancel",
+      "cached": "CACHED",
+      "previous": "Previous",
+      "next": "Next",
+      "audioOnly": "Audio Only",
+      "previewUnavailableTitle": "Preview unavailable for this format",
+      "hlsPreviewUnavailableBody": "HLS live preview disabled. Use Download/Merge to get the final media file.",
+      "youtubePreviewUnavailableBody": "360p and audio formats can be played directly. Other YouTube video qualities stay downloadable.",
+      "genericPreviewUnavailableBody": "This format cannot be previewed directly. Use Download to get the final media file.",
+      "downloadLimitNotice": "We currently support downloads up to 892MB per file. For the smoothest experience, files under 600MB usually download best, and YouTube merge jobs may take a bit longer.",
+      "facebookCarouselNotice": "Facebook gallery: up to 5 images can be fetched. Visit the original post for the full album.",
+      "retryDownload": "Retry Download"
+    },
+    "clearInput": "Clear input",
+    "batch": {
+      "startingDownloads": "Starting downloads...",
+      "creatingZip": "Creating ZIP archive...",
+      "preparingZip": "Preparing ZIP...",
+      "zipGenerationFailed": "Failed to create ZIP archive",
+      "noFilesDownloaded": "No files were downloaded"
     }
   },
-
   "history": {
     "title": "Download History",
     "subtitle": "View and manage your past downloads",
@@ -124,12 +170,10 @@
     },
     "item": {
       "downloaded": "Downloaded",
-      "redownload": "Re-download",
       "copyUrl": "Copy URL",
       "delete": "Delete"
     }
   },
-
   "settings": {
     "title": "Settings",
     "subtitle": "Configure your DownAria experience with theme and language controls, platform cookies, backup and storage tools, plus Discord integration settings.",
@@ -247,7 +291,6 @@
       "comingSoon": "More integrations coming soon..."
     }
   },
-
   "settingsPage": {
     "badge": "Preferences",
     "tabs": {
@@ -276,9 +319,9 @@
       "unknownError": "Unknown error",
       "cleared": "Cleared",
       "scraperCacheClear": {
-        "title": "Clear Scraper Cache?",
-        "text": "This will remove cached scraper results. Next requests will fetch fresh data.",
-        "success": "Scraper Cache Cleared"
+        "title": "Clear Extraction Cache?",
+        "text": "This will clear all locally saved extraction results.",
+        "success": "Cache cleared!"
       },
       "indexedDbClear": {
         "title": "Clear IndexedDB?",
@@ -311,7 +354,6 @@
       "invalidBackupFile": "Invalid backup file"
     }
   },
-
   "settingsTabs": {
     "basic": {
       "language": {
@@ -409,9 +451,8 @@
           "subtitle": "IndexedDB history"
         },
         "scraperCache": {
-          "title": "Scraper Cache",
-          "subtitle": "Local cache",
-          "withStats": "{count} items • {hitRate} hit rate"
+          "title": "Extraction Cache",
+          "subtitle": "Saved metadata & results"
         },
         "localStorage": {
           "title": "LocalStorage",
@@ -456,7 +497,6 @@
       "comingSoon": "More integrations coming soon..."
     }
   },
-
   "settingsDiscord": {
     "header": {
       "title": "Discord Webhook",
@@ -530,7 +570,6 @@
       "testFailed": "Failed to send test message."
     }
   },
-
   "settingsSeasonal": {
     "seasonOptions": {
       "auto": "Auto",
@@ -538,6 +577,7 @@
       "winter": "Winter",
       "spring": "Spring",
       "autumn": "Autumn",
+      "locks": "Locks",
       "off": "Off"
     },
     "actions": {
@@ -597,7 +637,6 @@
       "enabledHint": "Disable without deleting"
     }
   },
-
   "privacyPage": {
     "titlePrefix": "Privacy",
     "titleHighlight": "Policy",
@@ -651,10 +690,6 @@
         "title": "Documentation",
         "description": "How extraction and downloads work"
       },
-      "changelog": {
-        "title": "Changelog",
-        "description": "Product and policy updates"
-      },
       "about": {
         "title": "About DownAria",
         "description": "Project overview and ecosystem"
@@ -664,7 +699,6 @@
       "prefix": "Questions or privacy concerns? Open an issue at"
     }
   },
-
   "creditsPage": {
     "titleHighlight": "Credits",
     "titleSuffix": "& Acknowledgements",
@@ -719,7 +753,7 @@
       },
       "documentation": {
         "title": "Documentation",
-        "description": "Guides, API flow, and troubleshooting"
+        "description": "Guides, app behavior, and troubleshooting"
       },
       "privacy": {
         "title": "Privacy",
@@ -727,7 +761,6 @@
       }
     }
   },
-
   "aboutPage": {
     "sections": {
       "features": "Features",
@@ -735,18 +768,44 @@
       "moreProjects": "More Projects"
     },
     "features": {
-      "video": { "title": "Video", "description": "Up to 4K quality" },
-      "audio": { "title": "Audio", "description": "MP3, M4A, FLAC" },
-      "stories": { "title": "Stories & Reels", "description": "All platforms" },
-      "noWatermark": { "title": "No Watermark", "description": "Clean downloads" },
-      "fastServers": { "title": "Fast Servers", "description": "Optimized CDN" },
-      "api": { "title": "REST API", "description": "For developers" }
+      "video": {
+        "title": "Video",
+        "description": "Up to 4K quality"
+      },
+      "audio": {
+        "title": "Audio",
+        "description": "MP3, M4A, FLAC"
+      },
+      "stories": {
+        "title": "Stories & Reels",
+        "description": "All platforms"
+      },
+      "noWatermark": {
+        "title": "No Watermark",
+        "description": "Clean downloads"
+      },
+      "fastServers": {
+        "title": "Fast Servers",
+        "description": "Optimized CDN"
+      },
+      "api": {
+        "title": "Web App",
+        "description": "Runs in your browser"
+      }
     },
     "quickLinks": {
-      "documentation": { "title": "Documentation", "description": "Guides, API reference, and integration flow" },
-      "changelog": { "title": "Changelog", "description": "Track updates and improvements" },
-      "privacy": { "title": "Privacy", "description": "Read data and security policy" },
-      "credits": { "title": "Credits", "description": "Open-source acknowledgements and stack" }
+      "documentation": {
+        "title": "Documentation",
+        "description": "Guides, current behavior, and troubleshooting"
+      },
+      "privacy": {
+        "title": "Privacy",
+        "description": "Read data and security policy"
+      },
+      "credits": {
+        "title": "Credits",
+        "description": "Open-source acknowledgements and stack"
+      }
     },
     "projects": {
       "downaria": {
@@ -789,7 +848,6 @@
       "middle": "- Licensed under GPL-3 - ©"
     }
   },
-
   "historyList": {
     "title": "History",
     "unknownPlatform": "Unknown",
@@ -820,7 +878,6 @@
       "clearAllText": "This action cannot be undone."
     }
   },
-
   "publicStats": {
     "freshness": {
       "waiting": "Waiting for data",
@@ -844,7 +901,6 @@
       }
     }
   },
-
   "sidebar": {
     "tagline": "Social Media Downloader",
     "theme": "Theme",
@@ -862,6 +918,9 @@
     },
     "on": "ON",
     "off": "OFF",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "themeMenuAria": "Theme menu",
     "profileMenuAria": "Profile menu",
     "guest": "Guest",
     "notLoggedIn": "Not logged in",
@@ -872,7 +931,6 @@
       "title": "+1000 platform via yt-dlp"
     }
   },
-
   "rateLimit": {
     "title": "Rate Limit",
     "reachedTitle": "Rate Limit Reached",
@@ -890,18 +948,15 @@
       "resetsIn": "Resets in"
     }
   },
-
   "accessibility": {
     "skipToMainContent": "Skip to main content",
     "loading": "Loading..."
   },
-
   "screenSizeGuard": {
     "title": "Screen size change detected",
     "message": "Your viewport has become narrower. Some elements may be less comfortable to view. Try rotating your device or widening the window.",
     "confirm": "OK"
   },
-
   "about": {
     "title": "About",
     "subtitle": "Social media downloader without limits.",
@@ -910,7 +965,7 @@
       "p1": "I used to use Telegram bots to download videos from social media. Convenient - just send a link, wait a bit, done.",
       "p2": "But over time, I got frustrated... 😤",
       "p3": "So I thought: \"Why not build my own?\"",
-      "p4": "And DownAria was born — same functionality, but no limits, no queue, and privacy-friendly. 🚀"
+      "p4": "And DownAria was born — same functionality, but no limits, no queue, and much easier to use. 🚀"
     },
     "painPoints": {
       "title": "Why I built this",
@@ -942,15 +997,15 @@
     },
     "startDownloading": "Start Downloading"
   },
-
   "maintenance": {
     "title": "Under Maintenance",
-    "defaultMessage": "🔧 DownAria is under maintenance. Please try again later.",
+    "defaultMessage": "DownAria is temporarily under maintenance. Please check back in a bit.",
+    "alternateSiteMessage": "Need something right now? You can use our alternate website with limited features while maintenance is in progress.",
+    "alternateSiteButton": "Use Alternate Site",
     "checkStatus": "Check Status",
     "adminPanel": "Admin Panel",
     "footer": "We're working hard to improve your experience. Thanks for your patience!"
   },
-
   "install": {
     "title": "Install DownAria",
     "subtitle": "Get the full app experience on your device",
@@ -999,7 +1054,6 @@
     "gotIt": "Got it!",
     "backToApp": "← Back to DownAria"
   },
-
   "notFound": {
     "title": "Page Not Found",
     "message": "Oops! The page you're looking for doesn't exist or has been moved.",
@@ -1007,7 +1061,6 @@
     "goBack": "Go Back",
     "suggestion": "Try downloading a video from the homepage"
   },
-
   "share": {
     "title": "Shared Content",
     "processing": "Processing shared URL...",
@@ -1023,7 +1076,6 @@
       "openCookieSettings": "Open Cookie Settings"
     }
   },
-
   "errors": {
     "invalidUrl": "Invalid URL",
     "enterUrl": "Enter a URL",
@@ -1034,6 +1086,7 @@
     "maintenance": "Under maintenance",
     "rateLimit": "Too many requests",
     "noValidUrl": "No valid URL in clipboard",
+    "unsupportedProtocol": "Only http and https URLs are supported",
     "pasteHint": "Tap here and press Ctrl+V (or long-press → Paste)",
     "checkpointRequired": {
       "title": "🚫 Cookie Blocked",
@@ -1066,10 +1119,45 @@
     },
     "botDetected": {
       "title": "🤖 Bot Detected",
-      "message": "Direct API access blocked. Please use the /api/v1/ endpoints if you are a developer."
+      "message": "This request was blocked. Please continue using the regular DownAria web app instead."
+    },
+    "notice": {
+      "codeLabel": "Code",
+      "detailsLabel": "Details",
+      "openCookies": "Open Cookies",
+      "openSettings": "Open Settings",
+      "history": "History",
+      "presentations": {
+        "authenticationRequiredTitle": "Authentication Required",
+        "instagramAuthRequiredDescription": "Instagram requires authentication for this content. Add a valid cookie or try another public content item.",
+        "mediaUnavailableTitle": "Media Unavailable",
+        "instagramMediaNotFoundDescription": "This post is unavailable, removed, or cannot be reached from the current server.",
+        "temporarilyRateLimitedTitle": "Temporarily Rate Limited",
+        "instagramRateLimitedDescription": "Instagram is rate limiting requests temporarily. Wait a moment and try again.",
+        "authRequiredDescription": "This content needs additional access. Open cookies settings and add a valid platform cookie.",
+        "requestFailedTitle": "Request Failed",
+        "requestFailedDescription": "DownAria failed to fetch data from source for this request. Retry, or open settings if the content is private."
+      }
     }
   },
-
+  "offlinePage": {
+    "badge": "Offline Mode",
+    "status": "NO CONNECTION",
+    "title": "Connection lost",
+    "description": "DownAria cannot connect to the network right now. You can still open History and cached pages.",
+    "previewHint": "Video preview/download will be available again when connection is stable.",
+    "tip": "Tip: check Wi‑Fi, disable VPN/proxy, or refresh after network recovers.",
+    "actions": {
+      "tryAgain": "Try again",
+      "openHistory": "Open History",
+      "openDocs": "Open Guide"
+    }
+  },
+  "seoLanding": {
+    "validUrlError": "Please paste a valid public URL.",
+    "openDashboard": "Open Dashboard",
+    "whyTitle": "Why this page exists"
+  },
   "platforms": {
     "facebook": "Facebook",
     "instagram": "Instagram",
@@ -1090,44 +1178,230 @@
       "weibo": "Required"
     }
   },
-
   "footer": {
     "copyright": "© 2025 risunCode",
     "personalUse": "Enjoy responsibly ✨"
   },
-
-  "advanced": {
-    "title": "Advanced Tools",
-    "subtitle": "Power user features - extractors and tools",
-    "warning": {
-      "title": "Experimental:",
-      "message": "These tools are for advanced users. Use responsibly."
+  "docs": {
+    "title": "Documentation",
+    "subtitle": "Official DownAria documentation for runtime behavior, cleanup status, and FAQ.",
+    "nav": {
+      "overview": "Overview",
+      "apiUsage": "API Usage",
+      "errors": "Errors",
+      "faq": "FAQ"
     },
-    "tabs": {
-      "fbHtml": "FB HTML Extractor"
+    "home": {
+      "title": "DownAria Documentation",
+      "description": "DownAria is a downloader platform interface for social media content. This docs area explains what the platform does, how the extraction flow works, and how to integrate the active API usage path.",
+      "highlights": {
+        "socialMedia": {
+          "title": "Social media downloader",
+          "desc": "DownAria helps users extract and download media from many social platforms through one simple interface."
+        },
+        "fastExtraction": {
+          "title": "Fast extraction flow",
+          "desc": "Paste URL, read available sources and quality options, then download the exact format you choose."
+        },
+        "localFirst": {
+          "title": "Local-first experience",
+          "desc": "Settings, history, and most preferences stay on-device while backend extraction handles media processing."
+        }
+      },
+      "howItWorks": {
+        "title": "How DownAria works",
+        "step1": "Paste any supported post URL into the downloader input.",
+        "step2": "DownAria requests extraction metadata and source formats from the backend.",
+        "step3": "Users choose quality, container, and media type based on available sources.",
+        "step4": "Download can return direct file streaming or async job mode for heavier processing.",
+        "step5": "Higher quality video may merge separate video and audio tracks automatically."
+      },
+      "platformOverview": {
+        "title": "Platform overview",
+        "input": {
+          "label": "Input",
+          "desc": "URL-based extraction for posts, reels, clips, videos, and multi-item media pages."
+        },
+        "output": {
+          "label": "Output",
+          "desc": "Video, audio, and image artifacts with quality labels and backend-provided filenames."
+        },
+        "control": {
+          "label": "Control",
+          "desc": "Local-first settings for theme, seasonal effects, cookies, storage tools, and history."
+        }
+      },
+      "explore": {
+        "title": "Explore",
+        "apiUsage": {
+          "title": "API Usage",
+          "desc": "Extract, download, and async job polling examples"
+        },
+        "errorHandling": {
+          "title": "Error Handling",
+          "desc": "Error envelope, retryability, and common failure codes"
+        },
+        "faq": {
+          "title": "FAQ",
+          "desc": "Answers for product behavior, privacy, and troubleshooting"
+        },
+        "settings": {
+          "title": "Settings",
+          "desc": "Manage local preferences, cookies, storage, and integrations"
+        },
+        "about": {
+          "title": "About DownAria",
+          "desc": "Project story, feature overview, and ecosystem links"
+        },
+        "credits": {
+          "title": "Credits",
+          "desc": "Acknowledgements and technology credits"
+        }
+      },
+      "popularDownloaders": {
+        "title": "Popular Downloader Pages",
+        "description": "Platform-focused DownAria pages that help people discover the main dashboard faster."
+      }
     },
-    "fbHtml": {
-      "title": "Facebook HTML Extractor",
-      "description": "Extract videos from private posts via page source",
-      "step1": "Facebook URL",
-      "step2": "View Source URL",
-      "step3": "Paste HTML Source",
-      "paste": "Paste",
-      "clear": "Clear",
-      "copy": "Copy",
-      "copied": "Copied!",
-      "copyHint": "Paste in new tab",
-      "sourceHint": "Open in new tab → Ctrl+A → Ctrl+C",
-      "extracting": "Extracting media URLs...",
-      "found": "Found {count} media",
-      "extractNew": "Extract New",
-      "extractMedia": "Extract Media",
-      "pasteFromClipboard": "Paste from Clipboard",
-      "pasteHint": "Tip: If paste button doesn't work, manually paste (Ctrl+V) into the box above",
-      "noMediaFound": "No media found",
-      "parseError": "Parse error",
-      "htmlPlaceholder": "Paste the entire HTML source code here (Ctrl+V)...",
-      "pasteFailed": "Paste failed"
+    "api": {
+      "title": "API Usage",
+      "description": "Rich reference for integrating Backend public API (`/api/v1/*`) used by DownAria clients and external apps.",
+      "mainSurface": {
+        "title": "Main Surface",
+        "desc": "/api/v1/extract, /api/v1/download, and /api/v1/jobs/{id} drive most client integrations."
+      },
+      "downloadModes": {
+        "title": "Download Modes",
+        "desc": "Responses can be sync file streams or async jobs depending on merge/convert workload."
+      },
+      "clientRule": {
+        "title": "Client Rule",
+        "desc": "Extract first, choose source second, then download with the exact media URL or merge pair."
+      },
+      "baseUrl": {
+        "title": "Base URL",
+        "note": "Production deployments should use your own Backend domain."
+      },
+      "requestHeader": {
+        "title": "Request Header",
+        "note": "No authentication header is required."
+      },
+      "flowOverview": {
+        "title": "Flow Overview",
+        "step1": "Call `POST /api/v1/extract` with the content URL.",
+        "step2": "Read `media[].sources[]` and choose the exact source or merge pair.",
+        "step3": "Call `POST /api/v1/download` for direct or async artifact delivery.",
+        "step4": "When response is `202`, poll `GET /api/v1/jobs/{id}` until the artifact is complete."
+      },
+      "endpoints": {
+        "title": "Available Endpoints",
+        "extract": {
+          "note": "Extract media metadata, source items, and available quality options."
+        },
+        "download": {
+          "note": "Download selected source directly or create async job for heavier processing."
+        },
+        "merge": {
+          "note": "Merge separate video and audio URLs into one final artifact."
+        },
+        "convert": {
+          "note": "Convert downloaded media into another output format such as MP3."
+        },
+        "jobStatus": {
+          "note": "Poll async job state until artifact becomes available."
+        },
+        "jobArtifact": {
+          "note": "Stream the completed async artifact once the job is finished."
+        },
+        "proxy": {
+          "note": "Proxy media streams from external CDNs directly to the browser (supports Range requests)."
+        },
+        "request": "Request",
+        "response": "Response",
+        "binaryNote": "This endpoint returns a binary file stream rather than JSON."
+      }
+    },
+    "errors": {
+      "title": "Error Handling",
+      "description": "DownAria and Backend return structured errors so clients can decide retry logic and user-facing messages.",
+      "envelope": {
+        "title": "Error Envelope"
+      },
+      "commonCodes": {
+        "title": "Common Error Codes",
+        "code": "Code",
+        "kind": "Kind",
+        "http": "HTTP",
+        "retryable": "Retryable"
+      },
+      "retryRule": {
+        "title": "Retry Rule",
+        "desc": "Retry only when `error.retryable` is `true`, or when timeout/upstream errors are explicitly marked as temporary."
+      },
+      "supportRule": {
+        "title": "Support Rule",
+        "desc": "Always log `request_id` in client telemetry or bug reports so backend logs can correlate failures quickly."
+      }
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "description": "Common questions about DownAria usage, download behavior, and platform limits.",
+      "categories": {
+        "productBasics": "Product Basics",
+        "downloadBehavior": "Download Behavior",
+        "privacyLocalData": "Privacy & Local Data",
+        "troubleshooting": "Troubleshooting"
+      },
+      "questions": {
+        "whatIsDownAria": {
+          "q": "What is DownAria?",
+          "a": "DownAria is a social media downloader interface that extracts platform media metadata, presents available quality options, and lets users download selected artifacts."
+        },
+        "whatLinks": {
+          "q": "What kind of links can I use?",
+          "a": "Use direct post/reel/video URLs from supported platforms. The extractor reads the source and returns available video, audio, and image formats when possible."
+        },
+        "needAccount": {
+          "q": "Do I need an account to download?",
+          "a": "Most public content works without login. Private or restricted content may require valid cookies or platform-side access rights."
+        },
+        "why1080pNoAudio": {
+          "q": "Why can 1080p download without audio in some cases?",
+          "a": "Some platforms expose video and audio as separate streams at higher quality. DownAria will merge them when required and supported by the selected source metadata."
+        },
+        "whyDifferentQuality": {
+          "q": "Why are quality options different for each URL?",
+          "a": "Quality depends on what the source platform currently exposes for that exact post. Some posts only have SD, others include multiple HD levels."
+        },
+        "asyncMode": {
+          "q": "What happens when download returns async mode?",
+          "a": "If backend processing needs extra time, download returns a job response. The app then polls the job endpoint until the artifact is completed."
+        },
+        "cookiesStored": {
+          "q": "Are cookies stored locally?",
+          "a": "Yes. Cookie management is local-first in your browser storage."
+        },
+        "historyLocal": {
+          "q": "Is download history local?",
+          "a": "Yes. History and storage tools are maintained on your device unless you explicitly clear them."
+        },
+        "controlThemes": {
+          "q": "Can I control themes and visual effects?",
+          "a": "Yes. Theme, language, accent, seasonal effects, and other preferences are adjustable from settings."
+        },
+        "extractionFails": {
+          "q": "Why does extraction fail for a valid URL?",
+          "a": "The source may be region-restricted, expired, private, or temporarily blocked. Retry with a fresh URL and check platform visibility."
+        },
+        "qualityDuplicated": {
+          "q": "Why does quality list look duplicated or missing?",
+          "a": "DownAria deduplicates sources based on backend metadata. If a source is missing, it usually means the platform did not expose a valid downloadable variant."
+        },
+        "downloadStalls": {
+          "q": "What should I do if a download stalls?",
+          "a": "Retry extraction to refresh source URLs, then download again. Signed media links can expire quickly, especially on high-traffic platforms."
+        }
+      }
     }
   }
 }

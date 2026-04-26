@@ -1,4 +1,5 @@
 import { MetadataRoute } from 'next';
+import { DOWNLOADER_LANDING_PAGES } from '@/modules/seo';
 
 export default function sitemap(): MetadataRoute.Sitemap {
     const baseUrl = 'https://downaria.vercel.app';
@@ -36,12 +37,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
             priority: 0.7,
         },
         {
-            url: `${baseUrl}/docs/changelog`,
-            lastModified,
-            changeFrequency: 'weekly',
-            priority: 0.7,
-        },
-        {
             url: `${baseUrl}/install`,
             lastModified,
             changeFrequency: 'monthly',
@@ -65,6 +60,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
             changeFrequency: 'monthly',
             priority: 0.4,
         },
+        ...DOWNLOADER_LANDING_PAGES.map((page) => ({
+            url: `${baseUrl}/${page.slug}`,
+            lastModified,
+            changeFrequency: 'weekly' as const,
+            priority: 0.85,
+        })),
     ];
 
     const combinations = [
